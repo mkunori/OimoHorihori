@@ -1,0 +1,505 @@
+﻿@page "/"
+
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Services
+@using OimoHorihori.Utilities
+
+@inject SaveService SaveService
+
+@implements IDisposable
+
+<PageTitle>OIMO HORIHORI</PageTitle>
+
+<main class="game">
+
+    <header class="game-header">
+
+        <h1>OIMO HORIHORI</h1>
+
+        @if (game.HasStarted)
+        {
+            <button class="settings-button" @onclick="OpenSettings" aria-label="設定">
+                ⚙
+            </button>
+        }
+
+    </header>
+
+    @if (!game.HasStarted)
+    {
+        <section class="start-screen">
+
+            <button class="dig-button" @onclick="StartGame">
+                掘る！
+            </button>
+
+        </section>
+    }
+    else
+    {
+        <section class="status-panel">
+
+            <div class="potato-value">
+                @NumberFormatter.Format(
+                    game.Potato)
+                <span class="unit">
+                    芋
+                </span>
+            </div>
+
+            <div class="production-value">
+                +@NumberFormatter.Format(game.ProductionPerSecond)
+                / sec
+            </div>
+
+            <div class="total-value">
+                TOTAL
+                @NumberFormatter.Format(
+                    game.TotalPotato)
+            </div>
+
+        </section>
+
+        <section class="farm-list">
+
+            @foreach (Farm farm in game.Farms)
+            {
+                bool canBuy =
+                    game.CanBuyFarm(farm);
+
+                <button class="farm-card" disabled="@(!canBuy)" @onclick="() => BuyFarm(farm)">
+
+                    <div class="farm-header">
+
+                        <span class="farm-name">
+                            @farm.Name
+                        </span>
+
+                        <span class="farm-level">
+                            Lv. @farm.Level
+                        </span>
+
+                    </div>
+
+                    <div class="farm-production">
+                        +@NumberFormatter.Format(farm.ProductionPerSecond)
+                        / sec
+                    </div>
+
+                    <div class="farm-cost">
+                        COST
+                        @NumberFormatter.Format(
+                            farm.NextCost)
+                        芋
+                    </div>
+
+                </button>
+            }
+
+        </section>
+    }
+
+</main>
+
+@if (BuildInfo.IsDebug && game.HasStarted)
+{
+    <section class="debug-panel">
+
+        <div class="debug-title">
+            DEBUG
+        </div>
+
+        <button @onclick="() => DebugAddPotatoAsync(1_000)">
+            +1.000e+3 芋
+        </button>
+
+        <button @onclick="() => DebugAddPotatoAsync(1_000_000)">
+            +1.000e+6 芋
+        </button>
+
+        <button @onclick="() => DebugOfflineAsync(3_600)">
+            OFFLINE 1時間
+        </button>
+
+        <button @onclick="() => DebugOfflineAsync(43_200)">
+            OFFLINE 12時間
+        </button>
+
+    </section>
+}
+
+@if (showSettings)
+{
+    <div class="modal-backdrop">
+
+        <div class="settings-modal">
+
+            <h2>SETTINGS</h2>
+
+            <section class="settings-section">
+
+                <div class="settings-label">
+                    OFFLINE LIMIT
+                </div>
+
+                <div>
+                    8 HOURS
+                </div>
+
+            </section>
+
+            <section class="settings-section">
+
+                <div class="settings-label">
+                    DATA
+                </div>
+
+                <button class="reset-button" @onclick="OpenResetConfirmation">
+                    セーブデータ初期化
+                </button>
+
+            </section>
+
+            <section class="settings-section">
+
+                <div class="settings-label">
+                    VERSION
+                </div>
+
+                <div>
+                    1.0.0
+                </div>
+
+            </section>
+
+            <button class="close-button" @onclick="CloseSettings">
+                閉じる
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@if (showOfflineResult)
+{
+    <div class="modal-backdrop">
+
+        <div class="offline-modal">
+
+            <h2>おかえり！</h2>
+
+            <div class="offline-label">
+                OFFLINE
+            </div>
+
+            <div class="offline-time">
+                @FormatOfflineTime(
+                    offlineDuration)
+            </div>
+
+            <div class="offline-reward">
+                +@NumberFormatter.Format(offlineReward) 芋
+            </div>
+
+            <button @onclick="CloseOfflineResult">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@if (showResetConfirmation)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                セーブデータ初期化
+            </h2>
+
+            <p>
+                本当にセーブデータを初期化しますか？
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="CancelReset">
+                    キャンセル
+                </button>
+
+                <button class="danger-button" @onclick="ResetGameAsync">
+                    初期化する
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    private GameState game = new();
+
+    private PeriodicTimer? timer;
+
+    private CancellationTokenSource
+        cancellationTokenSource = new();
+
+    private DateTimeOffset lastUpdateTime;
+
+    private DateTimeOffset lastAutoSaveTime;
+
+    private bool showOfflineResult;
+
+    private TimeSpan offlineDuration;
+
+    private double offlineReward;
+
+    private bool showSettings;
+
+    private bool showResetConfirmation;
+
+    protected override async Task
+     OnInitializedAsync()
+    {
+        SaveData? save =
+            await SaveService.LoadAsync();
+
+        DateTimeOffset now =
+            DateTimeOffset.UtcNow;
+
+        if (save is not null)
+        {
+            bool loaded =
+                game.TryLoadSaveData(save);
+
+            if (!loaded)
+            {
+                await SaveService.DeleteAsync();
+            }
+            else if (game.HasStarted)
+            {
+                double elapsedSeconds =
+                    (now
+                    - save.LastSaveTimeUtc)
+                    .TotalSeconds;
+
+                if (elapsedSeconds > 0)
+                {
+                    double cappedSeconds =
+                        Math.Min(
+                            elapsedSeconds,
+                            GameConstants
+                                .OfflineLimitSeconds);
+
+                    offlineReward =
+                        game.ProduceOffline(
+                            elapsedSeconds);
+
+                    offlineDuration =
+                        TimeSpan.FromSeconds(
+                            cappedSeconds);
+
+                    showOfflineResult = true;
+
+                    await SaveGameAsync();
+                }
+            }
+        }
+
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+
+        timer = new PeriodicTimer(
+            TimeSpan.FromMilliseconds(
+                GameConstants
+                    .GameLoopIntervalMilliseconds));
+
+        _ = RunGameLoopAsync();
+    }
+
+    private async Task StartGame()
+    {
+        game.HasStarted = true;
+
+        game.ProducePotato(0.1);
+
+        lastUpdateTime =
+            DateTimeOffset.UtcNow;
+
+        await SaveGameAsync();
+    }
+
+    private async Task BuyFarm(Farm farm)
+    {
+        bool bought =
+            game.BuyFarm(farm);
+
+        if (bought)
+        {
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task RunGameLoopAsync()
+    {
+        if (timer is null)
+        {
+            return;
+        }
+
+        try
+        {
+            while (await timer
+                .WaitForNextTickAsync(
+                    cancellationTokenSource
+                        .Token))
+            {
+                DateTimeOffset now =
+                    DateTimeOffset.UtcNow;
+
+                double elapsedSeconds =
+                    (now - lastUpdateTime)
+                    .TotalSeconds;
+
+                lastUpdateTime = now;
+
+                if (!game.HasStarted)
+                {
+                    continue;
+                }
+
+                game.ProduceForSeconds(
+                    elapsedSeconds);
+
+                if ((now - lastAutoSaveTime)
+                        .TotalSeconds
+                    >= GameConstants
+                        .AutoSaveIntervalSeconds)
+                {
+                    await SaveGameAsync();
+
+                    lastAutoSaveTime = now;
+                }
+
+                await InvokeAsync(
+                    StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+
+        timer?.Dispose();
+
+        cancellationTokenSource.Dispose();
+    }
+
+    private async Task SaveGameAsync()
+    {
+        SaveData save =
+            game.CreateSaveData();
+
+        await SaveService.SaveAsync(save);
+    }
+
+    private static string FormatOfflineTime(
+    TimeSpan time)
+    {
+        int hours =
+            (int)time.TotalHours;
+
+        return
+            $"{hours:00}:" +
+            $"{time.Minutes:00}:" +
+            $"{time.Seconds:00}";
+    }
+
+    private void CloseOfflineResult()
+    {
+        showOfflineResult = false;
+    }
+
+    private void OpenSettings()
+    {
+        showSettings = true;
+    }
+
+    private void CloseSettings()
+    {
+        showSettings = false;
+    }
+
+    private void OpenResetConfirmation()
+    {
+        showSettings = false;
+
+        showResetConfirmation = true;
+    }
+
+    private void CancelReset()
+    {
+        showResetConfirmation = false;
+
+        showSettings = true;
+    }
+
+    private async Task ResetGameAsync()
+    {
+        await SaveService.DeleteAsync();
+
+        game = new GameState();
+
+        showResetConfirmation = false;
+
+        showSettings = false;
+
+        showOfflineResult = false;
+
+        DateTimeOffset now =
+            DateTimeOffset.UtcNow;
+
+        lastUpdateTime = now;
+
+        lastAutoSaveTime = now;
+    }
+
+    private async Task DebugAddPotatoAsync(
+    double amount)
+    {
+        game.ProducePotato(amount);
+
+        await SaveGameAsync();
+    }
+
+    private async Task DebugOfflineAsync(
+    double seconds)
+    {
+        double cappedSeconds =
+            Math.Min(
+                seconds,
+                GameConstants.OfflineLimitSeconds);
+
+        offlineReward =
+            game.ProduceOffline(seconds);
+
+        offlineDuration =
+            TimeSpan.FromSeconds(
+                cappedSeconds);
+
+        showOfflineResult = true;
+
+        await SaveGameAsync();
+    }
+}

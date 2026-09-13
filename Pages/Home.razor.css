@@ -1,0 +1,325 @@
+.game {
+    width: 100%;
+    max-width: 480px;
+
+    min-height: 100vh;
+
+    margin: 0 auto;
+    padding: 12px;
+}
+
+.game-header {
+    position: relative;
+
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-header h1 {
+    margin: 0;
+
+    font-size: 1.25rem;
+    letter-spacing: 0.06em;
+}
+
+.settings-button {
+    position: absolute;
+
+    top: 50%;
+    right: 0;
+
+    transform: translateY(-50%);
+
+    width: 40px;
+    height: 40px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+
+    font-size: 1.3rem;
+
+    cursor: pointer;
+}
+
+.start-screen {
+    min-height: calc(100vh - 80px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dig-button {
+    min-width: 160px;
+
+    padding: 16px 32px;
+
+    border: 2px solid #604060;
+    border-radius: 10px;
+
+    background: #765276;
+    color: white;
+
+    font-size: 1.35rem;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+.status-panel {
+    margin: 20px 0;
+
+    padding: 24px 12px;
+
+    text-align: center;
+
+    border-top: 1px solid #b9a78b;
+    border-bottom: 1px solid #b9a78b;
+}
+
+.potato-value {
+    font-size: 2rem;
+    font-weight: 700;
+
+    line-height: 1.2;
+}
+
+.unit {
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+.production-value {
+    margin-top: 10px;
+
+    font-size: 1.05rem;
+}
+
+.total-value {
+    margin-top: 12px;
+
+    font-size: 0.9rem;
+
+    opacity: 0.75;
+}
+
+.farm-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.farm-card {
+    width: 100%;
+
+    padding: 14px 16px;
+
+    border: 1px solid #a99170;
+    border-radius: 10px;
+
+    background: #fffaf0;
+    color: #35281f;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.05s ease,
+        opacity 0.15s ease;
+}
+
+.farm-card:not(:disabled):active {
+    transform: scale(0.985);
+}
+
+.farm-card:disabled {
+    opacity: 0.42;
+
+    filter: grayscale(0.55);
+
+    cursor: default;
+}
+
+.farm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.farm-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.farm-level {
+    font-size: 0.95rem;
+}
+
+.farm-production {
+    margin-top: 9px;
+
+    font-size: 0.95rem;
+}
+
+.farm-cost {
+    margin-top: 5px;
+
+    font-size: 0.85rem;
+
+    opacity: 0.8;
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 16px;
+
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.offline-modal,
+.settings-modal,
+.confirm-modal {
+    width: 100%;
+    max-width: 320px;
+
+    padding: 24px;
+
+    border: 1px solid #b9a78b;
+    border-radius: 12px;
+
+    background: #fff8e8;
+    color: #35281f;
+}
+
+.offline-modal {
+    text-align: center;
+}
+
+.offline-label {
+    margin-top: 20px;
+
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.offline-time {
+    margin-top: 4px;
+
+    font-size: 1.2rem;
+}
+
+.offline-reward {
+    margin: 24px 0;
+
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.settings-modal h2,
+.confirm-modal h2 {
+    margin-top: 0;
+
+    text-align: center;
+}
+
+.settings-section {
+    padding: 14px 0;
+
+    border-bottom: 1px solid #d7c8ad;
+}
+
+.settings-label {
+    margin-bottom: 5px;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.reset-button,
+.close-button,
+.offline-modal button {
+    width: 100%;
+
+    min-height: 44px;
+
+    border: 1px solid #9c8769;
+    border-radius: 8px;
+
+    background: #fffaf0;
+
+    cursor: pointer;
+}
+
+.close-button {
+    margin-top: 20px;
+}
+
+.confirm-actions {
+    display: flex;
+
+    gap: 8px;
+}
+
+.confirm-actions button {
+    flex: 1;
+
+    min-height: 44px;
+
+    border-radius: 8px;
+}
+
+.danger-button {
+    border: 1px solid #7b3636;
+
+    background: #7b3636;
+    color: white;
+
+    font-weight: 700;
+}
+
+.debug-panel {
+    margin-top: 24px;
+    padding: 12px;
+
+    border: 1px dashed #777;
+    border-radius: 8px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.debug-title {
+    grid-column: 1 / -1;
+
+    font-size: 0.75rem;
+    font-weight: bold;
+
+    opacity: 0.7;
+}
+
+.debug-panel button {
+    min-height: 40px;
+
+    border: 1px solid #999;
+    border-radius: 6px;
+
+    background: #eee;
+
+    cursor: pointer;
+}
