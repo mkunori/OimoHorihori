@@ -877,7 +877,7 @@
 
                 <div class="offline-reward">
                     +@NumberFormatter.Format(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                offlineReward)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            offlineReward)
                     芋
                 </div>
             }
@@ -1063,7 +1063,7 @@
 
             <div class="oimo-discovery-count">
                 ×@game.GetOimoDiscoveryCount(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    lastDiscoveredOimo.Id)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    lastDiscoveredOimo.Id)
             </div>
 
             <button @onclick="CloseOimoDiscovery">
@@ -1219,27 +1219,24 @@
 
     private async Task StartGame()
     {
-        DateTimeOffset now =
-            DateTimeOffset.UtcNow;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
 
         game.HasStarted = true;
 
-        if (game.GameStartedAtUtc
-            == default)
+        if (game.GameStartedAtUtc == default)
         {
-            game.GameStartedAtUtc =
-                now;
+            game.GameStartedAtUtc = now;
         }
 
-        game.RunStartedAtUtc =
-            now;
+        game.RunStartedAtUtc = now;
 
         game.DigButtonCount++;
 
         game.ProducePotato(0.1);
 
-        lastUpdateTime =
-            now;
+        CheckAchievements();
+
+        lastUpdateTime = now;
 
         await SaveGameAsync();
     }
@@ -1334,13 +1331,11 @@
 
                 if (game.HasStarted)
                 {
-                    game.ProduceForSeconds(
-                        elapsedSeconds);
+                    game.ProduceForSeconds(elapsedSeconds);
 
-                    game.BestProductionPerSecond =
-                        Math.Max(
-                            game.BestProductionPerSecond,
-                            game.ProductionPerSecond);
+                    game.BestProductionPerSecond = Math.Max(game.BestProductionPerSecond, game.ProductionPerSecond);
+
+                    CheckAchievements();
                 }
 
                 if (game.GameStartedAtUtc != default
@@ -1745,7 +1740,7 @@
 
     private async Task BuyOfflineUpgradeAsync()
     {
-        if (game.BuyDigUpgrade())
+        if (game.BuyOfflineUpgrade())
         {
             CheckAchievements();
 

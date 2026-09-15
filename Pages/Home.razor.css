@@ -1019,3 +1019,124 @@
 
     padding: 9px 16px;
 }
+
+@media (max-width: 390px) {
+    .game {
+        min-height: 100dvh;
+
+        padding:
+            8px 8px calc(72px + env(safe-area-inset-bottom));
+    }
+
+    .game-header {
+        min-height: 38px;
+    }
+
+    .game-header h1 {
+        font-size: 1.05rem;
+    }
+
+    .status-panel {
+        margin: 8px 0 10px;
+        padding: 14px 8px;
+    }
+
+    .potato-value {
+        font-size: 1.65rem;
+        overflow-wrap: anywhere;
+    }
+
+    .production-value {
+        margin-top: 6px;
+        font-size: 0.9rem;
+    }
+
+    .total-value {
+        margin-top: 7px;
+        font-size: 0.78rem;
+        overflow-wrap: anywhere;
+    }
+
+    .purchase-mode {
+        gap: 5px;
+        margin-bottom: 8px;
+    }
+
+    .purchase-mode-button {
+        padding: 7px 5px;
+        font-size: 0.82rem;
+    }
+
+    .farm-list,
+    .menu-list,
+    .upgrade-list,
+    .achievement-list {
+        gap: 7px;
+    }
+
+    .farm-card,
+    .replant-card,
+    .upgrade-card,
+    .menu-item,
+    .statistics-section,
+    .achievement-card,
+    .settings-card {
+        padding: 10px 12px;
+    }
+
+    .farm-header,
+    .replant-header,
+    .upgrade-header,
+    .achievement-header {
+        gap: 8px;
+    }
+
+    .farm-name,
+    .replant-name,
+    .upgrade-name,
+    .achievement-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .stat-row {
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .stat-row span {
+        min-width: 0;
+    }
+
+    .stat-row span:last-child {
+        overflow-wrap: anywhere;
+    }
+
+    .oimo-book-list {
+        gap: 6px;
+    }
+
+    .oimo-book-card {
+        min-height: 80px;
+        padding: 8px;
+    }
+
+    .oimo-book-name {
+        font-size: 0.8rem;
+        overflow-wrap: anywhere;
+    }
+
+    .modal-backdrop {
+        padding: 10px;
+    }
+
+    .offline-modal,
+    .confirm-modal,
+    .replant-modal,
+    .oimo-discovery-modal,
+    .achievement-unlock-modal {
+        max-height: calc(100dvh - 20px);
+        overflow-y: auto;
+        padding: 18px;
+    }
+}
