@@ -876,8 +876,7 @@
                 </div>
 
                 <div class="offline-reward">
-                    +@NumberFormatter.Format(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                offlineReward)
+                    +@NumberFormatter.Format(offlineReward)
                     芋
                 </div>
             }
@@ -1062,8 +1061,7 @@
             </h2>
 
             <div class="oimo-discovery-count">
-                ×@game.GetOimoDiscoveryCount(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    lastDiscoveredOimo.Id)
+                ×@game.GetOimoDiscoveryCount(lastDiscoveredOimo.Id)
             </div>
 
             <button @onclick="CloseOimoDiscovery">
@@ -1111,32 +1109,27 @@
 
 @code {
     private GameState game = new();
-
     private PeriodicTimer? timer;
-
     private CancellationTokenSource cancellationTokenSource = new();
-
     private DateTimeOffset lastUpdateTime;
-
     private DateTimeOffset lastAutoSaveTime;
-
     private bool showOfflineResult;
-
     private TimeSpan offlineDuration;
-
     private double offlineReward;
-
     private bool showResetConfirmation;
-
     private PurchaseMode purchaseMode = PurchaseMode.One;
-
     private bool showReplant;
-
     private bool showReplantConfirmation;
-
     private OimoSpeciesDefinition? lastDiscoveredOimo;
-
     private bool showOimoDiscovery;
+    private List<OimoSpeciesDefinition> offlineOimoDiscoveries = new();
+    private string? shareResultMessage;
+    private Queue<AchievementDefinition> achievementNotificationQueue = new();
+    private AchievementDefinition? currentAchievementNotification;
+    private bool isPageHidden;
+    private DateTimeOffset? pageHiddenAtUtc;
+    private DotNetObjectReference<Home>? visibilityReference;
+    private int? newerSaveVersion;
 
     private void SetPurchaseMode(PurchaseMode mode)
     {
@@ -1145,31 +1138,23 @@
 
     protected override async Task OnInitializedAsync()
     {
-        SaveData? save =
-            await SaveService.LoadAsync();
-
-        DateTimeOffset now =
-            DateTimeOffset.UtcNow;
+        SaveData? save = await SaveService.LoadAsync();
+        DateTimeOffset now = DateTimeOffset.UtcNow;
 
         if (save is not null)
         {
-            int loadedVersion =
-                save.Version;
+            int loadedVersion = save.Version;
 
             // 現在のアプリより
             // 新しいセーブは絶対に触らない
-            if (loadedVersion
-                > GameConstants.SaveVersion)
+            if (loadedVersion > GameConstants.SaveVersion)
             {
-                newerSaveVersion =
-                    loadedVersion;
+                newerSaveVersion = loadedVersion;
 
                 return;
             }
 
-            bool loaded =
-                game.TryLoadSaveData(save);
-
+            bool loaded = game.TryLoadSaveData(save);
             if (!loaded)
             {
                 await SaveService.DeleteAsync();
@@ -1179,51 +1164,32 @@
                 // v1を読み込んだ場合は、
                 // GameState上ですでにv2へ移行済みなので
                 // v2形式で保存し直す
-                if (loadedVersion
-                    < GameConstants.SaveVersion)
+                if (loadedVersion < GameConstants.SaveVersion)
                 {
                     await SaveGameAsync();
                 }
 
                 double elapsedSeconds = (now - save.LastSaveTimeUtc).TotalSeconds;
-
                 if (elapsedSeconds > 0)
                 {
                     if (game.HasStarted)
                     {
-                        double cappedSeconds =
-                            Math.Min(
-                                elapsedSeconds,
-                                game.OfflineLimitSeconds);
+                        double cappedSeconds = Math.Min(elapsedSeconds, game.OfflineLimitSeconds);
 
-                        offlineReward =
-                            game.ProduceOffline(
-                                elapsedSeconds);
-
-                        offlineDuration =
-                            TimeSpan.FromSeconds(
-                                cappedSeconds);
+                        offlineReward = game.ProduceOffline(elapsedSeconds);
+                        offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
                     }
 
-                    if (game.GameStartedAtUtc
-                        != default)
+                    if (game.GameStartedAtUtc != default)
                     {
-                        IReadOnlyList<
-                            OimoSpeciesDefinition>
-                            discoveries =
-                                game
-                                .ProduceOfflineOimoDiscoveries(
-                                    elapsedSeconds);
+                        IReadOnlyList<OimoSpeciesDefinition> discoveries = game.ProduceOfflineOimoDiscoveries(elapsedSeconds);
 
-                        offlineOimoDiscoveries =
-                            discoveries.ToList();
+                        offlineOimoDiscoveries = discoveries.ToList();
                     }
 
-                    if (game.HasStarted
-                        || offlineOimoDiscoveries.Count > 0)
+                    if (game.HasStarted || offlineOimoDiscoveries.Count > 0)
                     {
-                        showOfflineResult =
-                            true;
+                        showOfflineResult = true;
                     }
 
                     await SaveGameAsync();
@@ -1238,23 +1204,13 @@
 
         await JS.InvokeVoidAsync("oimoVisibility.register", visibilityReference);
 
-        timer = new PeriodicTimer(
-            TimeSpan.FromMilliseconds(
-                GameConstants
-                    .GameLoopIntervalMilliseconds));
-
+        timer = new PeriodicTimer(TimeSpan.FromMilliseconds(GameConstants.GameLoopIntervalMilliseconds));
         _ = RunGameLoopAsync();
+        IReadOnlyList<AchievementDefinition> unlockedAchievements = game.CheckAchievements();
 
-        IReadOnlyList<AchievementDefinition>
-            unlockedAchievements =
-                game.CheckAchievements();
-
-        foreach (
-            AchievementDefinition achievement
-            in unlockedAchievements)
+        foreach (AchievementDefinition achievement in unlockedAchievements)
         {
-            achievementNotificationQueue.Enqueue(
-                achievement);
+            achievementNotificationQueue.Enqueue(achievement);
         }
 
         if (unlockedAchievements.Count > 0)
@@ -1268,7 +1224,6 @@
     private async Task StartGame()
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
-
         game.HasStarted = true;
 
         if (game.GameStartedAtUtc == default)
@@ -1277,46 +1232,32 @@
         }
 
         game.RunStartedAtUtc = now;
-
         game.DigButtonCount++;
-
         game.ProducePotato(0.1);
-
         CheckAchievements();
-
         lastUpdateTime = now;
 
         await SaveGameAsync();
     }
 
-    private async Task BuyFarm(
-        Farm farm)
+    private async Task BuyFarm(Farm farm)
     {
-        int maxLevels =
-            GetPurchaseMaxLevels();
-
-        int purchasedLevels =
-            game.BuyFarm(
-                farm,
-                maxLevels);
+        int maxLevels = GetPurchaseMaxLevels();
+        int purchasedLevels = game.BuyFarm(farm, maxLevels);
 
         if (purchasedLevels <= 0)
         {
             return;
         }
 
-        if (purchaseMode
-            == PurchaseMode.Ten)
+        if (purchaseMode == PurchaseMode.Ten)
         {
-            game.HasUsedTenPurchaseMode =
-                true;
+            game.HasUsedTenPurchaseMode = true;
         }
 
-        if (purchaseMode
-            == PurchaseMode.Max)
+        if (purchaseMode == PurchaseMode.Max)
         {
-            game.HasUsedMaxPurchaseMode =
-                true;
+            game.HasUsedMaxPurchaseMode = true;
         }
 
         CheckAchievements();
@@ -1333,17 +1274,10 @@
 
         try
         {
-            while (await timer
-                .WaitForNextTickAsync(
-                    cancellationTokenSource
-                        .Token))
+            while (await timer.WaitForNextTickAsync(cancellationTokenSource.Token))
             {
-                DateTimeOffset now =
-                    DateTimeOffset.UtcNow;
-
-                double elapsedSeconds =
-                    (now - lastUpdateTime)
-                    .TotalSeconds;
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                double elapsedSeconds = (now - lastUpdateTime).TotalSeconds;
 
                 lastUpdateTime = now;
 
@@ -1352,30 +1286,20 @@
                     continue;
                 }
 
-                if (game.GameStartedAtUtc != default
-                    && double.IsFinite(elapsedSeconds)
-                    && elapsedSeconds > 0)
+                if (game.GameStartedAtUtc != default && double.IsFinite(elapsedSeconds) && elapsedSeconds > 0)
                 {
-                    game.TotalPlayTimeSeconds +=
-                        elapsedSeconds;
+                    game.TotalPlayTimeSeconds += elapsedSeconds;
                 }
 
                 if (game.GameStartedAtUtc
                     != default)
                 {
-                    IReadOnlyList<OimoSpeciesDefinition>
-                        discoveries =
-                            game.AdvanceOimoDiscovery(
-                                elapsedSeconds);
+                    IReadOnlyList<OimoSpeciesDefinition> discoveries = game.AdvanceOimoDiscovery(elapsedSeconds);
 
                     if (discoveries.Count > 0)
                     {
-                        lastDiscoveredOimo =
-                            discoveries[^1];
-
-                        showOimoDiscovery =
-                            true;
-
+                        lastDiscoveredOimo = discoveries[^1];
+                        showOimoDiscovery = true;
                         CheckAchievements();
 
                         await SaveGameAsync();
@@ -1409,13 +1333,11 @@
 
         timer?.Dispose();
 
-        if (visibilityReference
-            is not null)
+        if (visibilityReference is not null)
         {
             try
             {
-                await JS.InvokeVoidAsync(
-                    "oimoVisibility.unregister");
+                await JS.InvokeVoidAsync("oimoVisibility.unregister");
             }
             catch
             {
@@ -1430,31 +1352,23 @@
 
     private async Task SaveGameAsync()
     {
-        SaveData save =
-            game.CreateSaveData();
+        SaveData save = game.CreateSaveData();
 
         await SaveService.SaveAsync(save);
     }
 
-    private static string FormatOfflineTime(
-    TimeSpan time)
+    private static string FormatOfflineTime(TimeSpan time)
     {
-        int hours =
-            (int)time.TotalHours;
+        int hours = (int)time.TotalHours;
 
         return
-            $"{hours:00}:" +
-            $"{time.Minutes:00}:" +
-            $"{time.Seconds:00}";
+            $"{hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
     }
 
     private void CloseOfflineResult()
     {
-        showOfflineResult =
-            false;
-
-        offlineOimoDiscoveries
-            .Clear();
+        showOfflineResult = false;
+        offlineOimoDiscoveries.Clear();
     }
 
     private void OpenSettings()
@@ -1476,60 +1390,31 @@
     {
         await SaveService.DeleteAsync();
 
-        game =
-            new GameState();
-
-        showResetConfirmation =
-            false;
-
-        showOfflineResult =
-            false;
-
-        showOimoDiscovery =
-            false;
-
-        offlineOimoDiscoveries
-            .Clear();
-
-        currentView =
-            HomeView.Horihori;
-
-        purchaseMode =
-            PurchaseMode.One;
-
-        DateTimeOffset now =
-            DateTimeOffset.UtcNow;
-
-        lastUpdateTime =
-            now;
-
-        lastAutoSaveTime =
-            now;
+        game = new GameState();
+        showResetConfirmation = false;
+        showOfflineResult = false;
+        showOimoDiscovery = false;
+        offlineOimoDiscoveries.Clear();
+        currentView = HomeView.Horihori;
+        purchaseMode = PurchaseMode.One;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
     }
 
-    private async Task DebugAddPotatoAsync(
-    double amount)
+    private async Task DebugAddPotatoAsync(double amount)
     {
         game.ProducePotato(amount);
 
         await SaveGameAsync();
     }
 
-    private async Task DebugOfflineAsync(
-    double seconds)
+    private async Task DebugOfflineAsync(double seconds)
     {
-        double cappedSeconds =
-            Math.Min(
-                seconds,
-                game.OfflineLimitSeconds);
+        double cappedSeconds = Math.Min(seconds, game.OfflineLimitSeconds);
 
-        offlineReward =
-            game.ProduceOffline(seconds);
-
-        offlineDuration =
-            TimeSpan.FromSeconds(
-                cappedSeconds);
-
+        offlineReward = game.ProduceOffline(seconds);
+        offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
         showOfflineResult = true;
 
         await SaveGameAsync();
@@ -1568,12 +1453,9 @@
         return farm.NextCost;
     }
 
-    private string GetPurchaseLevelText(
-    Farm farm)
+    private string GetPurchaseLevelText(Farm farm)
     {
-        int levels =
-            GetAffordablePurchaseLevels(farm);
-
+        int levels = GetAffordablePurchaseLevels(farm);
         if (levels <= 0)
         {
             return "購入不可";
@@ -1581,17 +1463,10 @@
 
         return purchaseMode switch
         {
-            PurchaseMode.One =>
-                "+1 Lv",
-
-            PurchaseMode.Ten =>
-                $"+{levels} Lv",
-
-            PurchaseMode.Max =>
-                $"MAX +{levels} Lv",
-
-            _ =>
-                $"+{levels} Lv"
+            PurchaseMode.One => "+1 Lv",
+            PurchaseMode.Ten => $"+{levels} Lv",
+            PurchaseMode.Max => $"MAX +{levels} Lv",
+            _ => $"+{levels} Lv"
         };
     }
 
@@ -1613,52 +1488,32 @@
         }
 
         showReplant = false;
-
         showReplantConfirmation = true;
     }
 
     private void CancelReplant()
     {
-        showReplantConfirmation =
-            false;
-
-        showReplant =
-            true;
+        showReplantConfirmation = false;
+        showReplant = true;
     }
 
     private async Task ExecuteReplantAsync()
     {
-        int earnedSeedPotato =
-            game.Replant();
-
+        int earnedSeedPotato = game.Replant();
         if (earnedSeedPotato <= 0)
         {
-            showReplantConfirmation =
-                false;
+            showReplantConfirmation = false;
 
             return;
         }
 
-        // REPLANT後に実績判定する
         CheckAchievements();
-
-        showReplantConfirmation =
-            false;
-
-        showReplant =
-            false;
-
-        purchaseMode =
-            PurchaseMode.One;
-
-        DateTimeOffset now =
-            DateTimeOffset.UtcNow;
-
-        lastUpdateTime =
-            now;
-
-        lastAutoSaveTime =
-            now;
+        showReplantConfirmation = false;
+        showReplant = false;
+        purchaseMode = PurchaseMode.One;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
 
         await SaveGameAsync();
     }
@@ -1673,9 +1528,7 @@
     private async Task DebugAddSeedPotatoAsync()
     {
         game.SeedPotato += 100;
-
-        game.TotalSeedPotatoEarned +=
-            100;
+        game.TotalSeedPotatoEarned += 100;
 
         await SaveGameAsync();
     }
@@ -1720,48 +1573,37 @@
         Settings
     }
 
-    private HomeView currentView =
-        HomeView.Horihori;
+    private HomeView currentView = HomeView.Horihori;
 
     private void OpenHorihori()
     {
         shareResultMessage = null;
-
-        currentView =
-            HomeView.Horihori;
+        currentView = HomeView.Horihori;
     }
 
     private void OpenMenu()
     {
-        currentView =
-            HomeView.Menu;
+        currentView = HomeView.Menu;
     }
 
     private void OpenSeedUpgrades()
     {
-        currentView =
-            HomeView.SeedUpgrades;
+        currentView = HomeView.SeedUpgrades;
     }
 
     private bool CanBuyOfflineUpgrade()
     {
-        return
-            !game.IsOfflineUpgradeMax
-            && game.SeedPotato
-                >= game.OfflineUpgradeCost;
+        return !game.IsOfflineUpgradeMax && game.SeedPotato >= game.OfflineUpgradeCost;
     }
 
     private string FormatOfflineUpgradeHours()
     {
-        double hours =
-            game.OfflineLimitSeconds
-            / 3600.0;
+        double hours = game.OfflineLimitSeconds / 3600.0;
 
         return $"{hours:0.#}時間";
     }
 
-    private async Task
-    BuyProductionUpgradeAsync()
+    private async Task BuyProductionUpgradeAsync()
     {
         if (game.BuyProductionUpgrade())
         {
@@ -1794,64 +1636,42 @@
     private string GetBottomNavClass(
     bool horihori)
     {
-        bool selected =
-            horihori
-                ? currentView
-                    == HomeView.Horihori
-                : currentView
-                    != HomeView.Horihori;
+        bool selected = horihori ? currentView == HomeView.Horihori : currentView != HomeView.Horihori;
 
-        return selected
-            ? "bottom-nav-button selected"
-            : "bottom-nav-button";
+        return selected ? "bottom-nav-button selected" : "bottom-nav-button";
     }
 
     private void OpenStatistics()
     {
-        currentView =
-            HomeView.Statistics;
+        currentView = HomeView.Statistics;
     }
 
-    private static string FormatPlayTime(
-    double totalSeconds)
+    private static string FormatPlayTime(double totalSeconds)
     {
-        if (!double.IsFinite(totalSeconds)
-            || totalSeconds < 0)
+        if (!double.IsFinite(totalSeconds) || totalSeconds < 0)
         {
             return "00:00:00";
         }
 
-        TimeSpan time =
-            TimeSpan.FromSeconds(
-                totalSeconds);
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+        int totalHours = (int)time.TotalHours;
 
-        int totalHours =
-            (int)time.TotalHours;
-
-        return
-            $"{totalHours:00}:"
-            + $"{time.Minutes:00}:"
-            + $"{time.Seconds:00}";
+        return $"{totalHours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
     }
 
     private string FormatGameStartedAt()
     {
-        if (game.GameStartedAtUtc
-            == default)
+        if (game.GameStartedAtUtc == default)
         {
             return "-";
         }
 
-        return game.GameStartedAtUtc
-            .ToLocalTime()
-            .ToString(
-                "yyyy/MM/dd HH:mm");
+        return game.GameStartedAtUtc.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
     }
 
     private void OpenAchievements()
     {
-        currentView =
-            HomeView.Achievements;
+        currentView = HomeView.Achievements;
     }
 
     private int GetUnlockedAchievementCount()
@@ -1859,11 +1679,9 @@
         int count = 0;
 
         foreach (
-            AchievementDefinition achievement
-            in AchievementCatalog.All)
+            AchievementDefinition achievement in AchievementCatalog.All)
         {
-            if (game.IsAchievementUnlocked(
-                    achievement.Id))
+            if (game.IsAchievementUnlocked(achievement.Id))
             {
                 count++;
             }
@@ -1872,31 +1690,21 @@
         return count;
     }
 
-    private static string
-    GetAchievementClass(
-        bool unlocked)
+    private static string GetAchievementClass(bool unlocked)
     {
-        return unlocked
-            ? "achievement-card unlocked"
-            : "achievement-card locked";
+        return unlocked ? "achievement-card unlocked" : "achievement-card locked";
     }
 
-    private string FormatAchievementDate(
-    string achievementId)
+    private string FormatAchievementDate(string achievementId)
     {
-        DateTimeOffset? unlockedAt =
-            game.GetAchievementUnlockedAtUtc(
-                achievementId);
+        DateTimeOffset? unlockedAt = game.GetAchievementUnlockedAtUtc(achievementId);
 
         if (unlockedAt is null)
         {
             return "";
         }
 
-        return unlockedAt.Value
-            .ToLocalTime()
-            .ToString(
-                "yyyy/MM/dd HH:mm");
+        return unlockedAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
     }
 
     private void CloseOimoDiscovery()
@@ -1910,20 +1718,13 @@
             HomeView.OimoBook;
     }
 
-    private static string
-        GetOimoSpeciesNumber(
-            OimoSpeciesDefinition species)
+    private static string GetOimoSpeciesNumber(OimoSpeciesDefinition species)
     {
-        for (int i = 0;
-            i < OimoSpeciesCatalog.All.Count;
-            i++)
+        for (int i = 0; i < OimoSpeciesCatalog.All.Count; i++)
         {
-            if (OimoSpeciesCatalog
-                    .All[i].Id
-                == species.Id)
+            if (OimoSpeciesCatalog.All[i].Id == species.Id)
             {
-                return (i + 1)
-                    .ToString("00");
+                return (i + 1).ToString("00");
             }
         }
 
@@ -1932,12 +1733,8 @@
 
     private static string GetOimoBookCardClass(bool discovered)
     {
-        return discovered
-            ? "oimo-book-card"
-            : "oimo-book-card locked";
+        return discovered ? "oimo-book-card" : "oimo-book-card locked";
     }
-
-    private List<OimoSpeciesDefinition> offlineOimoDiscoveries = new();
 
     private string BuildShareText()
     {
@@ -1950,51 +1747,27 @@
             + "#OIMOHORIHORI";
     }
 
-    private string? shareResultMessage;
-
     private async Task ShareGameAsync()
     {
-        string text =
-            BuildShareText();
+        string text = BuildShareText();
+        string result = await JS.InvokeAsync<string>("oimoShare", text);
 
-        string result =
-            await JS.InvokeAsync<string>(
-                "oimoShare",
-                text);
-
-        shareResultMessage =
-            result switch
-            {
-                "shared" =>
-                    "共有しました",
-
-                "copied" =>
-                    "共有テキストをコピーしました",
-
-                "cancelled" =>
-                    null,
-
-                _ =>
-                    "共有できませんでした"
-            };
+        shareResultMessage = result switch
+        {
+            "shared" => "共有しました",
+            "copied" => "共有テキストをコピーしました",
+            "cancelled" => null,
+            _ => "共有できませんでした"
+        };
     }
-
-    private Queue<AchievementDefinition> achievementNotificationQueue = new();
-
-    private AchievementDefinition? currentAchievementNotification;
 
     private void CheckAchievements()
     {
-        IReadOnlyList<AchievementDefinition>
-            unlockedAchievements =
-                game.CheckAchievements();
+        IReadOnlyList<AchievementDefinition> unlockedAchievements = game.CheckAchievements();
 
-        foreach (
-            AchievementDefinition achievement
-            in unlockedAchievements)
+        foreach (AchievementDefinition achievement in unlockedAchievements)
         {
-            achievementNotificationQueue.Enqueue(
-                achievement);
+            achievementNotificationQueue.Enqueue(achievement);
         }
 
         ShowNextAchievementNotification();
@@ -2002,42 +1775,30 @@
 
     private void ShowNextAchievementNotification()
     {
-        if (currentAchievementNotification
-            is not null)
+        if (currentAchievementNotification is not null)
         {
             return;
         }
 
-        if (achievementNotificationQueue.Count
-            == 0)
+        if (achievementNotificationQueue.Count == 0)
         {
             return;
         }
 
-        currentAchievementNotification =
-            achievementNotificationQueue.Dequeue();
+        currentAchievementNotification = achievementNotificationQueue.Dequeue();
     }
 
     private void CloseAchievementNotification()
     {
-        currentAchievementNotification =
-            null;
+        currentAchievementNotification = null;
 
         ShowNextAchievementNotification();
     }
 
-    private bool isPageHidden;
-
-    private DateTimeOffset? pageHiddenAtUtc;
-
-    private DotNetObjectReference<Home>?
-        visibilityReference;
-
     [JSInvokable]
     public async Task OnVisibilityChanged(bool hidden)
     {
-        DateTimeOffset now =
-            DateTimeOffset.UtcNow;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
 
         if (hidden)
         {
@@ -2047,15 +1808,9 @@
             }
 
             isPageHidden = true;
-
-            pageHiddenAtUtc =
-                now;
-
-            lastUpdateTime =
-                now;
-
-            lastAutoSaveTime =
-                now;
+            pageHiddenAtUtc = now;
+            lastUpdateTime = now;
+            lastAutoSaveTime = now;
 
             await SaveGameAsync();
 
@@ -2066,8 +1821,7 @@
 
         if (!isPageHidden)
         {
-            lastUpdateTime =
-                now;
+            lastUpdateTime = now;
 
             return;
         }
@@ -2076,25 +1830,18 @@
 
         if (pageHiddenAtUtc is null)
         {
-            lastUpdateTime =
-                now;
+            lastUpdateTime = now;
 
             return;
         }
 
-        double elapsedSeconds =
-            (now - pageHiddenAtUtc.Value)
-            .TotalSeconds;
+        double elapsedSeconds = (now - pageHiddenAtUtc.Value).TotalSeconds;
 
-        pageHiddenAtUtc =
-            null;
+        pageHiddenAtUtc = null;
 
-        if (!double.IsFinite(
-                elapsedSeconds)
-            || elapsedSeconds <= 0)
+        if (!double.IsFinite(elapsedSeconds) || elapsedSeconds <= 0)
         {
-            lastUpdateTime =
-                now;
+            lastUpdateTime = now;
 
             return;
         }
@@ -2102,49 +1849,30 @@
         // 芋のオフライン生産
         if (game.HasStarted)
         {
-            double cappedSeconds =
-                Math.Min(
-                    elapsedSeconds,
-                    game.OfflineLimitSeconds);
+            double cappedSeconds = Math.Min(elapsedSeconds, game.OfflineLimitSeconds);
 
-            offlineReward =
-                game.ProduceOffline(
-                    elapsedSeconds);
-
-            offlineDuration =
-                TimeSpan.FromSeconds(
-                    cappedSeconds);
+            offlineReward = game.ProduceOffline(elapsedSeconds);
+            offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
         }
         else
         {
             offlineReward = 0;
-            offlineDuration =
-                TimeSpan.Zero;
+            offlineDuration = TimeSpan.Zero;
         }
 
         // 図鑑は別途最大24時間
-        if (game.GameStartedAtUtc
-            != default)
+        if (game.GameStartedAtUtc != default)
         {
-            IReadOnlyList<
-                OimoSpeciesDefinition>
-                discoveries =
-                    game
-                    .ProduceOfflineOimoDiscoveries(
-                        elapsedSeconds);
+            IReadOnlyList<OimoSpeciesDefinition> discoveries = game.ProduceOfflineOimoDiscoveries(elapsedSeconds);
 
-            offlineOimoDiscoveries =
-                discoveries.ToList();
+            offlineOimoDiscoveries = discoveries.ToList();
         }
 
         // 数秒アプリを切り替えただけでは
         // おかえりモーダルを出さない
-        if ((game.HasStarted
-                && elapsedSeconds >= 30)
-            || offlineOimoDiscoveries.Count > 0)
+        if ((game.HasStarted && elapsedSeconds >= 30) || offlineOimoDiscoveries.Count > 0)
         {
-            showOfflineResult =
-                true;
+            showOfflineResult = true;
         }
 
         CheckAchievements();
@@ -2152,17 +1880,12 @@
         // ここ重要
         // 通常ループにhidden時間を
         // 二重計上させない
-        lastUpdateTime =
-            now;
-
-        lastAutoSaveTime =
-            now;
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
 
         await SaveGameAsync();
 
         await InvokeAsync(
             StateHasChanged);
     }
-
-    private int? newerSaveVersion;
 }

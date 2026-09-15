@@ -12,8 +12,6 @@ public static class NumberFormatter
             return "---";
         }
 
-        return value.ToString(
-            "0.000e+0",
-            CultureInfo.InvariantCulture);
+        return value.ToString("0.000e+0", CultureInfo.InvariantCulture);
     }
 }

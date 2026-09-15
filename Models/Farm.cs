@@ -5,42 +5,28 @@ namespace OimoHorihori.Models;
 public class Farm
 {
     public string Name { get; }
-
     public int Level { get; set; }
-
     public double BaseCost { get; }
-
     public double ProductionPerLevel { get; }
+    public double NextCost => GetCostAtLevel(Level);
+    public double ProductionPerSecond => ProductionPerLevel * Level;
 
-    public Farm(
-        string name,
-        double baseCost,
-        double productionPerLevel)
+    public Farm(string name, double baseCost, double productionPerLevel)
     {
         Name = name;
         BaseCost = baseCost;
-        ProductionPerLevel =
-            productionPerLevel;
+        ProductionPerLevel = productionPerLevel;
     }
 
-    public double GetCostAtLevel(
-        int level)
+    public double GetCostAtLevel(int level)
     {
-        double cost =
-            BaseCost *
-            Math.Pow(
-                GameConstants
-                    .FarmCostMultiplier,
-                level);
+        double cost = BaseCost * Math.Pow(GameConstants.FarmCostMultiplier, level);
 
         return Math.Ceiling(cost);
     }
 
-    public double NextCost =>
-        GetCostAtLevel(Level);
 
-    public double GetCostForLevels(
-        int levels)
+    public double GetCostForLevels(int levels)
     {
         if (levels <= 0)
         {
@@ -48,71 +34,46 @@ public class Farm
         }
 
         double totalCost = 0;
-
-        for (int i = 0;
-            i < levels;
-            i++)
+        for (int i = 0; i < levels; i++)
         {
-            double cost =
-                GetCostAtLevel(
-                    Level + i);
-
+            double cost = GetCostAtLevel(Level + i);
             if (!double.IsFinite(cost))
             {
-                return
-                    double.PositiveInfinity;
+                return double.PositiveInfinity;
             }
 
             totalCost += cost;
-
             if (!double.IsFinite(totalCost))
             {
-                return
-                    double.PositiveInfinity;
+                return double.PositiveInfinity;
             }
         }
 
         return totalCost;
     }
 
-    public int GetAffordableLevels(
-        double potato,
-        int maxLevels)
+    public int GetAffordableLevels(double potato, int maxLevels)
     {
-        if (!double.IsFinite(potato)
-            || potato < 0
-            || maxLevels <= 0)
+        if (!double.IsFinite(potato) || potato < 0 || maxLevels <= 0)
         {
             return 0;
         }
 
-        double remaining =
-            potato;
-
+        double remaining = potato;
         int affordableLevels = 0;
 
-        while (affordableLevels
-            < maxLevels)
+        while (affordableLevels < maxLevels)
         {
-            double cost =
-                GetCostAtLevel(
-                    Level
-                    + affordableLevels);
-
-            if (!double.IsFinite(cost)
-                || remaining < cost)
+            double cost = GetCostAtLevel(Level + affordableLevels);
+            if (!double.IsFinite(cost) || remaining < cost)
             {
                 break;
             }
 
             remaining -= cost;
-
             affordableLevels++;
         }
 
         return affordableLevels;
     }
-
-    public double ProductionPerSecond =>
-        ProductionPerLevel * Level;
 }

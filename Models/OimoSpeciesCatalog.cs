@@ -2,10 +2,7 @@ namespace OimoHorihori.Models;
 
 public static class OimoSpeciesCatalog
 {
-    public static IReadOnlyList<OimoSpeciesDefinition>
-        All
-    { get; } =
-        new List<OimoSpeciesDefinition>
+    public static IReadOnlyList<OimoSpeciesDefinition> All { get; } = new List<OimoSpeciesDefinition>
         {
             new("oimo_01", "ダンシャクイモ"),
             new("oimo_02", "メークインヌ"),
