@@ -9,7 +9,7 @@
 @inject IJSRuntime JS
 @inject SaveService SaveService
 
-@implements IDisposable
+@implements IAsyncDisposable
 
 <PageTitle>OIMO HORIHORI</PageTitle>
 
@@ -877,7 +877,7 @@
 
                 <div class="offline-reward">
                     +@NumberFormatter.Format(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            offlineReward)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                offlineReward)
                     芋
                 </div>
             }
@@ -1063,12 +1063,46 @@
 
             <div class="oimo-discovery-count">
                 ×@game.GetOimoDiscoveryCount(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    lastDiscoveredOimo.Id)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    lastDiscoveredOimo.Id)
             </div>
 
             <button @onclick="CloseOimoDiscovery">
                 OK
             </button>
+
+        </div>
+
+    </div>
+}
+
+@if (newerSaveVersion is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                セーブデータを保護しました
+            </h2>
+
+            <p>
+                このセーブデータは
+                Version
+                @newerSaveVersion
+                用です。
+            </p>
+
+            <p>
+                現在のアプリ
+                Version
+                @GameConstants.SaveVersion
+                では読み込めません。
+            </p>
+
+            <p>
+                データ保護のため、
+                セーブ内容には変更を加えていません。
+            </p>
 
         </div>
 
@@ -1109,8 +1143,7 @@
         purchaseMode = mode;
     }
 
-    protected override async Task
-     OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         SaveData? save =
             await SaveService.LoadAsync();
@@ -1122,6 +1155,17 @@
         {
             int loadedVersion =
                 save.Version;
+
+            // 現在のアプリより
+            // 新しいセーブは絶対に触らない
+            if (loadedVersion
+                > GameConstants.SaveVersion)
+            {
+                newerSaveVersion =
+                    loadedVersion;
+
+                return;
+            }
 
             bool loaded =
                 game.TryLoadSaveData(save);
@@ -1189,6 +1233,10 @@
 
         lastUpdateTime = now;
         lastAutoSaveTime = now;
+
+        visibilityReference = DotNetObjectReference.Create(this);
+
+        await JS.InvokeVoidAsync("oimoVisibility.register", visibilityReference);
 
         timer = new PeriodicTimer(
             TimeSpan.FromMilliseconds(
@@ -1299,6 +1347,11 @@
 
                 lastUpdateTime = now;
 
+                if (isPageHidden)
+                {
+                    continue;
+                }
+
                 if (game.GameStartedAtUtc != default
                     && double.IsFinite(elapsedSeconds)
                     && elapsedSeconds > 0)
@@ -1332,43 +1385,17 @@
                 if (game.HasStarted)
                 {
                     game.ProduceForSeconds(elapsedSeconds);
-
                     game.BestProductionPerSecond = Math.Max(game.BestProductionPerSecond, game.ProductionPerSecond);
-
                     CheckAchievements();
                 }
 
-                if (game.GameStartedAtUtc != default
-                    && (now - lastAutoSaveTime)
-                        .TotalSeconds
-                        >= GameConstants
-                            .AutoSaveIntervalSeconds)
+                if (game.GameStartedAtUtc != default && (now - lastAutoSaveTime).TotalSeconds >= GameConstants.AutoSaveIntervalSeconds)
                 {
                     await SaveGameAsync();
-
                     lastAutoSaveTime = now;
                 }
 
-                await InvokeAsync(
-                    StateHasChanged);
-
-                game.BestProductionPerSecond =
-                    Math.Max(
-                        game.BestProductionPerSecond,
-                        game.ProductionPerSecond);
-
-                if ((now - lastAutoSaveTime)
-                        .TotalSeconds
-                    >= GameConstants
-                        .AutoSaveIntervalSeconds)
-                {
-                    await SaveGameAsync();
-
-                    lastAutoSaveTime = now;
-                }
-
-                await InvokeAsync(
-                    StateHasChanged);
+                await InvokeAsync(StateHasChanged);
             }
         }
         catch (OperationCanceledException)
@@ -1376,11 +1403,27 @@
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         cancellationTokenSource.Cancel();
 
         timer?.Dispose();
+
+        if (visibilityReference
+            is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync(
+                    "oimoVisibility.unregister");
+            }
+            catch
+            {
+                // ページ終了中などは無視
+            }
+
+            visibilityReference.Dispose();
+        }
 
         cancellationTokenSource.Dispose();
     }
@@ -1982,4 +2025,144 @@
 
         ShowNextAchievementNotification();
     }
+
+    private bool isPageHidden;
+
+    private DateTimeOffset? pageHiddenAtUtc;
+
+    private DotNetObjectReference<Home>?
+        visibilityReference;
+
+    [JSInvokable]
+    public async Task OnVisibilityChanged(bool hidden)
+    {
+        DateTimeOffset now =
+            DateTimeOffset.UtcNow;
+
+        if (hidden)
+        {
+            if (isPageHidden)
+            {
+                return;
+            }
+
+            isPageHidden = true;
+
+            pageHiddenAtUtc =
+                now;
+
+            lastUpdateTime =
+                now;
+
+            lastAutoSaveTime =
+                now;
+
+            await SaveGameAsync();
+
+            return;
+        }
+
+        // ここから visible 復帰
+
+        if (!isPageHidden)
+        {
+            lastUpdateTime =
+                now;
+
+            return;
+        }
+
+        isPageHidden = false;
+
+        if (pageHiddenAtUtc is null)
+        {
+            lastUpdateTime =
+                now;
+
+            return;
+        }
+
+        double elapsedSeconds =
+            (now - pageHiddenAtUtc.Value)
+            .TotalSeconds;
+
+        pageHiddenAtUtc =
+            null;
+
+        if (!double.IsFinite(
+                elapsedSeconds)
+            || elapsedSeconds <= 0)
+        {
+            lastUpdateTime =
+                now;
+
+            return;
+        }
+
+        // 芋のオフライン生産
+        if (game.HasStarted)
+        {
+            double cappedSeconds =
+                Math.Min(
+                    elapsedSeconds,
+                    game.OfflineLimitSeconds);
+
+            offlineReward =
+                game.ProduceOffline(
+                    elapsedSeconds);
+
+            offlineDuration =
+                TimeSpan.FromSeconds(
+                    cappedSeconds);
+        }
+        else
+        {
+            offlineReward = 0;
+            offlineDuration =
+                TimeSpan.Zero;
+        }
+
+        // 図鑑は別途最大24時間
+        if (game.GameStartedAtUtc
+            != default)
+        {
+            IReadOnlyList<
+                OimoSpeciesDefinition>
+                discoveries =
+                    game
+                    .ProduceOfflineOimoDiscoveries(
+                        elapsedSeconds);
+
+            offlineOimoDiscoveries =
+                discoveries.ToList();
+        }
+
+        // 数秒アプリを切り替えただけでは
+        // おかえりモーダルを出さない
+        if ((game.HasStarted
+                && elapsedSeconds >= 30)
+            || offlineOimoDiscoveries.Count > 0)
+        {
+            showOfflineResult =
+                true;
+        }
+
+        CheckAchievements();
+
+        // ここ重要
+        // 通常ループにhidden時間を
+        // 二重計上させない
+        lastUpdateTime =
+            now;
+
+        lastAutoSaveTime =
+            now;
+
+        await SaveGameAsync();
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
+
+    private int? newerSaveVersion;
 }
