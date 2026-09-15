@@ -10,6 +10,63 @@ public class GameState
 
     public double TotalPotato { get; set; }
 
+    // 周回
+    public double RunProducedPotato { get; set; }
+
+    public DateTimeOffset RunStartedAtUtc { get; set; }
+
+    public double MaxRunProducedPotato { get; set; }
+
+    public int ReplantCount { get; set; }
+
+
+    // 種芋
+    public int SeedPotato { get; set; }
+
+    public int TotalSeedPotatoEarned { get; set; }
+
+    public int TotalSeedPotatoSpent { get; set; }
+
+    public int MaxSeedPotatoPerReplant { get; set; }
+
+
+    // 恒久強化
+    public int ProductionUpgradeLevel { get; set; }
+
+    public int DigUpgradeLevel { get; set; }
+
+    public int OfflineUpgradeLevel { get; set; }
+
+
+    // 統計
+    public double TotalConsumedPotato { get; set; }
+
+    public double BestProductionPerSecond { get; set; }
+
+    public int Farm1TotalPurchases { get; set; }
+
+    public int Farm2TotalPurchases { get; set; }
+
+    public int Farm3TotalPurchases { get; set; }
+
+    public int Farm1BestLevel { get; set; }
+
+    public int Farm2BestLevel { get; set; }
+
+    public int Farm3BestLevel { get; set; }
+
+    public double TotalOfflineProducedPotato { get; set; }
+
+    public double MaxOfflineProducedPotato { get; set; }
+
+    public int DigButtonCount { get; set; }
+
+    public DateTimeOffset GameStartedAtUtc { get; set; }
+
+    public double TotalPlayTimeSeconds { get; set; }
+
+    public double OimoDiscoveryElapsedSeconds { get; set; }
+
     public List<Farm> Farms { get; } = new()
     {
         new Farm(
@@ -19,21 +76,33 @@ public class GameState
 
         new Farm(
             "畑2",
-            1_000,
-            2),
+            300_000,
+            5),
 
         new Farm(
             "畑3",
-            100_000,
+            1_500_000,
             50)
     };
+
+    public double BaseProductionPerSecond =>
+        GameConstants.BaseProductionPerSecond
+        + DigUpgradeLevel
+        * GameConstants
+            .DigUpgradeBonusPerLevel;
+
+    public double ProductionMultiplier =>
+        1.0
+        + ProductionUpgradeLevel
+        * GameConstants
+            .ProductionUpgradeBonusPerLevel;
 
     public double ProductionPerSecond
     {
         get
         {
             double total =
-                GameConstants.BaseProductionPerSecond;
+                BaseProductionPerSecond;
 
             foreach (Farm farm in Farms)
             {
@@ -41,32 +110,80 @@ public class GameState
                     farm.ProductionPerSecond;
             }
 
-            return total;
+            return
+                total
+                * ProductionMultiplier;
         }
     }
 
-    public bool CanBuyFarm(Farm farm)
+    public int BuyFarm(Farm farm, int maxLevels)
     {
-        return
-            double.IsFinite(farm.NextCost)
-            && Potato >= farm.NextCost;
-    }
+        int levels = farm.GetAffordableLevels(Potato, maxLevels);
 
-    public bool BuyFarm(Farm farm)
-    {
-        if (!CanBuyFarm(farm))
+        if (levels <= 0)
         {
-            return false;
+            return 0;
         }
 
-        double cost =
-            farm.NextCost;
+        double cost = farm.GetCostForLevels(levels);
+
+        if (!double.IsFinite(cost) || cost > Potato)
+        {
+            return 0;
+        }
 
         Potato -= cost;
 
-        farm.Level++;
+        TotalConsumedPotato += cost;
 
-        return true;
+        farm.Level += levels;
+
+        UpdateFarmStatistics(farm, levels);
+
+        BestProductionPerSecond = Math.Max(BestProductionPerSecond, ProductionPerSecond);
+
+        return levels;
+    }
+
+    private void UpdateFarmStatistics(
+        Farm farm,
+        int purchasedLevels)
+    {
+        int farmIndex =
+            Farms.IndexOf(farm);
+
+        switch (farmIndex)
+        {
+            case 0:
+                Farm1TotalPurchases +=
+                    purchasedLevels;
+
+                Farm1BestLevel =
+                    Math.Max(
+                        Farm1BestLevel,
+                        farm.Level);
+                break;
+
+            case 1:
+                Farm2TotalPurchases +=
+                    purchasedLevels;
+
+                Farm2BestLevel =
+                    Math.Max(
+                        Farm2BestLevel,
+                        farm.Level);
+                break;
+
+            case 2:
+                Farm3TotalPurchases +=
+                    purchasedLevels;
+
+                Farm3BestLevel =
+                    Math.Max(
+                        Farm3BestLevel,
+                        farm.Level);
+                break;
+        }
     }
 
     public void ProducePotato(double amount)
@@ -78,7 +195,15 @@ public class GameState
         }
 
         Potato += amount;
+
         TotalPotato += amount;
+
+        RunProducedPotato += amount;
+
+        MaxRunProducedPotato =
+            Math.Max(
+                MaxRunProducedPotato,
+                RunProducedPotato);
     }
 
     public void ProduceForSeconds(
@@ -109,14 +234,21 @@ public class GameState
         double cappedSeconds =
             Math.Min(
                 seconds,
-                GameConstants
-                    .OfflineLimitSeconds);
+                OfflineLimitSeconds);
 
         double amount =
             ProductionPerSecond
             * cappedSeconds;
 
         ProducePotato(amount);
+
+        TotalOfflineProducedPotato +=
+            amount;
+
+        MaxOfflineProducedPotato =
+            Math.Max(
+                MaxOfflineProducedPotato,
+                amount);
 
         return amount;
     }
@@ -146,20 +278,232 @@ public class GameState
             Farm3Level =
                 Farms[2].Level,
 
+
+            RunProducedPotato =
+                RunProducedPotato,
+
+            RunStartedAtUtc =
+                RunStartedAtUtc,
+
+            MaxRunProducedPotato =
+                MaxRunProducedPotato,
+
+            ReplantCount =
+                ReplantCount,
+
+
+            SeedPotato =
+                SeedPotato,
+
+            TotalSeedPotatoEarned =
+                TotalSeedPotatoEarned,
+
+            TotalSeedPotatoSpent =
+                TotalSeedPotatoSpent,
+
+            MaxSeedPotatoPerReplant =
+                MaxSeedPotatoPerReplant,
+
+
+            ProductionUpgradeLevel =
+                ProductionUpgradeLevel,
+
+            DigUpgradeLevel =
+                DigUpgradeLevel,
+
+            OfflineUpgradeLevel =
+                OfflineUpgradeLevel,
+
+
+            TotalConsumedPotato =
+                TotalConsumedPotato,
+
+            BestProductionPerSecond =
+                BestProductionPerSecond,
+
+
+            Farm1TotalPurchases =
+                Farm1TotalPurchases,
+
+            Farm2TotalPurchases =
+                Farm2TotalPurchases,
+
+            Farm3TotalPurchases =
+                Farm3TotalPurchases,
+
+            Farm1BestLevel =
+                Farm1BestLevel,
+
+            Farm2BestLevel =
+                Farm2BestLevel,
+
+            Farm3BestLevel =
+                Farm3BestLevel,
+
+
+            TotalOfflineProducedPotato =
+                TotalOfflineProducedPotato,
+
+            MaxOfflineProducedPotato =
+                MaxOfflineProducedPotato,
+
+
+            DigButtonCount =
+                DigButtonCount,
+
+
+            GameStartedAtUtc =
+                GameStartedAtUtc,
+
+            TotalPlayTimeSeconds =
+                TotalPlayTimeSeconds,
+
+
             LastSaveTimeUtc =
-                DateTimeOffset.UtcNow
+                DateTimeOffset.UtcNow,
+
+
+            AchievementUnlockedAtUtc = new Dictionary<string, DateTimeOffset>(AchievementUnlockedAtUtc),
+
+            OimoDiscoveryCounts = new Dictionary<string, int>(OimoDiscoveryCounts),
+
+            OimoDiscoveryElapsedSeconds = OimoDiscoveryElapsedSeconds,
+
+            HasUsedTenPurchaseMode = HasUsedTenPurchaseMode,
+
+            HasUsedMaxPurchaseMode = HasUsedMaxPurchaseMode,
         };
     }
 
     public bool TryLoadSaveData(
         SaveData save)
     {
-        if (save.Version !=
-            GameConstants.SaveVersion)
+        return save.Version switch
+        {
+            1 => TryLoadVersion1(save),
+            2 => TryLoadVersion2(save),
+            _ => false
+        };
+    }
+
+    private bool TryLoadVersion1(
+    SaveData save)
+    {
+        if (!IsValidVersion1SaveData(save))
         {
             return false;
         }
 
+        DateTimeOffset migrationTime =
+            DateTimeOffset.UtcNow;
+
+
+        // v1からそのまま引き継ぐ
+
+        HasStarted =
+            save.HasStarted;
+
+        Potato =
+            save.Potato;
+
+        TotalPotato =
+            save.TotalPotato;
+
+        Farms[0].Level =
+            save.Farm1Level;
+
+        Farms[1].Level =
+            save.Farm2Level;
+
+        Farms[2].Level =
+            save.Farm3Level;
+
+
+        // -------------------------
+        // 周回
+        // -------------------------
+
+        RunProducedPotato =
+            save.TotalPotato;
+
+        MaxRunProducedPotato =
+            save.TotalPotato;
+
+        RunStartedAtUtc =
+            migrationTime;
+
+        ReplantCount = 0;
+
+
+        // -------------------------
+        // 種芋・強化
+        // -------------------------
+
+        SeedPotato = 0;
+
+        TotalSeedPotatoEarned = 0;
+
+        TotalSeedPotatoSpent = 0;
+
+        MaxSeedPotatoPerReplant = 0;
+
+        ProductionUpgradeLevel = 0;
+
+        DigUpgradeLevel = 0;
+
+        OfflineUpgradeLevel = 0;
+
+
+        // -------------------------
+        // 統計
+        // -------------------------
+
+        TotalConsumedPotato =
+            Math.Max(
+                0,
+                save.TotalPotato
+                - save.Potato);
+
+        Farm1TotalPurchases =
+            save.Farm1Level;
+
+        Farm2TotalPurchases =
+            save.Farm2Level;
+
+        Farm3TotalPurchases =
+            save.Farm3Level;
+
+        Farm1BestLevel =
+            save.Farm1Level;
+
+        Farm2BestLevel =
+            save.Farm2Level;
+
+        Farm3BestLevel =
+            save.Farm3Level;
+
+        TotalOfflineProducedPotato = 0;
+
+        MaxOfflineProducedPotato = 0;
+
+        DigButtonCount =
+            save.HasStarted ? 1 : 0;
+
+        GameStartedAtUtc =
+            migrationTime;
+
+        TotalPlayTimeSeconds = 0;
+
+
+        BestProductionPerSecond =
+            ProductionPerSecond;
+
+        return true;
+    }
+
+    private bool TryLoadVersion2(
+        SaveData save)
+    {
         if (!IsValidSaveData(save))
         {
             return false;
@@ -183,10 +527,127 @@ public class GameState
         Farms[2].Level =
             save.Farm3Level;
 
+
+        RunProducedPotato =
+            save.RunProducedPotato;
+
+        RunStartedAtUtc =
+            save.RunStartedAtUtc;
+
+        MaxRunProducedPotato =
+            save.MaxRunProducedPotato;
+
+        ReplantCount =
+            save.ReplantCount;
+
+
+        SeedPotato =
+            save.SeedPotato;
+
+        TotalSeedPotatoEarned =
+            save.TotalSeedPotatoEarned;
+
+        TotalSeedPotatoSpent =
+            save.TotalSeedPotatoSpent;
+
+        MaxSeedPotatoPerReplant =
+            save.MaxSeedPotatoPerReplant;
+
+
+        ProductionUpgradeLevel =
+            save.ProductionUpgradeLevel;
+
+        DigUpgradeLevel =
+            save.DigUpgradeLevel;
+
+        OfflineUpgradeLevel =
+            save.OfflineUpgradeLevel;
+
+
+        TotalConsumedPotato =
+            save.TotalConsumedPotato;
+
+        BestProductionPerSecond =
+            save.BestProductionPerSecond;
+
+        Farm1TotalPurchases =
+            save.Farm1TotalPurchases;
+
+        Farm2TotalPurchases =
+            save.Farm2TotalPurchases;
+
+        Farm3TotalPurchases =
+            save.Farm3TotalPurchases;
+
+        Farm1BestLevel =
+            save.Farm1BestLevel;
+
+        Farm2BestLevel =
+            save.Farm2BestLevel;
+
+        Farm3BestLevel =
+            save.Farm3BestLevel;
+
+        TotalOfflineProducedPotato =
+            save.TotalOfflineProducedPotato;
+
+        MaxOfflineProducedPotato =
+            save.MaxOfflineProducedPotato;
+
+        DigButtonCount =
+            save.DigButtonCount;
+
+        GameStartedAtUtc =
+            save.GameStartedAtUtc;
+
+        TotalPlayTimeSeconds =
+            save.TotalPlayTimeSeconds;
+
+        AchievementUnlockedAtUtc.Clear();
+
+        if (save.AchievementUnlockedAtUtc
+            is not null)
+        {
+            foreach (
+                KeyValuePair<string, DateTimeOffset>
+                    pair
+                in save.AchievementUnlockedAtUtc)
+            {
+                AchievementUnlockedAtUtc[
+                    pair.Key]
+                    = pair.Value;
+            }
+        }
+
+        OimoDiscoveryCounts.Clear();
+
+        if (save.OimoDiscoveryCounts
+            is not null)
+        {
+            foreach (
+                KeyValuePair<string, int>
+                    pair
+                in save.OimoDiscoveryCounts)
+            {
+                if (pair.Value > 0)
+                {
+                    OimoDiscoveryCounts[
+                        pair.Key]
+                        = pair.Value;
+                }
+            }
+        }
+
+        OimoDiscoveryElapsedSeconds = save.OimoDiscoveryElapsedSeconds;
+
+        HasUsedTenPurchaseMode = save.HasUsedTenPurchaseMode;
+
+        HasUsedMaxPurchaseMode = save.HasUsedMaxPurchaseMode;
+
         return true;
     }
 
-    private static bool IsValidSaveData(
+    private static bool IsValidVersion1SaveData(
         SaveData save)
     {
         if (!double.IsFinite(save.Potato)
@@ -217,4 +678,488 @@ public class GameState
 
         return true;
     }
+
+    private static bool IsValidSaveData(
+    SaveData save)
+    {
+        if (!IsValidVersion1SaveData(save))
+        {
+            return false;
+        }
+
+        if (!double.IsFinite(
+                save.RunProducedPotato)
+            || save.RunProducedPotato < 0)
+        {
+            return false;
+        }
+
+        if (save.ReplantCount < 0
+            || save.SeedPotato < 0
+            || save.TotalSeedPotatoEarned < 0
+            || save.TotalSeedPotatoSpent < 0)
+        {
+            return false;
+        }
+
+        if (save.ProductionUpgradeLevel < 0
+            || save.DigUpgradeLevel < 0
+            || save.OfflineUpgradeLevel < 0)
+        {
+            return false;
+        }
+
+        if (save.OfflineUpgradeLevel > 32)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public int ReplantSeedPotato
+    {
+        get
+        {
+            if (RunProducedPotato
+                < GameConstants.ReplantBaseProduction)
+            {
+                return 0;
+            }
+
+            double value =
+                Math.Sqrt(
+                    RunProducedPotato
+                    / GameConstants
+                        .ReplantBaseProduction);
+
+            return (int)Math.Floor(value);
+        }
+    }
+
+    public bool CanReplant =>
+        ReplantSeedPotato >= 1;
+
+    public double NextSeedPotatoRequiredProduction
+    {
+        get
+        {
+            int nextSeedPotato =
+                ReplantSeedPotato + 1;
+
+            return
+                GameConstants.ReplantBaseProduction
+                * nextSeedPotato
+                * nextSeedPotato;
+        }
+    }
+
+    public double ProductionUntilNextSeedPotato =>
+        Math.Max(
+            0,
+            NextSeedPotatoRequiredProduction
+            - RunProducedPotato);
+
+    public int Replant()
+    {
+        int earnedSeedPotato =
+            ReplantSeedPotato;
+
+        if (earnedSeedPotato <= 0)
+        {
+            return 0;
+        }
+
+        SeedPotato +=
+            earnedSeedPotato;
+
+        TotalSeedPotatoEarned +=
+            earnedSeedPotato;
+
+        MaxSeedPotatoPerReplant =
+            Math.Max(
+                MaxSeedPotatoPerReplant,
+                earnedSeedPotato);
+
+        ReplantCount++;
+
+        Potato = 0;
+
+        Farms[0].Level = 0;
+        Farms[1].Level = 0;
+        Farms[2].Level = 0;
+
+        RunProducedPotato = 0;
+
+        RunStartedAtUtc =
+            default;
+
+        HasStarted =
+            false;
+
+        return earnedSeedPotato;
+    }
+
+    private static int GetUpgradeCost(
+    int currentLevel)
+    {
+        int nextLevel =
+            currentLevel + 1;
+
+        double cost =
+            (double)nextLevel
+            * (nextLevel + 1)
+            / 3;
+
+        return (int)Math.Round(cost);
+    }
+
+    public int ProductionUpgradeCost =>
+        GetUpgradeCost(
+            ProductionUpgradeLevel);
+
+    public int DigUpgradeCost =>
+        GetUpgradeCost(
+            DigUpgradeLevel);
+
+    public int OfflineUpgradeCost =>
+        GetUpgradeCost(
+            OfflineUpgradeLevel);
+
+    private bool TrySpendSeedPotato(int cost)
+    {
+        if (cost <= 0
+            || SeedPotato < cost)
+        {
+            return false;
+        }
+
+        SeedPotato -= cost;
+
+        TotalSeedPotatoSpent +=
+            cost;
+
+        return true;
+    }
+
+    public bool BuyProductionUpgrade()
+    {
+        int cost =
+            ProductionUpgradeCost;
+
+        if (!TrySpendSeedPotato(cost))
+        {
+            return false;
+        }
+
+        ProductionUpgradeLevel++;
+
+        BestProductionPerSecond =
+            Math.Max(
+                BestProductionPerSecond,
+                ProductionPerSecond);
+
+        return true;
+    }
+
+    public bool BuyDigUpgrade()
+    {
+        int cost =
+            DigUpgradeCost;
+
+        if (!TrySpendSeedPotato(cost))
+        {
+            return false;
+        }
+
+        DigUpgradeLevel++;
+
+        BestProductionPerSecond =
+            Math.Max(
+                BestProductionPerSecond,
+                ProductionPerSecond);
+
+        return true;
+    }
+
+    public bool IsOfflineUpgradeMax =>
+        OfflineUpgradeLevel
+        >= GameConstants
+            .OfflineUpgradeMaxLevel;
+
+
+    public bool BuyOfflineUpgrade()
+    {
+        if (IsOfflineUpgradeMax)
+        {
+            return false;
+        }
+
+        int cost =
+            OfflineUpgradeCost;
+
+        if (!TrySpendSeedPotato(cost))
+        {
+            return false;
+        }
+
+        OfflineUpgradeLevel++;
+
+        return true;
+    }
+
+    public double OfflineLimitSeconds
+    {
+        get
+        {
+            double seconds =
+                GameConstants
+                    .InitialOfflineLimitSeconds
+                + OfflineUpgradeLevel
+                * GameConstants
+                    .OfflineUpgradeSecondsPerLevel;
+
+            return Math.Min(
+                seconds,
+                GameConstants
+                    .MaxOfflineLimitSeconds);
+        }
+    }
+
+    public Dictionary<string, DateTimeOffset>
+    AchievementUnlockedAtUtc
+    { get; }
+        = new();
+
+    public bool IsAchievementUnlocked(string achievementId)
+    {
+        return AchievementUnlockedAtUtc.ContainsKey(achievementId);
+    }
+
+    public DateTimeOffset?
+    GetAchievementUnlockedAtUtc(
+        string achievementId)
+    {
+        if (AchievementUnlockedAtUtc
+            .TryGetValue(
+                achievementId,
+                out DateTimeOffset unlockedAt))
+        {
+            return unlockedAt;
+        }
+
+        return null;
+    }
+
+    public IReadOnlyList<AchievementDefinition> CheckAchievements()
+    {
+        List<AchievementDefinition>
+            unlockedAchievements = new();
+
+        foreach (
+            AchievementDefinition achievement
+            in AchievementCatalog.All)
+        {
+            if (IsAchievementUnlocked(
+                    achievement.Id))
+            {
+                continue;
+            }
+
+            if (!achievement.Condition(this))
+            {
+                continue;
+            }
+
+            AchievementUnlockedAtUtc[
+                achievement.Id]
+                = DateTimeOffset.UtcNow;
+
+            unlockedAchievements.Add(
+                achievement);
+        }
+
+        return unlockedAchievements;
+    }
+
+    public Dictionary<string, int> OimoDiscoveryCounts { get; } = new();
+
+    public int GetOimoDiscoveryCount(string speciesId)
+    {
+        return OimoDiscoveryCounts
+            .TryGetValue(
+                speciesId,
+                out int count)
+            ? count
+            : 0;
+    }
+
+    public bool IsOimoDiscovered(string speciesId)
+    {
+        return GetOimoDiscoveryCount(
+            speciesId) > 0;
+    }
+
+    public int DiscoveredOimoSpeciesCount
+    {
+        get
+        {
+            int count = 0;
+
+            foreach (
+                OimoSpeciesDefinition species
+                in OimoSpeciesCatalog.All)
+            {
+                if (IsOimoDiscovered(
+                        species.Id))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    public int TotalOimoDiscoveries
+    {
+        get
+        {
+            int total = 0;
+
+            foreach (
+                OimoSpeciesDefinition species
+                in OimoSpeciesCatalog.All)
+            {
+                total +=
+                    GetOimoDiscoveryCount(
+                        species.Id);
+            }
+
+            return total;
+        }
+    }
+
+    public OimoSpeciesDefinition? TryDiscoverOimo()
+    {
+        double roll =
+            Random.Shared.NextDouble();
+
+        if (roll
+            >= GameConstants
+                .OimoDiscoveryChance)
+        {
+            return null;
+        }
+
+        return DiscoverRandomOimo();
+    }
+
+    private void AddOimoDiscovery(
+    OimoSpeciesDefinition species)
+    {
+        if (!OimoDiscoveryCounts
+            .TryAdd(
+                species.Id,
+                1))
+        {
+            OimoDiscoveryCounts[
+                species.Id]++;
+        }
+    }
+
+    private OimoSpeciesDefinition
+    DiscoverRandomOimo()
+    {
+        int index =
+            Random.Shared.Next(
+                OimoSpeciesCatalog
+                    .All.Count);
+
+        OimoSpeciesDefinition species =
+            OimoSpeciesCatalog
+                .All[index];
+
+        AddOimoDiscovery(
+            species);
+
+        return species;
+    }
+
+    public IReadOnlyList<OimoSpeciesDefinition>
+    AdvanceOimoDiscovery(
+        double seconds)
+    {
+        if (!double.IsFinite(seconds)
+            || seconds <= 0)
+        {
+            return
+                Array.Empty<OimoSpeciesDefinition>();
+        }
+
+        OimoDiscoveryElapsedSeconds +=
+            seconds;
+
+        int trialCount =
+            (int)Math.Floor(
+                OimoDiscoveryElapsedSeconds
+                / GameConstants
+                    .OimoDiscoveryIntervalSeconds);
+
+        if (trialCount <= 0)
+        {
+            return
+                Array.Empty<OimoSpeciesDefinition>();
+        }
+
+        OimoDiscoveryElapsedSeconds -=
+            trialCount
+            * GameConstants
+                .OimoDiscoveryIntervalSeconds;
+
+        List<OimoSpeciesDefinition>
+            discoveries = new();
+
+        for (int i = 0;
+            i < trialCount;
+            i++)
+        {
+            OimoSpeciesDefinition?
+                discovered =
+                    TryDiscoverOimo();
+
+            if (discovered is not null)
+            {
+                discoveries.Add(
+                    discovered);
+            }
+        }
+
+        return discoveries;
+    }
+
+    public IReadOnlyList<OimoSpeciesDefinition>
+    ProduceOfflineOimoDiscoveries(
+        double elapsedSeconds)
+    {
+        if (!double.IsFinite(elapsedSeconds)
+            || elapsedSeconds <= 0)
+        {
+            return
+                Array.Empty<OimoSpeciesDefinition>();
+        }
+
+        double cappedSeconds =
+            Math.Min(
+                elapsedSeconds,
+                GameConstants
+                    .OimoOfflineDiscoveryLimitSeconds);
+
+        return AdvanceOimoDiscovery(
+            cappedSeconds);
+    }
+
+    public bool HasUsedTenPurchaseMode { get; set; }
+
+    public bool HasUsedMaxPurchaseMode { get; set; }
 }

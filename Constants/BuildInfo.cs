@@ -7,4 +7,6 @@ public static class BuildInfo
 #else
     public const bool IsDebug = false;
 #endif
+
+    public const string Version = "2.0.0";
 }
