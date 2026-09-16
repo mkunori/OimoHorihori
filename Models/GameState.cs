@@ -39,8 +39,8 @@ public class GameState
     public List<Farm> Farms { get; } = new()
         {
             new Farm("畑1",       10,  0.1),
-            new Farm("畑2",  300_000,  5),
-            new Farm("畑3",1_500_000, 50)
+            new Farm("畑2",  200_000,  5),
+            new Farm("畑3",1_000_000, 50)
         };
 
     public double BaseProductionPerSecond => GameConstants.BaseProductionPerSecond + DigUpgradeLevel * GameConstants.DigUpgradeBonusPerLevel;
