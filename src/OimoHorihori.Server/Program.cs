@@ -539,9 +539,8 @@ app.MapGet("/api/admin/users",
             return Results.Unauthorized();
         }
 
-        List<AdminUserResponse> users = await db.UserAccounts
-            .AsNoTracking().OrderBy(
-                user => user.CreatedAtUtc)
+        List<AdminUserResponse> users = (await db.UserAccounts
+            .AsNoTracking()
             .Select(
                 user =>
                     new AdminUserResponse(
@@ -551,7 +550,9 @@ app.MapGet("/api/admin/users",
                         user.LastLoginAtUtc,
                         user.IsDisabled,
                         user.IsDeleted))
-            .ToListAsync();
+            .ToListAsync())
+            .OrderBy(user => user.CreatedAtUtc)
+            .ToList();
 
         return Results.Ok(users);
     });
