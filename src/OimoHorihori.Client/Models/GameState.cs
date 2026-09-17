@@ -39,9 +39,9 @@ public class GameState
     public Dictionary<string, int> OimoDiscoveryCounts { get; } = new();
     public List<Farm> Farms { get; } = new()
         {
-            new Farm("畑1",       10,  0.1),
-            new Farm("畑2",  200_000,  5),
-            new Farm("畑3",1_000_000, 50)
+            new Farm("畑1",      10,  0.1),
+            new Farm("畑2",  50_000,  5),
+            new Farm("畑3", 500_000, 50)
         };
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; } = new();
