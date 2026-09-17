@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OimoHorihori.Client/OimoHorihori.Client.csproj" />
+    <Project Path="src/OimoHorihori.Server/OimoHorihori.Server.csproj" />
+    <Project Path="src/OimoHorihori.Shared/OimoHorihori.Shared.csproj" />
+  </Folder>
+</Solution>

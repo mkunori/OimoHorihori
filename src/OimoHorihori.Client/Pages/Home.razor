@@ -1,0 +1,3366 @@
+﻿@page "/"
+
+@using Microsoft.JSInterop
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Services
+@using OimoHorihori.Shared.Auth
+@using OimoHorihori.Shared.Accounts
+@using OimoHorihori.Shared.Rankings
+@using OimoHorihori.Shared.Saves
+@using OimoHorihori.Shared.Profiles
+@using OimoHorihori.Utilities
+@using System.Net.Http.Json
+
+@inject AuthService AuthService
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject RankingService Rankings
+@inject SaveService SaveService
+@inject ServerSaveService ServerSave
+@inject ProfileService Profiles
+
+@implements IAsyncDisposable
+
+<PageTitle>OIMO HORIHORI</PageTitle>
+
+<main class="game">
+
+    <header class="game-header">
+
+        <h1>OIMO HORIHORI</h1>
+
+    </header>
+    @if (currentView == HomeView.Horihori)
+    {
+        @if (!game.HasStarted)
+        {
+            <section class="start-screen">
+
+                <button class="dig-button" @onclick="StartGame">
+                    掘る！
+                </button>
+
+            </section>
+        }
+        else
+        {
+            <section class="status-panel">
+
+                <div class="potato-value">
+                    @NumberFormatter.Format(
+                        game.Potato)
+                    <span class="unit">
+                        芋
+                    </span>
+                </div>
+
+                <div class="production-value">
+                    +@NumberFormatter.Format(game.ProductionPerSecond)
+                    / sec
+                </div>
+
+                <div class="total-value">
+                    TOTAL
+                    @NumberFormatter.Format(
+                        game.TotalPotato)
+                </div>
+
+            </section>
+
+            <section class="purchase-mode">
+
+                <button class="@GetPurchaseModeClass(PurchaseMode.One)" @onclick="() => SetPurchaseMode(PurchaseMode.One)">
+                    +1
+                </button>
+
+                <button class="@GetPurchaseModeClass(PurchaseMode.Ten)" @onclick="() => SetPurchaseMode(PurchaseMode.Ten)">
+                    +10
+                </button>
+
+                <button class="@GetPurchaseModeClass(PurchaseMode.Max)" @onclick="() => SetPurchaseMode(PurchaseMode.Max)">
+                    MAX
+                </button>
+
+            </section>
+
+            <section class="farm-list">
+
+                @foreach (Farm farm in game.Farms)
+                {
+                    int purchaseLevels =
+                        GetAffordablePurchaseLevels(
+                            farm);
+
+                    bool canBuy =
+                        purchaseLevels > 0;
+
+                    double purchaseCost =
+                        GetPurchaseDisplayCost(
+                            farm);
+
+                    <button class="farm-card" disabled="@(!canBuy)" @onclick="() => BuyFarm(farm)">
+
+                        <div class="farm-header">
+
+                            <span class="farm-name">
+                                @farm.Name
+                            </span>
+
+                            <span class="farm-level">
+                                Lv. @farm.Level
+                            </span>
+
+                        </div>
+
+                        <div class="farm-production">
+                            +@NumberFormatter.Format(farm.ProductionPerSecond)
+                            / sec
+                        </div>
+
+                        <div class="farm-purchase-level">
+                            @GetPurchaseLevelText(farm)
+                        </div>
+
+                        <div class="farm-cost">
+                            COST
+                            @NumberFormatter.Format(
+                                purchaseCost)
+                            芋
+                        </div>
+
+                    </button>
+                }
+
+                <button class="replant-card" @onclick="OpenReplant">
+
+                    <div class="replant-header">
+
+                        <span class="replant-name" disabled="@(!game.CanReplant)">
+                            REPLANT
+                        </span>
+
+                        <span class="replant-seed">
+                            種芋 ×@game.ReplantSeedPotato
+                        </span>
+
+                    </div>
+
+                    <div class="replant-production">
+                        今回の生産
+                        @NumberFormatter.Format(
+                            game.RunProducedPotato)
+                        芋
+                    </div>
+
+                    <div class="replant-next">
+                        次の種芋まで
+                        @NumberFormatter.Format(
+                            game.ProductionUntilNextSeedPotato)
+                        芋
+                    </div>
+
+                </button>
+
+            </section>
+
+        }
+
+    }
+    else if (currentView == HomeView.Menu)
+    {
+        <section class="menu-screen">
+
+            <h2>MENU</h2>
+
+            <div class="menu-list">
+
+                <button class="menu-item" @onclick="OpenSeedUpgrades">
+                    <span>種芋強化</span>
+                    <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenOimoBook">
+                    <span>いも図鑑</span>
+                    <span>
+                        @game.DiscoveredOimoSpeciesCount
+                        /20
+                    </span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenAchievements">
+                    <span>実績</span>
+                    <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenStatistics">
+                    <span>統計</span>
+                    <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenProfileAsync">
+                    <span>プロフィール</span>
+                    <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenRankingAsync">
+                    <span>ランキング</span>
+                    <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenReplantHistory">
+                    <span>REPLANET履歴</span>
+                    <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="ShareGameAsync">
+                    <span>共有</span>
+                    <span>SHARE</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenSettings">
+                    <span>設定</span>
+                    <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenAccount">
+                    <span>アカウント</span>
+                    <span>›</span>
+                </button>
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(shareResultMessage))
+            {
+                <div class="share-result">
+                    @shareResultMessage
+                </div>
+            }
+
+        </section>
+
+        
+    }
+    else if (currentView == HomeView.SeedUpgrades)
+    {
+        <section class="upgrade-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>種芋強化</h2>
+
+            </div>
+
+            <div class="seed-potato-status">
+                <div class="seed-potato-label">
+                    種芋
+                </div>
+
+                <div class="seed-potato-value">
+                    @game.SeedPotato
+                </div>
+            </div>
+
+            <div class="upgrade-list">
+
+                <button class="upgrade-card" disabled="@(game.SeedPotato < game.ProductionUpgradeCost)"
+                        @onclick="BuyProductionUpgradeAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            生産力強化
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.ProductionUpgradeLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+                        全生産
+                        +@((game.ProductionUpgradeLevel * 0.5).ToString("0.0"))%
+                    </div>
+
+                    <div class="upgrade-cost">
+                        NEXT
+                        @game.ProductionUpgradeCost
+                        種芋
+                    </div>
+
+                </button>
+
+                <button class="upgrade-card" disabled="@(game.SeedPotato < game.DigUpgradeCost)"
+                        @onclick="BuyDigUpgradeAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            掘り出し強化
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.DigUpgradeLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+                        基礎
+                        +@((game.DigUpgradeLevel * 0.1).ToString("0.0"))
+                        / sec
+                    </div>
+
+                    <div class="upgrade-cost">
+                        NEXT
+                        @game.DigUpgradeCost
+                        種芋
+                    </div>
+
+                </button>
+
+                <button class="upgrade-card" disabled="@(!CanBuyOfflineUpgrade())" @onclick="BuyOfflineUpgradeAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            放置強化
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.OfflineUpgradeLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+                        最大
+                        @FormatOfflineUpgradeHours()
+                    </div>
+
+                    <div class="upgrade-cost">
+
+                        @if (game.IsOfflineUpgradeMax)
+                        {
+                            <span>MAX</span>
+                        }
+                        else
+                        {
+                            <span>
+                                NEXT
+                                @game.OfflineUpgradeCost
+                                種芋
+                            </span>
+                        }
+
+                    </div>
+
+                </button>
+
+            </div>
+
+        </section>
+    }
+    else if (currentView == HomeView.Statistics)
+    {
+        <section class="statistics-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>統計</h2>
+
+            </div>
+
+            <div class="statistics-list">
+
+                <section class="statistics-section">
+
+                    <h3>芋</h3>
+
+                    <div class="stat-row">
+                        <span>累計生産</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.TotalPotato)
+                            芋
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>累計消費</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.TotalConsumedPotato)
+                            芋
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>歴代最高 芋/sec</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.BestProductionPerSecond)
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>最大周回生産</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.MaxRunProducedPotato)
+                            芋
+                        </span>
+                    </div>
+
+                </section>
+
+                <section class="statistics-section">
+
+                    <h3>REPLANT</h3>
+
+                    <div class="stat-row">
+                        <span>REPLANT回数</span>
+                        <span>
+                            @game.ReplantCount
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>現在の種芋</span>
+                        <span>
+                            @game.SeedPotato
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>累計獲得種芋</span>
+                        <span>
+                            @game.TotalSeedPotatoEarned
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>累計消費種芋</span>
+                        <span>
+                            @game.TotalSeedPotatoSpent
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>最大一括獲得</span>
+                        <span>
+                            @game.MaxSeedPotatoPerReplant
+                        </span>
+                    </div>
+
+                </section>
+
+                <section class="statistics-section">
+
+                    <h3>畑</h3>
+
+                    <div class="farm-stat">
+
+                        <div class="farm-stat-name">
+                            畑1
+                        </div>
+
+                        <div class="stat-row">
+                            <span>累計購入</span>
+                            <span>
+                                @game.Farm1TotalPurchases Lv
+                            </span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span>最高Lv</span>
+                            <span>
+                                @game.Farm1BestLevel
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="farm-stat">
+
+                        <div class="farm-stat-name">
+                            畑2
+                        </div>
+
+                        <div class="stat-row">
+                            <span>累計購入</span>
+                            <span>
+                                @game.Farm2TotalPurchases Lv
+                            </span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span>最高Lv</span>
+                            <span>
+                                @game.Farm2BestLevel
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="farm-stat">
+
+                        <div class="farm-stat-name">
+                            畑3
+                        </div>
+
+                        <div class="stat-row">
+                            <span>累計購入</span>
+                            <span>
+                                @game.Farm3TotalPurchases Lv
+                            </span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span>最高Lv</span>
+                            <span>
+                                @game.Farm3BestLevel
+                            </span>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section class="statistics-section">
+
+                    <h3>OFFLINE</h3>
+
+                    <div class="stat-row">
+                        <span>累計オフライン生産</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.TotalOfflineProducedPotato)
+                            芋
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>最大オフライン獲得</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.MaxOfflineProducedPotato)
+                            芋
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>現在の放置上限</span>
+                        <span>
+                            @FormatOfflineUpgradeHours()
+                        </span>
+                    </div>
+
+                </section>
+
+                <section class="statistics-section">
+
+                    <h3>PLAY</h3>
+
+                    <div class="stat-row">
+                        <span>プレイ時間</span>
+                        <span>
+                            @FormatPlayTime(
+                                game.TotalPlayTimeSeconds)
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>掘る！回数</span>
+                        <span>
+                            @game.DigButtonCount
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>開始日時</span>
+                        <span>
+                            @FormatGameStartedAt()
+                        </span>
+                    </div>
+
+                </section>
+
+            </div>
+
+        </section>
+    }
+    else if (currentView == HomeView.Achievements)
+    {
+        <section class="achievements-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>実績</h2>
+
+            </div>
+
+            <div class="achievement-progress">
+
+                @GetUnlockedAchievementCount()
+                /
+                @AchievementCatalog.All.Count
+
+            </div>
+
+            <div class="achievement-list">
+
+                @foreach (
+                    AchievementDefinition achievement
+                    in AchievementCatalog.All)
+                {
+                    bool unlocked =
+                        game.IsAchievementUnlocked(
+                            achievement.Id);
+
+                    <div class="@GetAchievementClass(unlocked)">
+
+                        <div class="achievement-header">
+
+                            <span class="achievement-name">
+                                @achievement.Name
+                            </span>
+
+                            @if (unlocked)
+                            {
+                                <span class="achievement-status">
+                                    CLEAR
+                                </span>
+                            }
+
+                        </div>
+
+                        <div class="achievement-description">
+                            @achievement.Description
+                        </div>
+
+                        @if (unlocked)
+                        {
+                            <div class="achievement-date">
+                                @FormatAchievementDate(
+                                    achievement.Id)
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+        </section>
+    }
+    else if (currentView == HomeView.OimoBook)
+    {
+        <section class="oimo-book-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>いも図鑑</h2>
+
+            </div>
+
+            <div class="oimo-book-progress">
+
+                @game.DiscoveredOimoSpeciesCount
+                / 20
+
+            </div>
+
+            <div class="oimo-book-list">
+
+                @foreach (
+                    OimoSpeciesDefinition species
+                    in OimoSpeciesCatalog.All)
+                {
+                    bool discovered =
+                        game.IsOimoDiscovered(
+                            species.Id);
+
+                    <div class="@GetOimoBookCardClass(discovered)">
+
+                        <div class="oimo-book-number">
+                            #@GetOimoSpeciesNumber(species)
+                        </div>
+
+                        <div class="oimo-book-name">
+
+                            @if (discovered)
+                            {
+                                @species.Name
+                            }
+                            else
+                            {
+                                <span>??????</span>
+                            }
+
+                        </div>
+
+                        @if (discovered)
+                        {
+                            <div class="oimo-book-count">
+                                ×@game.GetOimoDiscoveryCount(species.Id)
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+        </section>
+    }
+    else if (currentView == HomeView.Account)
+    {
+        <section class="account-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>ACCOUNT</h2>
+
+            </div>
+
+            @if (currentUser is not null)
+            {
+                <section class="account-card">
+
+                    <h3>ログイン中</h3>
+
+                    <div>
+                        USERNAME
+                    </div>
+
+                    <div>
+                        @currentUser.UserName
+                    </div>
+
+                    <button @onclick="LogoutAsync">
+                        ログアウト
+                    </button>
+
+                    <button class="account-delete-button" @onclick="OpenDeleteAccountConfirmation">
+                        アカウント削除
+                    </button>
+
+                </section>
+            }
+            else
+            {
+                <section class="account-card">
+
+                    <h3>ログイン</h3>
+
+                    <div class="account-field">
+                        <label>USERNAME</label>
+
+                        <input type="text" maxlength="10" autocomplete="username" @bind="loginUserName" />
+                    </div>
+
+                    <div class="account-field">
+                        <label>4-DIGIT PIN</label>
+
+                        <input type="password" maxlength="4" inputmode="numeric" autocomplete="current-password"
+                               @bind="loginPin" />
+                    </div>
+
+                    <button class="account-register-button" disabled="@isLoggingIn" @onclick="LoginAsync">
+
+                        @(isLoggingIn
+                            ? "ログイン中..."
+                            : "ログイン")
+
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(loginError))
+                    {
+                        <div class="account-message error">
+                            @loginError
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(loginMessage))
+                    {
+                        <div class="account-message success">
+                            @loginMessage
+                        </div>
+                    }
+
+                </section>
+
+                <section class="account-card">
+
+                    <h3>ユーザー登録</h3>
+
+                    <div class="account-field">
+                        <label>USERNAME</label>
+
+                        <input type="text" maxlength="10" autocomplete="username" @bind="registerUserName" />
+
+                        <div class="account-hint">
+                            1〜10文字
+                        </div>
+                    </div>
+
+                    <div class="account-field">
+                        <label>4-DIGIT PIN</label>
+
+                        <input type="password" maxlength="4" inputmode="numeric" autocomplete="new-password"
+                               @bind="registerPin" />
+
+                        <div class="account-hint">
+                            数字4桁
+                        </div>
+                    </div>
+
+                    <button class="account-register-button" disabled="@isRegistering" @onclick="RegisterAccountAsync">
+
+                        @(isRegistering
+                            ? "登録中..."
+                            : "登録する")
+
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(registerError))
+                    {
+                        <div class="account-message error">
+                            @registerError
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(registerMessage))
+                    {
+                        <div class="account-message success">
+                            @registerMessage
+                        </div>
+                    }
+
+                </section>
+            }
+
+
+        </section>
+    }
+    else if (currentView == HomeView.Settings)
+    {
+        <section class="settings-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>設定</h2>
+
+            </div>
+
+            <div class="settings-list">
+
+                <section class="settings-card">
+
+                    <div class="settings-row">
+
+                        <span>
+                            OFFLINE LIMIT
+                        </span>
+
+                        <span>
+                            @FormatOfflineLimit()
+                        </span>
+
+                    </div>
+
+                </section>
+
+                <section class="settings-card">
+
+                    <div class="settings-row">
+
+                        <span>
+                            VERSION
+                        </span>
+
+                        <span>
+                            @BuildInfo.Version
+                        </span>
+
+                    </div>
+
+                </section>
+
+                <section class="settings-card">
+
+                    <div class="settings-card-title">
+                        DATA
+                    </div>
+
+                    <button class="reset-button" @onclick="OpenResetConfirmation">
+                        セーブデータ初期化
+                    </button>
+
+                </section>
+
+            </div>
+
+        </section>
+    }
+    else if (currentView == HomeView.ReplantHistory)
+    {
+        <section class="replant-history-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>REPLANET HISTORY</h2>
+
+            </div>
+
+            <section class="replant-record-card">
+
+                <h3>BEST RECORDS</h3>
+
+                <div class="replant-record-row">
+                    <span>最短REPLANET</span>
+
+                    <span>
+                        @FormatReplantDuration(
+                            game.ShortestReplantSeconds)
+                    </span>
+                </div>
+
+                <div class="replant-record-row">
+                    <span>最大周回生産</span>
+
+                    <span>
+                        @NumberFormatter.Format(
+                            game.MaxRunProducedPotato)
+                        芋
+                    </span>
+                </div>
+
+                <div class="replant-record-row">
+                    <span>最大獲得種芋</span>
+
+                    <span>
+                        @game.MaxSeedPotatoPerReplant
+                    </span>
+                </div>
+
+            </section>
+
+            <section class="replant-history-list">
+
+                @if (game.ReplantHistory.Count == 0)
+                {
+                    <div class="replant-history-empty">
+                        REPLANET履歴はまだありません。
+                    </div>
+                }
+                else
+                {
+                    @for (int i = 0;
+                          i < game.ReplantHistory.Count;
+                          i++)
+                    {
+                        ReplantHistoryEntry entry =
+                            game.ReplantHistory[i];
+
+                        int replantNumber =
+                            game.ReplantCount - i;
+
+                        <section class="replant-history-card">
+
+                            <div class="replant-history-number">
+                                #@replantNumber
+                            </div>
+
+                            <div class="replant-history-date">
+                                @FormatReplantDate(
+                                    entry.ReplantedAtUtc)
+                            </div>
+
+                            <div class="replant-history-row">
+                                <span>周回時間</span>
+
+                                <span>
+                                    @FormatReplantDuration(
+                                        entry.RunDurationSeconds)
+                                </span>
+                            </div>
+
+                            <div class="replant-history-row">
+                                <span>周回生産</span>
+
+                                <span>
+                                    @NumberFormatter.Format(
+                                        entry.RunProducedPotato)
+                                    芋
+                                </span>
+                            </div>
+
+                            <div class="replant-history-row">
+                                <span>獲得種芋</span>
+
+                                <span>
+                                    +@entry.EarnedSeedPotato
+                                </span>
+                            </div>
+
+                        </section>
+                    }
+                }
+
+            </section>
+
+        </section>
+    }
+    else if (currentView == HomeView.Ranking)
+    {
+        <section class="ranking-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>RANKING</h2>
+
+            </div>
+
+            <div class="ranking-tabs">
+
+                <button class="@GetRankingTabClass(RankingCategory.TotalPotato)"
+                        @onclick="() => LoadRankingAsync(RankingCategory.TotalPotato)">TOTAL POTATO</button>
+
+                <button class="@GetRankingTabClass(RankingCategory.BestProductionPerSecond)"
+                        @onclick="() => LoadRankingAsync(RankingCategory.BestProductionPerSecond)">BEST / SEC</button>
+
+                <button class="@GetRankingTabClass(RankingCategory.Replant)"
+                        @onclick="() => LoadRankingAsync(RankingCategory.Replant)">REPLANET</button>
+
+            </div>
+
+            @if (isRankingLoading)
+            {
+                <div class="ranking-message">
+                    LOADING...
+                </div>
+            }
+            else if (rankingError is not null)
+            {
+                <div class="ranking-message">
+                    @rankingError
+                </div>
+            }
+            else if (rankingResponse is not null)
+            {
+                <div class="ranking-list">
+
+                    @foreach (
+                        RankingEntryResponse entry
+                        in rankingResponse.TopEntries)
+                    {
+                        <div class="@GetRankingRowClass(entry)">
+
+                            <span class="ranking-rank">
+                                #@entry.Rank
+                            </span>
+
+                            <button class="ranking-name ranking-profile-link" @onclick="() => OpenPublicProfileAsync(entry.UserId)">
+                                @entry.UserName
+                            </button>
+
+                            <span class="ranking-value">
+                                @FormatRankingValue(
+                                    entry.Value)
+                            </span>
+
+                        </div>
+                    }
+
+                </div>
+
+                @if (rankingResponse.TopEntries.Count == 0)
+                {
+                    <div class="ranking-message">
+                        まだランキング記録がありません。
+                    </div>
+                }
+
+                @if (rankingResponse.MyEntry is not null
+                    && rankingResponse.MyEntry.Rank > 30)
+                {
+                    <div class="ranking-my-position">
+
+                        <div class="ranking-divider">
+                            YOUR RANK
+                        </div>
+
+                        <div class="ranking-row ranking-self">
+
+                            <span class="ranking-rank">
+                                #@rankingResponse.MyEntry.Rank
+                            </span>
+
+                            <span class="ranking-name">
+                                @rankingResponse.MyEntry.UserName
+                            </span>
+
+                            <span class="ranking-value">
+                                @FormatRankingValue(
+                                    rankingResponse.MyEntry.Value)
+                            </span>
+
+                        </div>
+
+                    </div>
+                }
+            }
+
+        </section>
+    }
+    else if (currentView == HomeView.Profile)
+    {
+        <section class="profile-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>PROFILE</h2>
+
+            </div>
+
+            @if (currentUser is null)
+            {
+                <div class="profile-message">
+                    プロフィールを利用するには
+                    ログインしてください。
+                </div>
+            }
+            else
+            {
+                <section class="profile-card">
+
+                    <div class="profile-user-name">
+                        @currentUser.UserName
+                    </div>
+
+                    <div class="profile-title">
+                        @GetEquippedTitleName()
+                    </div>
+
+                </section>
+
+                <section class="profile-card">
+
+                    <div class="profile-row">
+                        <span>総生産芋</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.TotalPotato)
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>歴代最高 芋 / sec</span>
+                        <span>
+                            @NumberFormatter.Format(
+                                game.BestProductionPerSecond)
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>REPLANET</span>
+                        <span>
+                            @game.ReplantCount 回
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>実績</span>
+                        <span>
+                            @game.AchievementUnlockedAtUtc.Count
+                            /
+                            @AchievementCatalog.All.Count
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>いも図鑑</span>
+                        <span>
+                            @game.DiscoveredOimoSpeciesCount
+                            /
+                            @OimoSpeciesCatalog.All.Count
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>ゲーム開始</span>
+                        <span>
+                            @FormatGameStartedDate()
+                        </span>
+                    </div>
+
+                </section>
+
+                <section class="profile-card">
+
+                    <h3>称号</h3>
+
+                    @if (isProfileLoading)
+                    {
+                        <div>
+                            LOADING...
+                        </div>
+                    }
+                    else if (profileError is not null)
+                    {
+                        <div>
+                            @profileError
+                        </div>
+                    }
+                    else if (titleSettings is not null)
+                    {
+                        <button class="title-option" @onclick="() => EquipTitleAsync(null)">
+                            称号を外す
+                        </button>
+
+                        @foreach (
+                            TitleOptionResponse title
+                            in titleSettings.Titles)
+                        {
+                            <button class="@GetTitleClass(title)" disabled="@(!title.Unlocked)"
+                                    @onclick="() => EquipTitleAsync(title.Id)">
+
+                                <span>
+                                    @title.Name
+                                </span>
+
+                                <span>
+                                    @GetTitleStatus(title)
+                                </span>
+
+                            </button>
+                        }
+                    }
+
+                </section>
+            }
+
+        </section>
+    }
+    else if (currentView == HomeView.PublicProfile)
+    {
+        <section class="profile-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="BackToRanking">
+                    ‹
+                </button>
+
+                <h2>PROFILE</h2>
+
+            </div>
+
+            @if (isPublicProfileLoading)
+            {
+                <div class="profile-message">
+                    LOADING...
+                </div>
+            }
+            else if (publicProfileError is not null)
+            {
+                <div class="profile-message">
+                    @publicProfileError
+                </div>
+            }
+            else if (selectedPublicProfile is not null)
+            {
+                <section class="profile-card">
+
+                    <div class="profile-user-name">
+                        @selectedPublicProfile.UserName
+                    </div>
+
+                    <div class="profile-title">
+                        @(selectedPublicProfile
+                            .EquippedTitleName
+                            ?? "称号なし")
+                    </div>
+
+                </section>
+
+                <section class="profile-card">
+
+                    <div class="profile-row">
+                        <span>総生産芋</span>
+
+                        <span>
+                            @NumberFormatter.Format(
+                                selectedPublicProfile
+                                    .TotalPotato)
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>
+                            歴代最高 芋 / sec
+                        </span>
+
+                        <span>
+                            @NumberFormatter.Format(
+                                selectedPublicProfile
+                                    .BestProductionPerSecond)
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>REPLANET</span>
+
+                        <span>
+                            @(selectedPublicProfile.ReplantCount) 回
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>実績</span>
+
+                        <span>
+                            @(selectedPublicProfile.AchievementCount)
+                            /
+                            @AchievementCatalog.All.Count
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>いも図鑑</span>
+
+                        <span>
+                            @(selectedPublicProfile.OimoSpeciesCount)
+                            /
+                            @OimoSpeciesCatalog.All.Count
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>ゲーム開始</span>
+
+                        <span>
+                            @FormatPublicGameStartedDate(
+                                selectedPublicProfile
+                                    .GameStartedAtUtc)
+                        </span>
+                    </div>
+
+                </section>
+            }
+
+        </section>
+    }
+    @if (showDeleteAccountConfirmation)
+    {
+        <div class="modal-backdrop">
+
+            <div class="confirm-modal">
+
+                <h2>
+                    アカウント削除
+                </h2>
+
+                <p>
+                    このアカウントを削除します。
+                </p>
+
+                <p>
+                    最新のセーブデータは
+                    この端末に保存され、
+                    ローカルプレイへ戻ります。
+                </p>
+
+                <p>
+                    同じユーザー名は
+                    再登録できません。
+                </p>
+
+                @if (!string.IsNullOrEmpty(
+                    deleteAccountError))
+                {
+                    <div class="account-message error">
+                        @deleteAccountError
+                    </div>
+                }
+
+                <div class="confirm-actions">
+
+                    <button disabled="@isDeletingAccount" @onclick="CloseDeleteAccountConfirmation">
+                        キャンセル
+                    </button>
+
+                    <button class="danger-button" disabled="@isDeletingAccount" @onclick="DeleteAccountAsync">
+
+                        @(isDeletingAccount
+                            ? "削除中..."
+                            : "削除する")
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+    <nav class="bottom-nav">
+
+        <button class="@GetBottomNavClass(true)" @onclick="OpenHorihori">
+            HORIHORI
+        </button>
+
+        <button class="@GetBottomNavClass(false)" @onclick="OpenMenu">
+            MENU
+        </button>
+
+    </nav>
+
+</main>
+
+@if (currentAchievementNotification is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="achievement-unlock-modal">
+
+            <div class="achievement-unlock-label">
+                ACHIEVEMENT UNLOCKED
+            </div>
+
+            <h2>
+                @currentAchievementNotification.Name
+            </h2>
+
+            <div class="achievement-unlock-description">
+                @currentAchievementNotification.Description
+            </div>
+
+            <button @onclick="CloseAchievementNotification">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@if (BuildInfo.IsDebug && game.HasStarted)
+{
+    <section class="debug-panel">
+
+        <div class="debug-title">
+            DEBUG
+        </div>
+
+        <button @onclick="() => DebugAddPotatoAsync(1_000)">
+            +1.000e+3 芋
+        </button>
+
+        <button @onclick="() => DebugAddPotatoAsync(1_000_000)">
+            +1.000e+6 芋
+        </button>
+
+        <button @onclick="() => DebugOfflineAsync(3_600)">
+            OFFLINE 1時間
+        </button>
+
+        <button @onclick="() => DebugOfflineAsync(43_200)">
+            OFFLINE 12時間
+        </button>
+
+        <button @onclick="DebugAddSeedPotatoAsync">
+            +100 種芋
+        </button>
+
+        <button @onclick="DebugBuyProductionUpgradeAsync">
+            生産力強化
+        </button>
+
+        <button @onclick="DebugBuyDigUpgradeAsync">
+            掘り出し強化
+        </button>
+
+        <button @onclick="DebugBuyOfflineUpgradeAsync">
+            放置強化
+        </button>
+
+    </section>
+}
+
+@if (showOfflineResult)
+{
+    <div class="modal-backdrop">
+
+        <div class="offline-modal">
+
+            <h2>おかえり！</h2>
+
+            @if (offlineReward > 0)
+            {
+                <div class="offline-label">
+                    OFFLINE
+                </div>
+
+                <div class="offline-time">
+                    @FormatOfflineTime(
+                        offlineDuration)
+                </div>
+
+                <div class="offline-reward">
+                    +@NumberFormatter.Format(offlineReward)
+                    芋
+                </div>
+            }
+
+            @if (offlineOimoDiscoveries.Count > 0)
+            {
+                <div class="offline-oimo">
+
+                    <div class="offline-oimo-label">
+                        いも図鑑
+                    </div>
+
+                    @foreach (
+                        OimoSpeciesDefinition species
+                        in offlineOimoDiscoveries)
+                    {
+                        <div class="offline-oimo-entry">
+                            @species.Name
+                        </div>
+                    }
+
+                </div>
+            }
+
+            <button @onclick="CloseOfflineResult">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@if (showResetConfirmation)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                セーブデータ初期化
+            </h2>
+
+            <p>
+                本当にセーブデータを初期化しますか？
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="CancelReset">
+                    キャンセル
+                </button>
+
+                <button class="danger-button" @onclick="ResetGameAsync">
+                    初期化する
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@if (showReplant)
+{
+    <div class="modal-backdrop">
+
+        <div class="replant-modal">
+
+            <h2>
+                REPLANT
+            </h2>
+
+            <div class="replant-detail">
+
+                <div class="replant-detail-label">
+                    今回の生産
+                </div>
+
+                <div class="replant-detail-value">
+                    @NumberFormatter.Format(
+                        game.RunProducedPotato)
+                    芋
+                </div>
+
+            </div>
+
+            <div class="replant-detail">
+
+                <div class="replant-detail-label">
+                    獲得予定
+                </div>
+
+                <div class="replant-detail-value">
+                    種芋 ×@game.ReplantSeedPotato
+                </div>
+
+            </div>
+
+            <div class="replant-detail">
+
+                <div class="replant-detail-label">
+                    次の種芋まで
+                </div>
+
+                <div class="replant-detail-value">
+                    @NumberFormatter.Format(
+                        game.ProductionUntilNextSeedPotato)
+                    芋
+                </div>
+
+            </div>
+
+            <div class="replant-actions">
+
+                <button @onclick="CloseReplant">
+                    閉じる
+                </button>
+
+                <button disabled="@(!game.CanReplant)" @onclick="OpenReplantConfirmation">
+                    REPLANT
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@if (showReplantConfirmation)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                REPLANT
+            </h2>
+
+            <p>
+                本当に REPLANT しますか？
+            </p>
+
+            <p>
+                現在の芋、畑Lv、周回生産量はリセットされます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="CancelReplant">
+                    キャンセル
+                </button>
+
+                <button @onclick="ExecuteReplantAsync">
+                    REPLANT
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@if (showOimoDiscovery && lastDiscoveredOimo is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="oimo-discovery-modal">
+
+            <div class="oimo-discovery-label">
+                NEW OIMO
+            </div>
+
+            <h2>
+                @lastDiscoveredOimo.Name
+            </h2>
+
+            <div class="oimo-discovery-count">
+                ×@game.GetOimoDiscoveryCount(lastDiscoveredOimo.Id)
+            </div>
+
+            <button @onclick="CloseOimoDiscovery">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@if (newerSaveVersion is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                セーブデータを保護しました
+            </h2>
+
+            <p>
+                このセーブデータは
+                Version
+                @newerSaveVersion
+                用です。
+            </p>
+
+            <p>
+                現在のアプリ
+                Version
+                @GameConstants.SaveVersion
+                では読み込めません。
+            </p>
+
+            <p>
+                データ保護のため、
+                セーブ内容には変更を加えていません。
+            </p>
+
+        </div>
+
+    </div>
+}
+
+@if (showLocalSaveMigration)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                セーブデータ引き継ぎ
+            </h2>
+
+            <p>
+                この端末のセーブデータを
+                引き継ぎますか？
+            </p>
+
+            <p>
+                引き継ぎ後は
+                サーバー上のセーブデータを
+                正として扱います。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="MigrateLocalSaveAsync">
+                    引き継ぐ
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@if (showSaveConflict)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                新しいセーブデータが見つかりました
+            </h2>
+
+            <p>
+                別の端末でゲームが
+                更新されています。
+            </p>
+
+            <p>
+                最新データを読み込みます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="LoadConflictingSaveAsync">
+                    読み込む
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    private GameState game = new();
+    private PeriodicTimer? timer;
+    private CancellationTokenSource cancellationTokenSource = new();
+    private DateTimeOffset lastUpdateTime;
+    private DateTimeOffset lastAutoSaveTime;
+    private bool showOfflineResult;
+    private TimeSpan offlineDuration;
+    private double offlineReward;
+    private bool showResetConfirmation;
+    private PurchaseMode purchaseMode = PurchaseMode.One;
+    private bool showReplant;
+    private bool showReplantConfirmation;
+    private OimoSpeciesDefinition? lastDiscoveredOimo;
+    private bool showOimoDiscovery;
+    private List<OimoSpeciesDefinition> offlineOimoDiscoveries = new();
+    private string? shareResultMessage;
+    private Queue<AchievementDefinition> achievementNotificationQueue = new();
+    private AchievementDefinition? currentAchievementNotification;
+    private bool isPageHidden;
+    private DateTimeOffset? pageHiddenAtUtc;
+    private DotNetObjectReference<Home>? visibilityReference;
+    private int? newerSaveVersion;
+    private string registerUserName = string.Empty;
+    private string registerPin = string.Empty;
+    private string? registerMessage;
+    private string? registerError;
+    private bool isRegistering;
+    private string loginUserName = string.Empty;
+    private string loginPin = string.Empty;
+    private string? loginMessage;
+    private string? loginError;
+    private bool isLoggingIn;
+    private CurrentUserResponse? currentUser;
+    private long serverRevision;
+    private bool serverSaveReady;
+    private bool showLocalSaveMigration;
+    private SaveData? pendingLocalSave;
+    private ServerSaveResponse? conflictingServerSave;
+    private bool showSaveConflict;
+    private RankingCategory rankingCategory = RankingCategory.TotalPotato;
+    private RankingResponse? rankingResponse;
+    private bool isRankingLoading;
+    private string? rankingError;
+    private TitleSettingsResponse? titleSettings;
+    private bool isProfileLoading;
+    private string? profileError;
+    private PublicProfileResponse? selectedPublicProfile;
+    private bool isPublicProfileLoading;
+    private string? publicProfileError;
+    private bool showDeleteAccountConfirmation;
+    private bool isDeletingAccount;
+    private string? deleteAccountError;
+
+    private void SetPurchaseMode(PurchaseMode mode)
+    {
+        purchaseMode = mode;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentUser = await AuthService.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auth restore failed: {ex}");
+
+            currentUser = null;
+        }
+
+        SaveData? save = await SaveService.LoadAsync();
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
+        if (save is not null)
+        {
+            int loadedVersion = save.Version;
+
+            // 現在のアプリより
+            // 新しいセーブは絶対に触らない
+            if (loadedVersion > GameConstants.SaveVersion)
+            {
+                newerSaveVersion = loadedVersion;
+
+                return;
+            }
+
+            bool loaded = game.TryLoadSaveData(save);
+            if (!loaded)
+            {
+                await SaveService.DeleteAsync();
+            }
+            else
+            {
+                // v1を読み込んだ場合は、
+                // GameState上ですでにv2へ移行済みなので
+                // v2形式で保存し直す
+                if (loadedVersion < GameConstants.SaveVersion)
+                {
+                    await SaveGameAsync();
+                }
+
+                double elapsedSeconds = (now - save.LastSaveTimeUtc).TotalSeconds;
+                if (elapsedSeconds > 0)
+                {
+                    if (game.HasStarted)
+                    {
+                        double cappedSeconds = Math.Min(elapsedSeconds, game.OfflineLimitSeconds);
+
+                        offlineReward = game.ProduceOffline(elapsedSeconds);
+                        offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
+                    }
+
+                    if (game.GameStartedAtUtc != default)
+                    {
+                        IReadOnlyList<OimoSpeciesDefinition> discoveries = game.ProduceOfflineOimoDiscoveries(elapsedSeconds);
+
+                        offlineOimoDiscoveries = discoveries.ToList();
+                    }
+
+                    if (game.HasStarted || offlineOimoDiscoveries.Count > 0)
+                    {
+                        showOfflineResult = true;
+                    }
+
+                    await SaveGameAsync();
+                }
+            }
+        }
+
+        if (currentUser is not null && newerSaveVersion is null)
+        {
+            await InitializeServerSaveAsync();
+        }
+
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+
+        visibilityReference = DotNetObjectReference.Create(this);
+
+        await JS.InvokeVoidAsync("oimoVisibility.register", visibilityReference);
+
+        timer = new PeriodicTimer(TimeSpan.FromMilliseconds(GameConstants.GameLoopIntervalMilliseconds));
+        _ = RunGameLoopAsync();
+        IReadOnlyList<AchievementDefinition> unlockedAchievements = game.CheckAchievements();
+
+        foreach (AchievementDefinition achievement in unlockedAchievements)
+        {
+            achievementNotificationQueue.Enqueue(achievement);
+        }
+
+        if (unlockedAchievements.Count > 0)
+        {
+            ShowNextAchievementNotification();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task StartGame()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        game.HasStarted = true;
+
+        if (game.GameStartedAtUtc == default)
+        {
+            game.GameStartedAtUtc = now;
+        }
+
+        game.RunStartedAtUtc = now;
+        game.DigButtonCount++;
+        game.ProducePotato(0.1);
+        CheckAchievements();
+        lastUpdateTime = now;
+
+        await SaveGameAsync();
+    }
+
+    private async Task BuyFarm(Farm farm)
+    {
+        int maxLevels = GetPurchaseMaxLevels();
+        int purchasedLevels = game.BuyFarm(farm, maxLevels);
+
+        if (purchasedLevels <= 0)
+        {
+            return;
+        }
+
+        if (purchaseMode == PurchaseMode.Ten)
+        {
+            game.HasUsedTenPurchaseMode = true;
+        }
+
+        if (purchaseMode == PurchaseMode.Max)
+        {
+            game.HasUsedMaxPurchaseMode = true;
+        }
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private async Task RunGameLoopAsync()
+    {
+        if (timer is null)
+        {
+            return;
+        }
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationTokenSource.Token))
+            {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                double elapsedSeconds = (now - lastUpdateTime).TotalSeconds;
+
+                lastUpdateTime = now;
+
+                if (isPageHidden)
+                {
+                    continue;
+                }
+
+                if (game.GameStartedAtUtc != default && double.IsFinite(elapsedSeconds) && elapsedSeconds > 0)
+                {
+                    game.TotalPlayTimeSeconds += elapsedSeconds;
+                }
+
+                if (game.GameStartedAtUtc
+                    != default)
+                {
+                    IReadOnlyList<OimoSpeciesDefinition> discoveries = game.AdvanceOimoDiscovery(elapsedSeconds);
+
+                    if (discoveries.Count > 0)
+                    {
+                        lastDiscoveredOimo = discoveries[^1];
+                        showOimoDiscovery = true;
+                        CheckAchievements();
+
+                        await SaveGameAsync();
+                    }
+                }
+
+                if (game.HasStarted)
+                {
+                    game.ProduceForSeconds(elapsedSeconds);
+                    game.BestProductionPerSecond = Math.Max(game.BestProductionPerSecond, game.ProductionPerSecond);
+                    CheckAchievements();
+                }
+
+                if (game.GameStartedAtUtc != default && (now - lastAutoSaveTime).TotalSeconds >= GameConstants.AutoSaveIntervalSeconds)
+                {
+                    await SaveGameAsync();
+                    lastAutoSaveTime = now;
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        cancellationTokenSource.Cancel();
+
+        timer?.Dispose();
+
+        if (visibilityReference is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("oimoVisibility.unregister");
+            }
+            catch
+            {
+                // ページ終了中などは無視
+            }
+
+            visibilityReference.Dispose();
+        }
+
+        cancellationTokenSource.Dispose();
+    }
+
+    private async Task SaveGameAsync()
+    {
+        if (showSaveConflict)
+        {
+            return;
+        }
+
+        SaveData save = game.CreateSaveData();
+
+        //
+        // 未登録・未ログイン
+        //
+        if (currentUser is null)
+        {
+            await SaveService.SaveAsync(save);
+
+            return;
+        }
+
+        //
+        // 初回引き継ぎ確認中など
+        //
+        if (!serverSaveReady)
+        {
+            await SaveService.SaveAsync(save);
+
+            return;
+        }
+
+        try
+        {
+            ServerSaveResult result = await ServerSave.SaveAsync(serverRevision, save);
+
+            //
+            // 正常保存
+            //
+            if (result.Success && result.Save is not null)
+            {
+                serverRevision = result.Save.Revision;
+
+                // localStorageはキャッシュとして保持
+                await SaveService.SaveAsync(result.Save.Save);
+
+                return;
+            }
+
+            //
+            // 別端末との競合
+            //
+            if (result.Conflict && result.Save is not null)
+            {
+                conflictingServerSave = result.Save;
+
+                showSaveConflict = true;
+
+                return;
+            }
+        }
+        catch (HttpRequestException)
+        {
+            //
+            // 通信不能時はlocalStorageへ
+            // 一時キャッシュ
+            //
+            await SaveService.SaveAsync(save);
+        }
+    }
+    private static string FormatOfflineTime(TimeSpan time)
+    {
+        int hours = (int)time.TotalHours;
+
+        return
+            $"{hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private void CloseOfflineResult()
+    {
+        showOfflineResult = false;
+        offlineOimoDiscoveries.Clear();
+    }
+
+    private void OpenSettings()
+    {
+        currentView = HomeView.Settings;
+    }
+
+    private void OpenResetConfirmation()
+    {
+        showResetConfirmation = true;
+    }
+
+    private void CancelReset()
+    {
+        showResetConfirmation = false;
+    }
+
+    private async Task ResetGameAsync()
+    {
+        await SaveService.DeleteAsync();
+
+        game = new GameState();
+        showResetConfirmation = false;
+        showOfflineResult = false;
+        showOimoDiscovery = false;
+        offlineOimoDiscoveries.Clear();
+        currentView = HomeView.Horihori;
+        purchaseMode = PurchaseMode.One;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+    }
+
+    private async Task DebugAddPotatoAsync(double amount)
+    {
+        game.ProducePotato(amount);
+
+        await SaveGameAsync();
+    }
+
+    private async Task DebugOfflineAsync(double seconds)
+    {
+        double cappedSeconds = Math.Min(seconds, game.OfflineLimitSeconds);
+
+        offlineReward = game.ProduceOffline(seconds);
+        offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
+        showOfflineResult = true;
+
+        await SaveGameAsync();
+    }
+
+    private string GetPurchaseModeClass(PurchaseMode mode)
+    {
+        return purchaseMode == mode ? "purchase-mode-button selected" : "purchase-mode-button";
+    }
+
+    private int GetPurchaseMaxLevels()
+    {
+        return purchaseMode switch
+        {
+            PurchaseMode.One => 1,
+            PurchaseMode.Ten => 10,
+            PurchaseMode.Max => int.MaxValue,
+            _ => 1
+        };
+    }
+
+    private int GetAffordablePurchaseLevels(Farm farm)
+    {
+        return farm.GetAffordableLevels(game.Potato, GetPurchaseMaxLevels());
+    }
+
+    private double GetPurchaseDisplayCost(Farm farm)
+    {
+        int levels = GetAffordablePurchaseLevels(farm);
+
+        if (levels > 0)
+        {
+            return farm.GetCostForLevels(levels);
+        }
+
+        return farm.NextCost;
+    }
+
+    private string GetPurchaseLevelText(Farm farm)
+    {
+        int levels = GetAffordablePurchaseLevels(farm);
+        if (levels <= 0)
+        {
+            return "購入不可";
+        }
+
+        return purchaseMode switch
+        {
+            PurchaseMode.One => "+1 Lv",
+            PurchaseMode.Ten => $"+{levels} Lv",
+            PurchaseMode.Max => $"MAX +{levels} Lv",
+            _ => $"+{levels} Lv"
+        };
+    }
+
+    private void OpenReplant()
+    {
+        showReplant = true;
+    }
+
+    private void CloseReplant()
+    {
+        showReplant = false;
+    }
+
+    private void OpenReplantConfirmation()
+    {
+        if (!game.CanReplant)
+        {
+            return;
+        }
+
+        showReplant = false;
+        showReplantConfirmation = true;
+    }
+
+    private void CancelReplant()
+    {
+        showReplantConfirmation = false;
+        showReplant = true;
+    }
+
+    private async Task ExecuteReplantAsync()
+    {
+        int earnedSeedPotato = game.Replant();
+        if (earnedSeedPotato <= 0)
+        {
+            showReplantConfirmation = false;
+
+            return;
+        }
+
+        CheckAchievements();
+        showReplantConfirmation = false;
+        showReplant = false;
+        purchaseMode = PurchaseMode.One;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+
+        await SaveGameAsync();
+    }
+
+    private string FormatOfflineLimit()
+    {
+        double hours = game.OfflineLimitSeconds / 3600.0;
+
+        return $"{hours:0.#} HOURS";
+    }
+
+    private async Task DebugAddSeedPotatoAsync()
+    {
+        game.SeedPotato += 100;
+        game.TotalSeedPotatoEarned += 100;
+
+        await SaveGameAsync();
+    }
+
+    private async Task DebugBuyProductionUpgradeAsync()
+    {
+        if (game.BuyProductionUpgrade())
+        {
+            CheckAchievements();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task DebugBuyDigUpgradeAsync()
+    {
+        if (game.BuyDigUpgrade())
+        {
+            CheckAchievements();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task DebugBuyOfflineUpgradeAsync()
+    {
+        if (game.BuyOfflineUpgrade())
+        {
+            CheckAchievements();
+            await SaveGameAsync();
+        }
+    }
+
+    private enum HomeView
+    {
+        Horihori,
+        Menu,
+        SeedUpgrades,
+        Statistics,
+        Achievements,
+        OimoBook,
+        ReplantHistory,
+        Ranking,
+        Profile,
+        PublicProfile,
+        Account,
+        Settings
+    }
+
+    private HomeView currentView = HomeView.Horihori;
+
+    private void OpenHorihori()
+    {
+        shareResultMessage = null;
+        currentView = HomeView.Horihori;
+    }
+
+    private void OpenMenu()
+    {
+        currentView = HomeView.Menu;
+    }
+
+    private void OpenSeedUpgrades()
+    {
+        currentView = HomeView.SeedUpgrades;
+    }
+
+    private bool CanBuyOfflineUpgrade()
+    {
+        return !game.IsOfflineUpgradeMax && game.SeedPotato >= game.OfflineUpgradeCost;
+    }
+
+    private string FormatOfflineUpgradeHours()
+    {
+        double hours = game.OfflineLimitSeconds / 3600.0;
+
+        return $"{hours:0.#}時間";
+    }
+
+    private async Task BuyProductionUpgradeAsync()
+    {
+        if (game.BuyProductionUpgrade())
+        {
+            CheckAchievements();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task BuyDigUpgradeAsync()
+    {
+        if (game.BuyDigUpgrade())
+        {
+            CheckAchievements();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task BuyOfflineUpgradeAsync()
+    {
+        if (game.BuyOfflineUpgrade())
+        {
+            CheckAchievements();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private string GetBottomNavClass(
+    bool horihori)
+    {
+        bool selected = horihori ? currentView == HomeView.Horihori : currentView != HomeView.Horihori;
+
+        return selected ? "bottom-nav-button selected" : "bottom-nav-button";
+    }
+
+    private void OpenStatistics()
+    {
+        currentView = HomeView.Statistics;
+    }
+
+    private static string FormatPlayTime(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds < 0)
+        {
+            return "00:00:00";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+        int totalHours = (int)time.TotalHours;
+
+        return $"{totalHours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private string FormatGameStartedAt()
+    {
+        if (game.GameStartedAtUtc == default)
+        {
+            return "-";
+        }
+
+        return game.GameStartedAtUtc.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+
+    private void OpenAchievements()
+    {
+        currentView = HomeView.Achievements;
+    }
+
+    private int GetUnlockedAchievementCount()
+    {
+        int count = 0;
+
+        foreach (
+            AchievementDefinition achievement in AchievementCatalog.All)
+        {
+            if (game.IsAchievementUnlocked(achievement.Id))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static string GetAchievementClass(bool unlocked)
+    {
+        return unlocked ? "achievement-card unlocked" : "achievement-card locked";
+    }
+
+    private string FormatAchievementDate(string achievementId)
+    {
+        DateTimeOffset? unlockedAt = game.GetAchievementUnlockedAtUtc(achievementId);
+
+        if (unlockedAt is null)
+        {
+            return "";
+        }
+
+        return unlockedAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+
+    private void CloseOimoDiscovery()
+    {
+        showOimoDiscovery = false;
+    }
+
+    private void OpenOimoBook()
+    {
+        currentView =
+            HomeView.OimoBook;
+    }
+
+    private static string GetOimoSpeciesNumber(OimoSpeciesDefinition species)
+    {
+        for (int i = 0; i < OimoSpeciesCatalog.All.Count; i++)
+        {
+            if (OimoSpeciesCatalog.All[i].Id == species.Id)
+            {
+                return (i + 1).ToString("00");
+            }
+        }
+
+        return "--";
+    }
+
+    private static string GetOimoBookCardClass(bool discovered)
+    {
+        return discovered ? "oimo-book-card" : "oimo-book-card locked";
+    }
+
+    private string BuildShareText()
+    {
+        return
+            "🍠 OIMO HORIHORI\n"
+            + $"累計 {NumberFormatter.Format(game.TotalPotato)}芋"
+            + $" / REPLANT {game.ReplantCount}回"
+            + $" / 種芋 {game.SeedPotato}"
+            + $" / 図鑑 {game.DiscoveredOimoSpeciesCount}/20\n"
+            + "#OIMOHORIHORI";
+    }
+
+    private async Task ShareGameAsync()
+    {
+        string text = BuildShareText();
+        string result = await JS.InvokeAsync<string>("oimoShare", text);
+
+        shareResultMessage = result switch
+        {
+            "shared" => "共有しました",
+            "copied" => "共有テキストをコピーしました",
+            "cancelled" => null,
+            _ => "共有できませんでした"
+        };
+    }
+
+    private void CheckAchievements()
+    {
+        IReadOnlyList<AchievementDefinition> unlockedAchievements = game.CheckAchievements();
+
+        foreach (AchievementDefinition achievement in unlockedAchievements)
+        {
+            achievementNotificationQueue.Enqueue(achievement);
+        }
+
+        ShowNextAchievementNotification();
+    }
+
+    private void ShowNextAchievementNotification()
+    {
+        if (currentAchievementNotification is not null)
+        {
+            return;
+        }
+
+        if (achievementNotificationQueue.Count == 0)
+        {
+            return;
+        }
+
+        currentAchievementNotification = achievementNotificationQueue.Dequeue();
+    }
+
+    private void CloseAchievementNotification()
+    {
+        currentAchievementNotification = null;
+
+        ShowNextAchievementNotification();
+    }
+
+    [JSInvokable]
+    public async Task OnVisibilityChanged(bool hidden)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
+        if (hidden)
+        {
+            if (isPageHidden)
+            {
+                return;
+            }
+
+            isPageHidden = true;
+            pageHiddenAtUtc = now;
+            lastUpdateTime = now;
+            lastAutoSaveTime = now;
+
+            await SaveGameAsync();
+
+            return;
+        }
+
+        // ここから visible 復帰
+
+        if (!isPageHidden)
+        {
+            lastUpdateTime = now;
+
+            return;
+        }
+
+        isPageHidden = false;
+
+        if (pageHiddenAtUtc is null)
+        {
+            lastUpdateTime = now;
+
+            return;
+        }
+
+        double elapsedSeconds = (now - pageHiddenAtUtc.Value).TotalSeconds;
+
+        pageHiddenAtUtc = null;
+
+        if (!double.IsFinite(elapsedSeconds) || elapsedSeconds <= 0)
+        {
+            lastUpdateTime = now;
+
+            return;
+        }
+
+        // 芋のオフライン生産
+        if (game.HasStarted)
+        {
+            double cappedSeconds = Math.Min(elapsedSeconds, game.OfflineLimitSeconds);
+
+            offlineReward = game.ProduceOffline(elapsedSeconds);
+            offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
+        }
+        else
+        {
+            offlineReward = 0;
+            offlineDuration = TimeSpan.Zero;
+        }
+
+        // 図鑑は別途最大24時間
+        if (game.GameStartedAtUtc != default)
+        {
+            IReadOnlyList<OimoSpeciesDefinition> discoveries = game.ProduceOfflineOimoDiscoveries(elapsedSeconds);
+
+            offlineOimoDiscoveries = discoveries.ToList();
+        }
+
+        // 数秒アプリを切り替えただけでは
+        // おかえりモーダルを出さない
+        if ((game.HasStarted && elapsedSeconds >= 30) || offlineOimoDiscoveries.Count > 0)
+        {
+            showOfflineResult = true;
+        }
+
+        CheckAchievements();
+
+        // ここ重要
+        // 通常ループにhidden時間を
+        // 二重計上させない
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+
+        await SaveGameAsync();
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
+
+    private void OpenAccount()
+    {
+        currentView = HomeView.Account;
+    }
+
+    private async Task RegisterAccountAsync()
+    {
+        registerMessage = null;
+        registerError = null;
+
+        string userName = registerUserName.Trim();
+        string pin = registerPin;
+
+        if (userName.Length is < 1 or > 10)
+        {
+            registerError = "ユーザー名は1〜10文字で入力してください。";
+
+            return;
+        }
+
+        bool validPin = pin.Length == 4 && pin.All(c => c is >= '0' and <= '9');
+        if (!validPin)
+        {
+            registerError = "PINは数字4桁で入力してください。";
+
+            return;
+        }
+
+        RegisterRequest request = new(userName, pin);
+        isRegistering = true;
+
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/auth/register", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                RegisterResponse? result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+
+                if (result is null)
+                {
+                    registerError = "サーバーから正しい応答を取得できませんでした。";
+
+                    return;
+                }
+
+                registerMessage = $"{result.UserName} を登録しました。";
+                registerPin = string.Empty;
+
+                return;
+            }
+
+            ApiErrorResponse? error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+
+            registerError = error?.Message ?? "ユーザー登録に失敗しました。";
+        }
+        catch (HttpRequestException)
+        {
+            registerError = "サーバーへ接続できませんでした。";
+        }
+        catch (Exception)
+        {
+            registerError = "ユーザー登録中にエラーが発生しました。";
+        }
+        finally
+        {
+            isRegistering = false;
+        }
+    }
+
+    private async Task LoginAsync()
+    {
+        loginMessage = null;
+        loginError = null;
+
+        string userName = loginUserName.Trim();
+        string pin = loginPin;
+
+        if (userName.Length is < 1 or > 10)
+        {
+            loginError = "ユーザー名またはPINが正しくありません。";
+
+            return;
+        }
+
+        bool validPin = pin.Length == 4 && pin.All(c => c is >= '0' and <= '9');
+        if (!validPin)
+        {
+            loginError = "ユーザー名またはPINが正しくありません。";
+
+            return;
+        }
+
+        LoginRequest request = new(userName, pin);
+        isLoggingIn = true;
+
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/auth/login", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                LoginResponse? result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+                if (result is null)
+                {
+                    loginError = "サーバーから正しい応答を取得できませんでした。";
+
+                    return;
+                }
+
+                await AuthService.SaveTokenAsync(result.SessionToken);
+
+                currentUser = new CurrentUserResponse(result.UserId, result.UserName);
+
+                await InitializeServerSaveAsync();
+
+                loginMessage = $"{result.UserName} でログインしました。";
+                loginPin = string.Empty;
+
+                return;
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                loginError = "ユーザー名またはPINが正しくありません。";
+
+                return;
+            }
+
+            ApiErrorResponse? error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+
+            loginError = error?.Message ?? "ログインに失敗しました。";
+        }
+        catch (HttpRequestException)
+        {
+            loginError = "サーバーへ接続できませんでした。";
+        }
+        catch (Exception)
+        {
+            loginError = "ログイン中にエラーが発生しました。";
+        }
+        finally
+        {
+            isLoggingIn = false;
+        }
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+
+        currentUser = null;
+        loginUserName = string.Empty;
+        loginPin = string.Empty;
+        loginMessage = null;
+        loginError = null;
+        serverRevision = 0;
+        serverSaveReady = false;
+        pendingLocalSave = null;
+        conflictingServerSave = null;
+        showLocalSaveMigration = false;
+        showSaveConflict = false;
+    }
+
+    private async Task InitializeServerSaveAsync()
+    {
+        if (currentUser is null)
+        {
+            serverSaveReady = false;
+            serverRevision = 0;
+
+            return;
+        }
+
+        try
+        {
+            ServerSaveResponse? serverSave = await ServerSave.LoadAsync();
+
+            //
+            // すでにサーバーセーブがある
+            //
+            if (serverSave is not null)
+            {
+                bool loaded = game.TryLoadSaveData(serverSave.Save);
+
+                if (!loaded)
+                {
+                    return;
+                }
+
+                serverRevision = serverSave.Revision;
+                serverSaveReady = true;
+
+                // localStorageはキャッシュとして
+                // 最新状態にしておく
+                await SaveService.SaveAsync(serverSave.Save);
+
+                return;
+            }
+
+            //
+            // サーバーセーブがまだ無い
+            //
+            SaveData? localSave = await SaveService.LoadAsync();
+
+            if (localSave is not null)
+            {
+                pendingLocalSave = localSave;
+                showLocalSaveMigration = true;
+
+                return;
+            }
+
+            //
+            // ローカルにも何も無い場合
+            // 現在の初期状態をサーバーへ作成
+            //
+            await CreateInitialServerSaveAsync();
+        }
+        catch (HttpRequestException)
+        {
+            // Serverに接続できなくても
+            // ローカルゲーム自体は続ける
+            serverSaveReady = false;
+        }
+    }
+
+    private async Task MigrateLocalSaveAsync()
+    {
+        if (pendingLocalSave is null)
+        {
+            return;
+        }
+
+        ServerSaveResult result = await ServerSave.SaveAsync(0, pendingLocalSave);
+
+        if (result.Success && result.Save is not null)
+        {
+            serverRevision = result.Save.Revision;
+
+            serverSaveReady = true;
+
+            game.TryLoadSaveData(result.Save.Save);
+
+            await SaveService.SaveAsync(result.Save.Save);
+
+            pendingLocalSave = null;
+
+            showLocalSaveMigration = false;
+
+            return;
+        }
+
+        //
+        // 確認している間に別端末が
+        // サーバーセーブを作った場合
+        //
+        if (result.Conflict && result.Save is not null)
+        {
+            conflictingServerSave = result.Save;
+
+            showLocalSaveMigration = false;
+            showSaveConflict = true;
+        }
+    }
+
+    private async Task CreateInitialServerSaveAsync()
+    {
+        SaveData save = game.CreateSaveData();
+
+        ServerSaveResult result = await ServerSave.SaveAsync(0, save);
+
+        if (result.Success && result.Save is not null)
+        {
+            serverRevision = result.Save.Revision;
+
+            serverSaveReady = true;
+
+            await SaveService.SaveAsync(result.Save.Save);
+
+            return;
+        }
+
+        if (result.Conflict && result.Save is not null)
+        {
+            conflictingServerSave = result.Save;
+
+            showSaveConflict = true;
+        }
+    }
+
+    private async Task LoadConflictingSaveAsync()
+    {
+        if (conflictingServerSave is null)
+        {
+            return;
+        }
+
+        bool loaded = game.TryLoadSaveData(conflictingServerSave.Save);
+        if (!loaded)
+        {
+            return;
+        }
+
+        serverRevision = conflictingServerSave.Revision;
+        serverSaveReady = true;
+
+        await SaveService.SaveAsync(conflictingServerSave.Save);
+
+        conflictingServerSave = null;
+        showSaveConflict = false;
+        purchaseMode = PurchaseMode.One;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+    }
+
+    private void OpenReplantHistory()
+    {
+        currentView = HomeView.ReplantHistory;
+    }
+
+    private static string FormatReplantDuration(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds <= 0)
+        {
+            return "--:--:--";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int hours = (int)time.TotalHours;
+
+        return $"{hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private static string FormatReplantDate(DateTimeOffset date)
+    {
+        return date.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+
+    private async Task OpenRankingAsync()
+    {
+        currentView = HomeView.Ranking;
+
+        await LoadRankingAsync(rankingCategory);
+    }
+
+    private async Task LoadRankingAsync(RankingCategory category)
+    {
+        rankingCategory = category;
+        isRankingLoading = true;
+        rankingError = null;
+
+        try
+        {
+            rankingResponse = await Rankings.GetAsync(category);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ranking load failed: {ex}");
+
+            rankingError = "ランキングを読み込めませんでした。";
+        }
+        finally
+        {
+            isRankingLoading = false;
+        }
+    }
+
+    private string GetRankingTabClass(RankingCategory category)
+    {
+        return rankingCategory == category ? "ranking-tab active" : "ranking-tab";
+    }
+
+    private static string GetRankingRowClass(RankingEntryResponse entry)
+    {
+        return entry.IsCurrentUser ? "ranking-row ranking-self" : "ranking-row";
+    }
+
+    private string FormatRankingValue(double value)
+    {
+        return rankingCategory switch
+        {
+            RankingCategory.TotalPotato => $"{NumberFormatter.Format(value)} 芋",
+            RankingCategory.BestProductionPerSecond => $"{NumberFormatter.Format(value)} 芋 / sec",
+            RankingCategory.Replant => $"{(long)value} 回",
+            _ => NumberFormatter.Format(value)
+        };
+    }
+
+    private async Task OpenProfileAsync()
+    {
+        currentView = HomeView.Profile;
+
+        if (currentUser is null)
+        {
+            return;
+        }
+
+        await LoadProfileTitlesAsync();
+    }
+
+    private async Task LoadProfileTitlesAsync()
+    {
+        isProfileLoading = true;
+        profileError = null;
+
+        try
+        {
+            titleSettings = await Profiles.GetTitlesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Profile load failed: {ex}");
+
+            profileError = "プロフィールを読み込めませんでした。";
+        }
+        finally
+        {
+            isProfileLoading = false;
+        }
+    }
+
+    private async Task EquipTitleAsync(string? titleId)
+    {
+        try
+        {
+            await Profiles.EquipTitleAsync(titleId);
+
+            titleSettings = await Profiles.GetTitlesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Title update failed: {ex}");
+
+            profileError = "称号を変更できませんでした。";
+        }
+    }
+
+    private string GetEquippedTitleName()
+    {
+        TitleOptionResponse? equipped = titleSettings?.Titles.FirstOrDefault(title => title.Equipped);
+
+        return equipped?.Name ?? "称号なし";
+    }
+
+    private static string GetTitleClass(TitleOptionResponse title)
+    {
+        if (title.Equipped)
+        {
+            return "title-option equipped";
+        }
+
+        if (!title.Unlocked)
+        {
+            return "title-option locked";
+        }
+
+        return "title-option";
+    }
+
+    private static string GetTitleStatus(TitleOptionResponse title)
+    {
+        if (title.Equipped)
+        {
+            return "装備中";
+        }
+
+        if (!title.Unlocked)
+        {
+            return "未解放";
+        }
+
+        return "装備";
+    }
+
+    private string FormatGameStartedDate()
+    {
+        if (game.GameStartedAtUtc == default)
+        {
+            return "-";
+        }
+
+        return game.GameStartedAtUtc.ToLocalTime().ToString("yyyy/MM/dd");
+    }
+
+    private async Task OpenPublicProfileAsync(Guid userId)
+    {
+        currentView = HomeView.PublicProfile;
+
+        selectedPublicProfile = null;
+        publicProfileError = null;
+        isPublicProfileLoading = true;
+
+        try
+        {
+            selectedPublicProfile = await Profiles.GetPublicProfileAsync(userId);
+
+            if (selectedPublicProfile is null)
+            {
+                publicProfileError = "プロフィールが見つかりませんでした。";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Public profile load failed: {ex}");
+
+            publicProfileError = "プロフィールを読み込めませんでした。";
+        }
+        finally
+        {
+            isPublicProfileLoading = false;
+        }
+    }
+
+    private void BackToRanking()
+    {
+        currentView = HomeView.Ranking;
+    }
+
+    private static string FormatPublicGameStartedDate(DateTimeOffset? date)
+    {
+        if (date is null)
+        {
+            return "-";
+        }
+
+        return date.Value.ToLocalTime().ToString("yyyy/MM/dd");
+    }
+
+    private void OpenDeleteAccountConfirmation()
+    {
+        deleteAccountError = null;
+
+        showDeleteAccountConfirmation = true;
+    }
+
+    private void CloseDeleteAccountConfirmation()
+    {
+        if (isDeletingAccount)
+        {
+            return;
+        }
+
+        showDeleteAccountConfirmation = false;
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        if (currentUser is null || isDeletingAccount)
+        {
+            return;
+        }
+
+        isDeletingAccount = true;
+        deleteAccountError = null;
+
+        try
+        {
+            DeleteAccountResponse? result = await AuthService.DeleteAccountAsync();
+
+            if (result is null)
+            {
+                deleteAccountError = "アカウントを削除できませんでした。";
+
+                return;
+            }
+
+            //
+            // Serverの最終セーブを
+            // localStorageへ引き継ぐ
+            //
+            if (result.LatestSave is not null)
+            {
+                bool loaded = game.TryLoadSaveData(result.LatestSave);
+
+                if (!loaded)
+                {
+                    deleteAccountError = "セーブデータを読み込めませんでした。";
+
+                    return;
+                }
+
+                await SaveService.SaveAsync(result.LatestSave);
+            }
+            else
+            {
+                //
+                // 通常は発生しないが、
+                // Server Saveが無い場合の保険
+                //
+                SaveData localSave = game.CreateSaveData();
+
+                await SaveService.SaveAsync(localSave);
+            }
+
+            currentUser = null;
+            serverRevision = 0;
+            serverSaveReady = false;
+            pendingLocalSave = null;
+            conflictingServerSave = null;
+            showLocalSaveMigration = false;
+            showSaveConflict = false;
+            titleSettings = null;
+            selectedPublicProfile = null;
+            showDeleteAccountConfirmation = false;
+            loginUserName = string.Empty;
+            loginPin = string.Empty;
+            loginError = null;
+
+            loginMessage = "アカウントを削除しました。" + "ゲームはローカルデータで続けられます。";
+
+            currentView =
+                HomeView.Account;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Account delete failed: {ex}");
+
+            deleteAccountError = "アカウントを削除できませんでした。";
+        }
+        finally
+        {
+            isDeletingAccount = false;
+        }
+    }
+}
