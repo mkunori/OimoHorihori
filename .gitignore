@@ -4,3 +4,4 @@ publish/
 *.db
 *.db-shm
 *.db-wal
+*.tar.gz
