@@ -192,8 +192,8 @@ public static class AchievementCatalog
 
             new(
                 "oimo_complete",
-                "OIMO MASTER",
-                "図鑑20種類コンプリート",
+                "いも博士",
+                "図鑑20種類発見",
                 game => game.DiscoveredOimoSpeciesCount >= 20),
 
             new(
