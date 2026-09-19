@@ -1475,3 +1475,11 @@
     opacity: 0.45;
     cursor: default;
 }
+
+.loading-panel {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}

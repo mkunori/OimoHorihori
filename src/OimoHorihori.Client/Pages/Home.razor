@@ -33,7 +33,13 @@
     </header>
     @if (currentView == HomeView.Horihori)
     {
-        @if (!game.HasStarted)
+        @if (isInitializing)
+        {
+            <div class="loading-panel">
+                <div>セーブデータを読み込み中...</div>
+            </div>
+        }
+        else if (!game.HasStarted)
         {
             <section class="start-screen">
 
@@ -2063,6 +2069,7 @@
     private string? deleteAccountError;
     private bool showRetillConfirmation;
     private Farm? retillTargetFarm;
+    private bool isInitializing = true;
 
     private void SetPurchaseMode(PurchaseMode mode)
     {
@@ -2073,111 +2080,118 @@
     {
         try
         {
-            currentUser = await AuthService.GetCurrentUserAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Auth restore failed: {ex}");
-
-            currentUser = null;
-        }
-
-        SaveData? save = await SaveService.LoadAsync();
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-
-        if (save is not null)
-        {
-            int loadedVersion = save.Version;
-
-            // 現在のアプリより
-            // 新しいセーブは絶対に触らない
-            if (loadedVersion > GameConstants.SaveVersion)
+            try
             {
-                newerSaveVersion = loadedVersion;
+                currentUser = await AuthService.GetCurrentUserAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Auth restore failed: {ex}");
 
-                return;
+                currentUser = null;
             }
 
-            bool loaded = game.TryLoadSaveData(save);
-            if (!loaded)
-            {
-                await SaveService.DeleteAsync();
+            SaveData? save = await SaveService.LoadAsync();
+            DateTimeOffset now = DateTimeOffset.UtcNow;
 
-                Console.WriteLine(
-                $"Save load failed. Version={save.Version}");
-
-                // 開発中は絶対に削除しない
-                // await SaveService.DeleteAsync();
-            }
-            else
+            if (save is not null)
             {
-                // v1を読み込んだ場合は、
-                // GameState上ですでにv2へ移行済みなので
-                // v2形式で保存し直す
-                if (loadedVersion < GameConstants.SaveVersion)
+                int loadedVersion = save.Version;
+
+                // 現在のアプリより
+                // 新しいセーブは絶対に触らない
+                if (loadedVersion > GameConstants.SaveVersion)
                 {
-                    await SaveGameAsync();
+                    newerSaveVersion = loadedVersion;
+
+                    return;
                 }
 
-                double elapsedSeconds = (now - save.LastSaveTimeUtc).TotalSeconds;
-                if (elapsedSeconds > 0)
+                bool loaded = game.TryLoadSaveData(save);
+                if (!loaded)
                 {
-                    if (game.HasStarted)
+                    Console.WriteLine(
+                    $"Save load failed. Version={save.Version}");
+                }
+                else
+                {
+                    // v1を読み込んだ場合は、
+                    // GameState上ですでにv2へ移行済みなので
+                    // v2形式で保存し直す
+                    if (loadedVersion < GameConstants.SaveVersion)
                     {
-                        double cappedSeconds = Math.Min(elapsedSeconds, game.OfflineLimitSeconds);
-
-                        offlineReward = game.ProduceOffline(elapsedSeconds);
-                        offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
+                        await SaveGameAsync();
                     }
 
-                    if (game.GameStartedAtUtc != default)
+                    double elapsedSeconds = (now - save.LastSaveTimeUtc).TotalSeconds;
+                    if (elapsedSeconds > 0)
                     {
-                        IReadOnlyList<OimoSpeciesDefinition> discoveries = game.ProduceOfflineOimoDiscoveries(elapsedSeconds);
+                        if (game.HasStarted)
+                        {
+                            double cappedSeconds = Math.Min(elapsedSeconds, game.OfflineLimitSeconds);
 
-                        offlineOimoDiscoveries = discoveries.ToList();
+                            offlineReward = game.ProduceOffline(elapsedSeconds);
+                            offlineDuration = TimeSpan.FromSeconds(cappedSeconds);
+                        }
+
+                        if (game.GameStartedAtUtc != default)
+                        {
+                            IReadOnlyList<OimoSpeciesDefinition> discoveries = game.ProduceOfflineOimoDiscoveries(elapsedSeconds);
+
+                            offlineOimoDiscoveries = discoveries.ToList();
+                        }
+
+                        if (game.HasStarted || offlineOimoDiscoveries.Count > 0)
+                        {
+                            showOfflineResult = true;
+                        }
+
+                        await SaveGameAsync();
                     }
-
-                    if (game.HasStarted || offlineOimoDiscoveries.Count > 0)
-                    {
-                        showOfflineResult = true;
-                    }
-
-                    await SaveGameAsync();
                 }
             }
+
+            if (currentUser is not null && newerSaveVersion is null)
+            {
+                await InitializeServerSaveAsync();
+            }
+
+            lastUpdateTime = now;
+            lastAutoSaveTime = now;
+
+            visibilityReference = DotNetObjectReference.Create(this);
+
+            await JS.InvokeVoidAsync("oimoVisibility.register", visibilityReference);
+
+            timer = new PeriodicTimer(TimeSpan.FromMilliseconds(GameConstants.GameLoopIntervalMilliseconds));
+            _ = RunGameLoopAsync();
+            IReadOnlyList<AchievementDefinition> unlockedAchievements = game.CheckAchievements();
+
+            foreach (AchievementDefinition achievement in unlockedAchievements)
+            {
+                achievementNotificationQueue.Enqueue(achievement);
+            }
+
+            if (unlockedAchievements.Count > 0)
+            {
+                ShowNextAchievementNotification();
+
+                await SaveGameAsync();
+            }
         }
-
-        if (currentUser is not null && newerSaveVersion is null)
+        finally
         {
-            await InitializeServerSaveAsync();
-        }
-
-        lastUpdateTime = now;
-        lastAutoSaveTime = now;
-
-        visibilityReference = DotNetObjectReference.Create(this);
-
-        await JS.InvokeVoidAsync("oimoVisibility.register", visibilityReference);
-
-        timer = new PeriodicTimer(TimeSpan.FromMilliseconds(GameConstants.GameLoopIntervalMilliseconds));
-        _ = RunGameLoopAsync();
-        IReadOnlyList<AchievementDefinition> unlockedAchievements = game.CheckAchievements();
-
-        foreach (AchievementDefinition achievement in unlockedAchievements)
-        {
-            achievementNotificationQueue.Enqueue(achievement);
-        }
-
-        if (unlockedAchievements.Count > 0)
-        {
-            ShowNextAchievementNotification();
-
-            await SaveGameAsync();
+            isInitializing = false;
         }
     }
 
     private async Task StartGame()
     {
+        if (isInitializing)
+        {
+            return;
+        }
+
         DateTimeOffset now = DateTimeOffset.UtcNow;
         game.HasStarted = true;
 
@@ -3023,7 +3037,16 @@
 
                 currentUser = new CurrentUserResponse(result.UserId, result.UserName);
 
-                await InitializeServerSaveAsync();
+                isInitializing = true;
+
+                try
+                {
+                    await InitializeServerSaveAsync();
+                }
+                finally
+                {
+                    isInitializing = false;
+                }
 
                 loginMessage = $"{result.UserName} でログインしました。";
                 loginPin = string.Empty;
