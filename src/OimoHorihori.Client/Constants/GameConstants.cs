@@ -9,7 +9,7 @@ public static class GameConstants
     public const int GameLoopIntervalMilliseconds = 250;
     public const double ReplantBaseProduction = 10_000_000;
     public const double ProductionUpgradeBonusPerLevel = 0.005;
-    public const double DigUpgradeBonusPerLevel = 0.1;
+    public const double DigUpgradeBonusPerLevel = 0.5;
     public const double InitialOfflineLimitSeconds = 28_800;
     public const double OfflineUpgradeSecondsPerLevel = 1_800;
     public const double MaxOfflineLimitSeconds = 86_400;
