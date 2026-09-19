@@ -2102,6 +2102,12 @@
             if (!loaded)
             {
                 await SaveService.DeleteAsync();
+
+                Console.WriteLine(
+                $"Save load failed. Version={save.Version}");
+
+                // 開発中は絶対に削除しない
+                // await SaveService.DeleteAsync();
             }
             else
             {
@@ -3091,31 +3097,44 @@
 
                 if (!loaded)
                 {
+                    Console.WriteLine($"Server save load failed. Version={loadedVersion}");
+
                     return;
                 }
 
                 serverRevision = serverSave.Revision;
                 serverSaveReady = true;
 
+                // v1～v3を読み込んだ場合、
+                // GameState内ではすでにv4へ移行済み
                 if (loadedVersion < GameConstants.SaveVersion)
                 {
                     SaveData migratedSave = game.CreateSaveData();
+                    ServerSaveResult result = await ServerSave.SaveAsync(serverRevision, migratedSave);
 
-                    ServerSaveResult migrationResult = await ServerSave.SaveAsync(serverRevision, migratedSave);
-
-                    if (migrationResult.Success && migrationResult.Save is not null)
+                    if (result.Success && result.Save is not null)
                     {
-                        serverRevision = migrationResult.Save.Revision;
+                        serverRevision = result.Save.Revision;
 
-                        await SaveService.SaveAsync(migrationResult.Save.Save);
+                        await SaveService.SaveAsync(result.Save.Save);
 
                         return;
                     }
+
+                    if (result.Conflict && result.Save is not null)
+                    {
+                        conflictingServerSave = result.Save;
+                        showSaveConflict = true;
+
+                        return;
+                    }
+
+                    return;
                 }
 
-                // localStorageはキャッシュとして
-                // 最新状態にしておく
-                await SaveService.SaveAsync(serverSave.Save);
+                // もともとv4ならそのままキャッシュ
+                await SaveService.SaveAsync(
+                    serverSave.Save);
 
                 return;
             }

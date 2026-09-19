@@ -53,7 +53,7 @@ public class GameState
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; } = new();
     public double BaseProductionPerSecond => GameConstants.BaseProductionPerSecond + DigUpgradeLevel * GameConstants.DigUpgradeBonusPerLevel;
-    public double ProductionMultiplier => 0.02 + ProductionUpgradeLevel * GameConstants.ProductionUpgradeBonusPerLevel;
+    public double ProductionMultiplier => 1.0 + ProductionUpgradeLevel * GameConstants.ProductionUpgradeBonusPerLevel;
     public double ProductionUntilNextSeedPotato => Math.Max(0, NextSeedPotatoRequiredProduction - RunProducedPotato);
     public int ProductionUpgradeCost => GetUpgradeCost(ProductionUpgradeLevel);
     public int DigUpgradeCost => GetUpgradeCost(DigUpgradeLevel);
@@ -423,8 +423,6 @@ public class GameState
             farm.PurchaseCount = 0;
             farm.RetillCount = 0;
         }
-        RunProducedPotato = save.RunProducedPotato;
-        RunStartedAtUtc = save.RunStartedAtUtc;
         MaxRunProducedPotato = save.MaxRunProducedPotato;
         ReplantCount = save.ReplantCount;
         SeedPotato = save.SeedPotato;
@@ -512,7 +510,7 @@ public class GameState
         TotalSeedPotatoEarned = save.TotalSeedPotatoEarned;
         TotalSeedPotatoSpent = save.TotalSeedPotatoSpent;
         MaxSeedPotatoPerReplant = save.MaxSeedPotatoPerReplant;
-        ProductionUpgradeLevel = save.ProductionUpgradeLevel / 4;
+        ProductionUpgradeLevel = save.ProductionUpgradeLevel;
         DigUpgradeLevel = save.DigUpgradeLevel;
         OfflineUpgradeLevel = save.OfflineUpgradeLevel;
         FieldEfficiencyUpgradeLevel = save.FieldEfficiencyUpgradeLevel;
