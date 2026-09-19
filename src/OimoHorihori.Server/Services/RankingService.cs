@@ -30,9 +30,9 @@ public class RankingService
         }
 
         record.UserName = user.UserName;
-        record.TotalPotato = save.TotalPotato;
-        record.BestProductionPerSecond = save.BestProductionPerSecond;
-        record.ReplantCount = save.ReplantCount;
+        record.TotalPotato = Math.Max(record.TotalPotato, save.TotalPotato);
+        record.BestProductionPerSecond = Math.Max(record.BestProductionPerSecond, save.BestProductionPerSecond);
+        record.ReplantCount = Math.Max(record.ReplantCount, save.ReplantCount);
         record.UpdatedAtUtc = DateTimeOffset.UtcNow;
     }
 

@@ -6,10 +6,16 @@ public class Farm
 {
     public string Name { get; }
     public int Level { get; set; }
+    public int PurchaseCount { get; set; }
+    public int RetillCount { get; set; }
     public double BaseCost { get; }
     public double ProductionPerLevel { get; }
-    public double NextCost => GetCostAtLevel(Level);
-    public double ProductionPerSecond => ProductionPerLevel * Level;
+    public int MaxLevel => GameConstants.InitialFarmMaxLevel + RetillCount * GameConstants.RetillLevelCapBonus;
+    public bool IsMaxLevel => Level >= MaxLevel;
+    public bool IsRetillMax => RetillCount >= GameConstants.RetillMaxCount;
+    public bool CanRetill => !IsRetillMax && Level >= MaxLevel;
+    public double RetillMultiplier => Math.Pow(GameConstants.RetillProductionMultiplier, RetillCount);
+    public double ProductionPerSecond => ProductionPerLevel * Level * RetillMultiplier;
 
     public Farm(string name, double baseCost, double productionPerLevel)
     {
@@ -18,15 +24,15 @@ public class Farm
         ProductionPerLevel = productionPerLevel;
     }
 
-    public double GetCostAtLevel(int level)
+    public double GetCostAtPurchaseCount(int purchaseCount, double costMultiplier = 1.0)
     {
-        double cost = BaseCost * Math.Pow(GameConstants.FarmCostMultiplier, level);
+        double rawCost = BaseCost * Math.Pow(GameConstants.FarmCostMultiplier, purchaseCount);
+        double finalCost = rawCost * costMultiplier;
 
-        return Math.Ceiling(cost);
+        return Math.Ceiling(finalCost);
     }
 
-
-    public double GetCostForLevels(int levels)
+    public double GetCostForLevels(int levels, double costMultiplier = 1.0)
     {
         if (levels <= 0)
         {
@@ -34,15 +40,18 @@ public class Farm
         }
 
         double totalCost = 0;
+
         for (int i = 0; i < levels; i++)
         {
-            double cost = GetCostAtLevel(Level + i);
+            double cost = GetCostAtPurchaseCount(PurchaseCount + i, costMultiplier);
+
             if (!double.IsFinite(cost))
             {
                 return double.PositiveInfinity;
             }
 
             totalCost += cost;
+
             if (!double.IsFinite(totalCost))
             {
                 return double.PositiveInfinity;
@@ -52,19 +61,28 @@ public class Farm
         return totalCost;
     }
 
-    public int GetAffordableLevels(double potato, int maxLevels)
+    public int GetAffordableLevels(double potato, int maxLevels, double costMultiplier = 1.0)
     {
         if (!double.IsFinite(potato) || potato < 0 || maxLevels <= 0)
         {
             return 0;
         }
 
+        int remainingLevels = MaxLevel - Level;
+        if (remainingLevels <= 0)
+        {
+            return 0;
+        }
+
+        int purchaseLimit = Math.Min(maxLevels, remainingLevels);
+
         double remaining = potato;
         int affordableLevels = 0;
 
-        while (affordableLevels < maxLevels)
+        while (affordableLevels < purchaseLimit)
         {
-            double cost = GetCostAtLevel(Level + affordableLevels);
+            double cost = GetCostAtPurchaseCount(PurchaseCount + affordableLevels, costMultiplier);
+
             if (!double.IsFinite(cost) || remaining < cost)
             {
                 break;
@@ -75,5 +93,23 @@ public class Farm
         }
 
         return affordableLevels;
+    }
+
+    public bool TryRetill()
+    {
+        if (!CanRetill)
+        {
+            return false;
+        }
+
+        Level = 0;
+        RetillCount++;
+
+        return true;
+    }
+
+    public double GetNextCost(double costMultiplier = 1.0)
+    {
+        return GetCostAtPurchaseCount(PurchaseCount, costMultiplier);
     }
 }

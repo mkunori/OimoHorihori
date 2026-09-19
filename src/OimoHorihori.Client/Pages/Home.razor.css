@@ -43,7 +43,8 @@
 
     font-size: 1.3rem;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .start-screen {
@@ -68,7 +69,8 @@
     font-size: 1.35rem;
     font-weight: bold;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .status-panel {
@@ -103,7 +105,8 @@
     font-size: 0.9rem;
     font-weight: 700;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .purchase-mode-button.selected {
@@ -159,7 +162,8 @@
 
     text-align: left;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 
     transition:
         transform 0.05s ease,
@@ -293,7 +297,8 @@
 
     background: #fffaf0;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .close-button {
@@ -333,6 +338,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+
+    margin-bottom: 80px;
 }
 
 .debug-title {
@@ -352,7 +359,8 @@
 
     background: #eee;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .farm-purchase-level {
@@ -375,7 +383,8 @@
 
     text-align: left;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 
     transition:
         transform 0.05s ease,
@@ -495,7 +504,8 @@
 
     font-size: 0.95rem;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .menu-item:disabled {
@@ -540,7 +550,8 @@
 
     text-align: left;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .upgrade-card:not(:disabled):active {
@@ -611,7 +622,8 @@
 
     font-size: 1.6rem;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .bottom-nav {
@@ -651,7 +663,8 @@
 
     opacity: 0.55;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .bottom-nav-button.selected {
@@ -963,7 +976,8 @@
 
     font-weight: 700;
 
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .share-result {
@@ -1260,7 +1274,8 @@
     border-radius: 6px;
     background: transparent;
     font-size: 0.75rem;
-    cursor: pointer;
+    cursor: default;
+    ;
 }
 
 .ranking-tab.active {
@@ -1386,7 +1401,8 @@
     color: inherit;
     font: inherit;
     text-align: left;
-    cursor: pointer;
+    cursor: default;
+    ;
 
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1404,4 +1420,58 @@
 
 .account-delete-button {
     width: 100%;
+}
+
+.farm-retill-info {
+    display: flex;
+    justify-content: space-between;
+
+    margin-top: 6px;
+
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.retill-ready {
+    margin-top: 10px;
+
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.farm-buy-button,
+.retill-button {
+    width: 100%;
+
+    margin-top: 10px;
+    padding: 9px 12px;
+
+    border: 1px solid #a99170;
+    border-radius: 8px;
+
+    background: #fff3d6;
+    color: #35281f;
+}
+
+.farm-complete {
+    margin-top: 10px;
+
+    text-align: center;
+    font-weight: 700;
+}
+
+.farm-buy-button:disabled {
+    opacity: 0.4;
+    filter: grayscale(1);
+    cursor: default;
+}
+
+.farm-card.unavailable {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+}
+
+.farm-buy-button:disabled {
+    opacity: 0.45;
+    cursor: default;
 }

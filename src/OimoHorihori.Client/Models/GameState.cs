@@ -19,6 +19,8 @@ public class GameState
     public int ProductionUpgradeLevel { get; set; }
     public int DigUpgradeLevel { get; set; }
     public int OfflineUpgradeLevel { get; set; }
+    public int FieldEfficiencyUpgradeLevel { get; set; }
+    public int FieldCostReductionUpgradeLevel { get; set; }
     public double TotalConsumedPotato { get; set; }
     public double BestProductionPerSecond { get; set; }
     public int Farm1TotalPurchases { get; set; }
@@ -38,21 +40,29 @@ public class GameState
     public Dictionary<string, DateTimeOffset> AchievementUnlockedAtUtc { get; } = new();
     public Dictionary<string, int> OimoDiscoveryCounts { get; } = new();
     public List<Farm> Farms { get; } = new()
-        {
-            new Farm("畑1",      10,  0.1),
-            new Farm("畑2",  20_000,  5),
-            new Farm("畑3", 750_000, 50)
-        };
+    {
+        new Farm("畑1", 1.000e1,  1.000e-1),
+        new Farm("畑2", 2.000e3,  1.000e1),
+        new Farm("畑3", 4.000e5,  1.000e3),
+        new Farm("畑4", 8.000e7,  1.000e5),
+        new Farm("畑5", 1.600e10, 1.000e7),
+        new Farm("畑6", 3.200e12, 1.000e9),
+        new Farm("畑7", 6.400e14, 1.000e11),
+        new Farm("畑8", 1.280e17, 1.000e13)
+    };
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; } = new();
     public double BaseProductionPerSecond => GameConstants.BaseProductionPerSecond + DigUpgradeLevel * GameConstants.DigUpgradeBonusPerLevel;
-
-    public double ProductionMultiplier => 1.0 + ProductionUpgradeLevel * GameConstants.ProductionUpgradeBonusPerLevel;
+    public double ProductionMultiplier => 0.02 + ProductionUpgradeLevel * GameConstants.ProductionUpgradeBonusPerLevel;
     public double ProductionUntilNextSeedPotato => Math.Max(0, NextSeedPotatoRequiredProduction - RunProducedPotato);
     public int ProductionUpgradeCost => GetUpgradeCost(ProductionUpgradeLevel);
     public int DigUpgradeCost => GetUpgradeCost(DigUpgradeLevel);
     public int OfflineUpgradeCost => GetUpgradeCost(OfflineUpgradeLevel);
     public bool IsOfflineUpgradeMax => OfflineUpgradeLevel >= GameConstants.OfflineUpgradeMaxLevel;
+    public double FieldEfficiencyMultiplier => 1.0 + FieldEfficiencyUpgradeLevel * GameConstants.FieldEfficiencyBonusPerLevel;
+    public int FieldEfficiencyUpgradeCost => GetUpgradeCost(FieldEfficiencyUpgradeLevel);
+    public int FieldCostReductionUpgradeCost => GetUpgradeCost(FieldCostReductionUpgradeLevel);
+    public bool IsFieldCostReductionUpgradeMax => FieldCostReductionUpgradeLevel >= GameConstants.FieldCostReductionMaxLevel;
 
     public double ProductionPerSecond
     {
@@ -61,7 +71,7 @@ public class GameState
             double total = BaseProductionPerSecond;
             foreach (Farm farm in Farms)
             {
-                total += farm.ProductionPerSecond;
+                total += farm.ProductionPerSecond * FieldEfficiencyMultiplier;
             }
 
             return total * ProductionMultiplier;
@@ -70,13 +80,13 @@ public class GameState
 
     public int BuyFarm(Farm farm, int maxLevels)
     {
-        int levels = farm.GetAffordableLevels(Potato, maxLevels);
+        int levels = farm.GetAffordableLevels(Potato, maxLevels, FieldCostMultiplier);
         if (levels <= 0)
         {
             return 0;
         }
 
-        double cost = farm.GetCostForLevels(levels);
+        double cost = farm.GetCostForLevels(levels, FieldCostMultiplier);
         if (!double.IsFinite(cost) || cost > Potato)
         {
             return 0;
@@ -85,7 +95,10 @@ public class GameState
         Potato -= cost;
         TotalConsumedPotato += cost;
         farm.Level += levels;
+        farm.PurchaseCount += levels;
+
         UpdateFarmStatistics(farm, levels);
+
         BestProductionPerSecond = Math.Max(BestProductionPerSecond, ProductionPerSecond);
 
         return levels;
@@ -158,9 +171,14 @@ public class GameState
             HasStarted = HasStarted,
             Potato = Potato,
             TotalPotato = TotalPotato,
-            Farm1Level = Farms[0].Level,
-            Farm2Level = Farms[1].Level,
-            Farm3Level = Farms[2].Level,
+            Farms = Farms
+            .Select(farm => new FarmSaveData
+            {
+                Level = farm.Level,
+                PurchaseCount = farm.PurchaseCount,
+                RetillCount = farm.RetillCount
+            })
+            .ToList(),
             RunProducedPotato = RunProducedPotato,
             RunStartedAtUtc = RunStartedAtUtc,
             MaxRunProducedPotato = MaxRunProducedPotato,
@@ -199,6 +217,8 @@ public class GameState
                 RunProducedPotato = entry.RunProducedPotato,
                 EarnedSeedPotato = entry.EarnedSeedPotato
             }).ToList(),
+            FieldEfficiencyUpgradeLevel = FieldEfficiencyUpgradeLevel,
+            FieldCostReductionUpgradeLevel = FieldCostReductionUpgradeLevel,
         };
     }
 
@@ -209,6 +229,7 @@ public class GameState
             1 => TryLoadVersion1(save),
             2 => TryLoadVersion2(save),
             3 => TryLoadVersion3(save),
+            4 => TryLoadVersion4(save),
             _ => false
         };
     }
@@ -227,6 +248,19 @@ public class GameState
         Farms[0].Level = save.Farm1Level;
         Farms[1].Level = save.Farm2Level;
         Farms[2].Level = save.Farm3Level;
+        Farms[3].Level = 0;
+        Farms[4].Level = 0;
+        Farms[5].Level = 0;
+        Farms[6].Level = 0;
+        Farms[7].Level = 0;
+        Farms[0].PurchaseCount = Farms[0].Level;
+        Farms[1].PurchaseCount = Farms[1].Level;
+        Farms[2].PurchaseCount = Farms[2].Level;
+        Farms[3].PurchaseCount = 0;
+        Farms[4].PurchaseCount = 0;
+        Farms[5].PurchaseCount = 0;
+        Farms[6].PurchaseCount = 0;
+        Farms[7].PurchaseCount = 0;
         RunProducedPotato = save.TotalPotato;
         MaxRunProducedPotato = save.TotalPotato;
         RunStartedAtUtc = migrationTime;
@@ -235,9 +269,9 @@ public class GameState
         TotalSeedPotatoEarned = 0;
         TotalSeedPotatoSpent = 0;
         MaxSeedPotatoPerReplant = 0;
-        ProductionUpgradeLevel = 0;
+        ProductionUpgradeLevel = (int)Math.Round(save.ProductionUpgradeLevel / 4.0, MidpointRounding.AwayFromZero);
         DigUpgradeLevel = 0;
-        OfflineUpgradeLevel = 0;
+        OfflineUpgradeLevel = Math.Min(GameConstants.OfflineUpgradeMaxLevel, (int)Math.Round(save.OfflineUpgradeLevel / 2.0, MidpointRounding.AwayFromZero));
         TotalConsumedPotato = Math.Max(0, save.TotalPotato - save.Potato);
         Farm1TotalPurchases = save.Farm1Level;
         Farm2TotalPurchases = save.Farm2Level;
@@ -251,6 +285,8 @@ public class GameState
         GameStartedAtUtc = migrationTime;
         TotalPlayTimeSeconds = 0;
         BestProductionPerSecond = ProductionPerSecond;
+        FieldEfficiencyUpgradeLevel = 0;
+        FieldCostReductionUpgradeLevel = 0;
 
         return true;
     }
@@ -268,6 +304,19 @@ public class GameState
         Farms[0].Level = save.Farm1Level;
         Farms[1].Level = save.Farm2Level;
         Farms[2].Level = save.Farm3Level;
+        Farms[3].Level = 0;
+        Farms[4].Level = 0;
+        Farms[5].Level = 0;
+        Farms[6].Level = 0;
+        Farms[7].Level = 0;
+        Farms[0].PurchaseCount = Farms[0].Level;
+        Farms[1].PurchaseCount = Farms[1].Level;
+        Farms[2].PurchaseCount = Farms[2].Level;
+        Farms[3].PurchaseCount = 0;
+        Farms[4].PurchaseCount = 0;
+        Farms[5].PurchaseCount = 0;
+        Farms[6].PurchaseCount = 0;
+        Farms[7].PurchaseCount = 0;
         RunProducedPotato = save.RunProducedPotato;
         RunStartedAtUtc = save.RunStartedAtUtc;
         MaxRunProducedPotato = save.MaxRunProducedPotato;
@@ -276,9 +325,9 @@ public class GameState
         TotalSeedPotatoEarned = save.TotalSeedPotatoEarned;
         TotalSeedPotatoSpent = save.TotalSeedPotatoSpent;
         MaxSeedPotatoPerReplant = save.MaxSeedPotatoPerReplant;
-        ProductionUpgradeLevel = save.ProductionUpgradeLevel;
+        ProductionUpgradeLevel = (int)Math.Round(save.ProductionUpgradeLevel / 4.0, MidpointRounding.AwayFromZero);
         DigUpgradeLevel = save.DigUpgradeLevel;
-        OfflineUpgradeLevel = save.OfflineUpgradeLevel;
+        OfflineUpgradeLevel = Math.Min(GameConstants.OfflineUpgradeMaxLevel, (int)Math.Round(save.OfflineUpgradeLevel / 2.0, MidpointRounding.AwayFromZero));
         TotalConsumedPotato = save.TotalConsumedPotato;
         BestProductionPerSecond = save.BestProductionPerSecond;
         Farm1TotalPurchases = save.Farm1TotalPurchases;
@@ -320,6 +369,8 @@ public class GameState
         HasUsedTenPurchaseMode = save.HasUsedTenPurchaseMode;
         HasUsedMaxPurchaseMode = save.HasUsedMaxPurchaseMode;
         ShortestReplantSeconds = 0;
+        FieldEfficiencyUpgradeLevel = 0;
+        FieldCostReductionUpgradeLevel = 0;
 
         ReplantHistory.Clear();
 
@@ -361,12 +412,17 @@ public class GameState
             }
         }
 
-        HasStarted = save.HasStarted;
-        Potato = save.Potato;
         TotalPotato = save.TotalPotato;
-        Farms[0].Level = save.Farm1Level;
-        Farms[1].Level = save.Farm2Level;
-        Farms[2].Level = save.Farm3Level;
+        HasStarted = false;
+        Potato = 0;
+        RunProducedPotato = 0;
+        RunStartedAtUtc = default;
+        foreach (Farm farm in Farms)
+        {
+            farm.Level = 0;
+            farm.PurchaseCount = 0;
+            farm.RetillCount = 0;
+        }
         RunProducedPotato = save.RunProducedPotato;
         RunStartedAtUtc = save.RunStartedAtUtc;
         MaxRunProducedPotato = save.MaxRunProducedPotato;
@@ -375,9 +431,9 @@ public class GameState
         TotalSeedPotatoEarned = save.TotalSeedPotatoEarned;
         TotalSeedPotatoSpent = save.TotalSeedPotatoSpent;
         MaxSeedPotatoPerReplant = save.MaxSeedPotatoPerReplant;
-        ProductionUpgradeLevel = save.ProductionUpgradeLevel;
+        ProductionUpgradeLevel = (int)Math.Round(save.ProductionUpgradeLevel / 4.0, MidpointRounding.AwayFromZero);
         DigUpgradeLevel = save.DigUpgradeLevel;
-        OfflineUpgradeLevel = save.OfflineUpgradeLevel;
+        OfflineUpgradeLevel = Math.Min(GameConstants.OfflineUpgradeMaxLevel, (int)Math.Round(save.OfflineUpgradeLevel / 2.0, MidpointRounding.AwayFromZero));
         TotalConsumedPotato = save.TotalConsumedPotato;
         BestProductionPerSecond = save.BestProductionPerSecond;
         Farm1TotalPurchases = save.Farm1TotalPurchases;
@@ -419,6 +475,89 @@ public class GameState
         HasUsedTenPurchaseMode = save.HasUsedTenPurchaseMode;
         HasUsedMaxPurchaseMode = save.HasUsedMaxPurchaseMode;
         ShortestReplantSeconds = save.ShortestReplantSeconds;
+        FieldEfficiencyUpgradeLevel = 0;
+        FieldCostReductionUpgradeLevel = 0;
+
+        ReplantHistory.Clear();
+
+        foreach (ReplantHistoryEntry entry in save.ReplantHistory)
+        {
+            ReplantHistory.Add(new ReplantHistoryEntry
+            {
+                ReplantedAtUtc = entry.ReplantedAtUtc,
+                RunDurationSeconds = entry.RunDurationSeconds,
+                RunProducedPotato = entry.RunProducedPotato,
+                EarnedSeedPotato = entry.EarnedSeedPotato
+            });
+        }
+
+        return true;
+    }
+
+    private bool TryLoadVersion4(SaveData save)
+    {
+        if (!IsValidVersion4SaveData(save))
+        {
+            return false;
+        }
+
+        HasStarted = save.HasStarted;
+        Potato = save.Potato;
+        TotalPotato = save.TotalPotato;
+        RunProducedPotato = save.RunProducedPotato;
+        RunStartedAtUtc = save.RunStartedAtUtc;
+        MaxRunProducedPotato = save.MaxRunProducedPotato;
+        ReplantCount = save.ReplantCount;
+        SeedPotato = save.SeedPotato;
+        TotalSeedPotatoEarned = save.TotalSeedPotatoEarned;
+        TotalSeedPotatoSpent = save.TotalSeedPotatoSpent;
+        MaxSeedPotatoPerReplant = save.MaxSeedPotatoPerReplant;
+        ProductionUpgradeLevel = save.ProductionUpgradeLevel / 4;
+        DigUpgradeLevel = save.DigUpgradeLevel;
+        OfflineUpgradeLevel = save.OfflineUpgradeLevel;
+        FieldEfficiencyUpgradeLevel = save.FieldEfficiencyUpgradeLevel;
+        FieldCostReductionUpgradeLevel = save.FieldCostReductionUpgradeLevel;
+        for (int i = 0; i < Farms.Count; i++)
+        {
+            FarmSaveData savedFarm = save.Farms[i];
+            Farms[i].Level = savedFarm.Level;
+            Farms[i].PurchaseCount = savedFarm.PurchaseCount;
+            Farms[i].RetillCount = savedFarm.RetillCount;
+        }
+        TotalConsumedPotato = save.TotalConsumedPotato;
+        BestProductionPerSecond = save.BestProductionPerSecond;
+        Farm1TotalPurchases = save.Farm1TotalPurchases;
+        Farm2TotalPurchases = save.Farm2TotalPurchases;
+        Farm3TotalPurchases = save.Farm3TotalPurchases;
+        Farm1BestLevel = save.Farm1BestLevel;
+        Farm2BestLevel = save.Farm2BestLevel;
+        Farm3BestLevel = save.Farm3BestLevel;
+        TotalOfflineProducedPotato = save.TotalOfflineProducedPotato;
+        MaxOfflineProducedPotato = save.MaxOfflineProducedPotato;
+        DigButtonCount = save.DigButtonCount;
+        GameStartedAtUtc = save.GameStartedAtUtc;
+        TotalPlayTimeSeconds = save.TotalPlayTimeSeconds;
+        OimoDiscoveryElapsedSeconds = save.OimoDiscoveryElapsedSeconds;
+        HasUsedTenPurchaseMode = save.HasUsedTenPurchaseMode;
+        HasUsedMaxPurchaseMode = save.HasUsedMaxPurchaseMode;
+        ShortestReplantSeconds = save.ShortestReplantSeconds;
+
+        AchievementUnlockedAtUtc.Clear();
+
+        foreach (var pair in save.AchievementUnlockedAtUtc)
+        {
+            AchievementUnlockedAtUtc[pair.Key] = pair.Value;
+        }
+
+        OimoDiscoveryCounts.Clear();
+
+        foreach (var pair in save.OimoDiscoveryCounts)
+        {
+            if (pair.Value > 0)
+            {
+                OimoDiscoveryCounts[pair.Key] = pair.Value;
+            }
+        }
 
         ReplantHistory.Clear();
 
@@ -520,7 +659,6 @@ public class GameState
     public int Replant()
     {
         int earnedSeedPotato = ReplantSeedPotato;
-
         if (earnedSeedPotato <= 0)
         {
             return 0;
@@ -536,6 +674,7 @@ public class GameState
         }
 
         double runProducedPotato = RunProducedPotato;
+
         if (runDurationSeconds > 0)
         {
             if (ShortestReplantSeconds <= 0 || runDurationSeconds < ShortestReplantSeconds)
@@ -543,13 +682,16 @@ public class GameState
                 ShortestReplantSeconds = runDurationSeconds;
             }
         }
-        ReplantHistory.Insert(0, new ReplantHistoryEntry
-        {
-            ReplantedAtUtc = replantedAtUtc,
-            RunDurationSeconds = runDurationSeconds,
-            RunProducedPotato = runProducedPotato,
-            EarnedSeedPotato = earnedSeedPotato
-        });
+
+        ReplantHistory.Insert(
+            0,
+            new ReplantHistoryEntry
+            {
+                ReplantedAtUtc = replantedAtUtc,
+                RunDurationSeconds = runDurationSeconds,
+                RunProducedPotato = runProducedPotato,
+                EarnedSeedPotato = earnedSeedPotato
+            });
 
         if (ReplantHistory.Count > 10)
         {
@@ -561,9 +703,14 @@ public class GameState
         MaxSeedPotatoPerReplant = Math.Max(MaxSeedPotatoPerReplant, earnedSeedPotato);
         ReplantCount++;
         Potato = 0;
-        Farms[0].Level = 0;
-        Farms[1].Level = 0;
-        Farms[2].Level = 0;
+
+        foreach (Farm farm in Farms)
+        {
+            farm.Level = 0;
+            farm.PurchaseCount = 0;
+            farm.RetillCount = 0;
+        }
+
         RunProducedPotato = 0;
         RunStartedAtUtc = default;
         HasStarted = false;
@@ -798,5 +945,135 @@ public class GameState
 
         return AdvanceOimoDiscovery(
             cappedSeconds);
+    }
+
+    public bool RetillFarm(Farm farm)
+    {
+        bool retilled = farm.TryRetill();
+
+        if (!retilled)
+        {
+            return false;
+        }
+
+        BestProductionPerSecond = Math.Max(BestProductionPerSecond, ProductionPerSecond);
+
+        return true;
+    }
+
+    public double GetFarmProductionPerSecond(
+    Farm farm)
+    {
+        return farm.ProductionPerSecond * FieldEfficiencyMultiplier;
+    }
+
+    public bool BuyFieldEfficiencyUpgrade()
+    {
+        int cost = FieldEfficiencyUpgradeCost;
+        if (!TrySpendSeedPotato(cost))
+        {
+            return false;
+        }
+
+        FieldEfficiencyUpgradeLevel++;
+        BestProductionPerSecond = Math.Max(BestProductionPerSecond, ProductionPerSecond);
+
+        return true;
+    }
+
+    public bool BuyFieldCostReductionUpgrade()
+    {
+        if (IsFieldCostReductionUpgradeMax)
+        {
+            return false;
+        }
+
+        int cost = FieldCostReductionUpgradeCost;
+        if (!TrySpendSeedPotato(cost))
+        {
+            return false;
+        }
+
+        FieldCostReductionUpgradeLevel++;
+
+        return true;
+    }
+
+    public double FieldCostMultiplier
+    {
+        get
+        {
+            double reduction = FieldCostReductionUpgradeLevel * GameConstants.FieldCostReductionPerLevel;
+
+            reduction = Math.Min(reduction, 0.10);
+
+            return 1.0 - reduction;
+        }
+    }
+
+    private static bool IsValidVersion4SaveData(SaveData save)
+    {
+        if (!double.IsFinite(save.Potato) || save.Potato < 0)
+        {
+            return false;
+        }
+
+        if (!double.IsFinite(save.TotalPotato) || save.TotalPotato < 0)
+        {
+            return false;
+        }
+
+        if (!double.IsFinite(save.RunProducedPotato) || save.RunProducedPotato < 0)
+        {
+            return false;
+        }
+
+        if (save.ReplantCount < 0 || save.SeedPotato < 0 || save.TotalSeedPotatoEarned < 0 || save.TotalSeedPotatoSpent < 0)
+        {
+            return false;
+        }
+
+        if (save.ProductionUpgradeLevel < 0 || save.DigUpgradeLevel < 0 || save.OfflineUpgradeLevel < 0 || save.FieldEfficiencyUpgradeLevel < 0 || save.FieldCostReductionUpgradeLevel < 0)
+        {
+            return false;
+        }
+
+        if (save.OfflineUpgradeLevel > GameConstants.OfflineUpgradeMaxLevel)
+        {
+            return false;
+        }
+
+        if (save.FieldCostReductionUpgradeLevel > GameConstants.FieldCostReductionMaxLevel)
+        {
+            return false;
+        }
+
+        if (save.Farms is null || save.Farms.Count != 8)
+        {
+            return false;
+        }
+
+        foreach (FarmSaveData farm in save.Farms)
+        {
+            if (farm.RetillCount < 0 || farm.RetillCount > GameConstants.RetillMaxCount)
+            {
+                return false;
+            }
+
+            int maxLevel = GameConstants.InitialFarmMaxLevel + farm.RetillCount * GameConstants.RetillLevelCapBonus;
+
+            if (farm.Level < 0
+                || farm.Level > maxLevel)
+            {
+                return false;
+            }
+
+            if (farm.PurchaseCount < 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

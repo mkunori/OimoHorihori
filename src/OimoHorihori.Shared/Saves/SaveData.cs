@@ -2,7 +2,7 @@ namespace OimoHorihori.Shared.Saves;
 
 public class SaveData
 {
-    public int Version { get; set; } = 3;
+    public int Version { get; set; } = 4;
     public bool HasStarted { get; set; }
     public double Potato { get; set; }
     public double TotalPotato { get; set; }
@@ -41,4 +41,7 @@ public class SaveData
     public bool HasUsedMaxPurchaseMode { get; set; }
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; set; } = new();
+    public List<FarmSaveData> Farms { get; set; } = new();
+    public int FieldEfficiencyUpgradeLevel { get; set; }
+    public int FieldCostReductionUpgradeLevel { get; set; }
 }

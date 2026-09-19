@@ -88,18 +88,11 @@
 
                 @foreach (Farm farm in game.Farms)
                 {
-                    int purchaseLevels =
-                        GetAffordablePurchaseLevels(
-                            farm);
+                    int purchaseLevels = GetAffordablePurchaseLevels(farm);
+                    bool canBuy = purchaseLevels > 0;
+                    double purchaseCost = GetPurchaseDisplayCost(farm);
 
-                    bool canBuy =
-                        purchaseLevels > 0;
-
-                    double purchaseCost =
-                        GetPurchaseDisplayCost(
-                            farm);
-
-                    <button class="farm-card" disabled="@(!canBuy)" @onclick="() => BuyFarm(farm)">
+                    <div class="farm-card @(canBuy || farm.CanRetill ? "" : "unavailable")">
 
                         <div class="farm-header">
 
@@ -108,28 +101,69 @@
                             </span>
 
                             <span class="farm-level">
-                                Lv. @farm.Level
+                                Lv. @farm.Level / @farm.MaxLevel
                             </span>
 
                         </div>
 
+                        <div class="farm-retill-info">
+                            @if (farm.IsRetillMax)
+                            {
+                                <span>
+                                    RETILL MAX
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    RETILL @farm.RetillCount / @GameConstants.RetillMaxCount
+                                </span>
+                            }
+
+                            <span>
+                                ×@farm.RetillMultiplier.ToString("0.000")
+                            </span>
+                        </div>
+
                         <div class="farm-production">
-                            +@NumberFormatter.Format(farm.ProductionPerSecond)
+                            +@NumberFormatter.Format(game.GetFarmProductionPerSecond(farm))
                             / sec
                         </div>
 
-                        <div class="farm-purchase-level">
-                            @GetPurchaseLevelText(farm)
-                        </div>
+                        @if (farm.CanRetill)
+                        {
+                            <div class="retill-ready">
+                                RETILL READY
+                            </div>
 
-                        <div class="farm-cost">
-                            COST
-                            @NumberFormatter.Format(
-                                purchaseCost)
-                            芋
-                        </div>
+                            <button class="retill-button" @onclick="() => OpenRetillConfirmation(farm)">
+                                RETILL
+                            </button>
+                        }
+                        else if (farm.IsRetillMax && farm.IsMaxLevel)
+                        {
+                            <div class="farm-complete">
+                                MAX
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="farm-purchase-level">
+                                @GetPurchaseLevelText(farm)
+                            </div>
 
-                    </button>
+                            <div class="farm-cost">
+                                COST
+                                @NumberFormatter.Format(purchaseCost)
+                                芋
+                            </div>
+
+                            <button class="farm-buy-button" disabled="@(!canBuy)" @onclick="() => BuyFarm(farm)">
+                                購入
+                            </button>
+                        }
+
+                    </div>
                 }
 
                 <button class="replant-card" @onclick="OpenReplant">
@@ -284,7 +318,7 @@
 
                     <div class="upgrade-effect">
                         全生産
-                        +@((game.ProductionUpgradeLevel * 0.5).ToString("0.0"))%
+                        +@((game.ProductionUpgradeLevel * 2.0).ToString("0"))%
                     </div>
 
                     <div class="upgrade-cost">
@@ -354,6 +388,73 @@
                             <span>
                                 NEXT
                                 @game.OfflineUpgradeCost
+                                種芋
+                            </span>
+                        }
+
+                    </div>
+
+                </button>
+
+                <button class="upgrade-card" disabled="@(game.SeedPotato < game.FieldEfficiencyUpgradeCost)"
+                        @onclick="BuyFieldEfficiencyUpgradeAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            畑効率強化
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.FieldEfficiencyUpgradeLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+                        全畑生産
+                        +@((game.FieldEfficiencyUpgradeLevel * 2.0).ToString("0"))%
+                    </div>
+
+                    <div class="upgrade-cost">
+                        NEXT
+                        @game.FieldEfficiencyUpgradeCost
+                        種芋
+                    </div>
+
+                </button>
+
+                <button class="upgrade-card" disabled="@(!CanBuyFieldCostReductionUpgrade())"
+                        @onclick="BuyFieldCostReductionUpgradeAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            畑コスト軽減
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.FieldCostReductionUpgradeLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+                        畑価格
+                        -@((game.FieldCostReductionUpgradeLevel * 0.25).ToString("0.00"))%
+                    </div>
+
+                    <div class="upgrade-cost">
+
+                        @if (game.IsFieldCostReductionUpgradeMax)
+                        {
+                            <span>MAX</span>
+                        }
+                        else
+                        {
+                            <span>
+                                NEXT
+                                @game.FieldCostReductionUpgradeCost
                                 種芋
                             </span>
                         }
@@ -1493,12 +1594,12 @@
             DEBUG
         </div>
 
-        <button @onclick="() => DebugAddPotatoAsync(1_000)">
-            +1.000e+3 芋
-        </button>
-
         <button @onclick="() => DebugAddPotatoAsync(1_000_000)">
             +1.000e+6 芋
+        </button>
+
+        <button @onclick="() => DebugAddPotatoAsync(5.000e19)">
+            +5.000e+19 芋
         </button>
 
         <button @onclick="() => DebugOfflineAsync(3_600)">
@@ -1523,6 +1624,14 @@
 
         <button @onclick="DebugBuyOfflineUpgradeAsync">
             放置強化
+        </button>
+
+        <button @onclick="DebugBuyFieldEfficiencyUpgradeAsync">
+            畑効率強化
+        </button>
+
+        <button @onclick="DebugBuyFieldCostReductionUpgradeAsync">
+            畑コスト軽減
         </button>
 
     </section>
@@ -1680,6 +1789,62 @@
     </div>
 }
 
+@if (showRetillConfirmation && retillTargetFarm is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                RETILL
+            </h2>
+
+            <p>
+                @retillTargetFarm.Name を
+                RETILLしますか？
+            </p>
+
+            <p>
+                Lv.@retillTargetFarm.Level
+                →
+                Lv.0
+            </p>
+
+            <p>
+                Lv上限
+                @retillTargetFarm.MaxLevel
+                →
+                @(retillTargetFarm.MaxLevel + GameConstants.RetillLevelCapBonus)
+            </p>
+
+            <p>
+                生産倍率
+                ×@retillTargetFarm.RetillMultiplier.ToString("0.000")
+                →
+                ×@((retillTargetFarm.RetillMultiplier * GameConstants.RetillProductionMultiplier).ToString("0.000"))
+            </p>
+
+            <p>
+                購入コストは引き継がれます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="CancelRetill">
+                    CANCEL
+                </button>
+
+                <button @onclick="ExecuteRetillAsync">
+                    RETILL
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
 @if (showReplantConfirmation)
 {
     <div class="modal-backdrop">
@@ -1695,7 +1860,8 @@
             </p>
 
             <p>
-                現在の芋、畑Lv、周回生産量はリセットされます。
+                現在の芋と周回生産、
+                全畑のLv・RETILL状態はリセットされます。
             </p>
 
             <div class="confirm-actions">
@@ -1895,6 +2061,8 @@
     private bool showDeleteAccountConfirmation;
     private bool isDeletingAccount;
     private string? deleteAccountError;
+    private bool showRetillConfirmation;
+    private Farm? retillTargetFarm;
 
     private void SetPurchaseMode(PurchaseMode mode)
     {
@@ -2279,19 +2447,18 @@
 
     private int GetAffordablePurchaseLevels(Farm farm)
     {
-        return farm.GetAffordableLevels(game.Potato, GetPurchaseMaxLevels());
+        return farm.GetAffordableLevels(game.Potato, GetPurchaseMaxLevels(), game.FieldCostMultiplier);
     }
 
     private double GetPurchaseDisplayCost(Farm farm)
     {
         int levels = GetAffordablePurchaseLevels(farm);
-
         if (levels > 0)
         {
-            return farm.GetCostForLevels(levels);
+            return farm.GetCostForLevels(levels, game.FieldCostMultiplier);
         }
 
-        return farm.NextCost;
+        return farm.GetNextCost(game.FieldCostMultiplier);
     }
 
     private string GetPurchaseLevelText(Farm farm)
@@ -2919,6 +3086,7 @@
             //
             if (serverSave is not null)
             {
+                int loadedVersion = serverSave.Save.Version;
                 bool loaded = game.TryLoadSaveData(serverSave.Save);
 
                 if (!loaded)
@@ -2928,6 +3096,22 @@
 
                 serverRevision = serverSave.Revision;
                 serverSaveReady = true;
+
+                if (loadedVersion < GameConstants.SaveVersion)
+                {
+                    SaveData migratedSave = game.CreateSaveData();
+
+                    ServerSaveResult migrationResult = await ServerSave.SaveAsync(serverRevision, migratedSave);
+
+                    if (migrationResult.Success && migrationResult.Save is not null)
+                    {
+                        serverRevision = migrationResult.Save.Revision;
+
+                        await SaveService.SaveAsync(migrationResult.Save.Save);
+
+                        return;
+                    }
+                }
 
                 // localStorageはキャッシュとして
                 // 最新状態にしておく
@@ -3361,6 +3545,98 @@
         finally
         {
             isDeletingAccount = false;
+        }
+    }
+
+    private void OpenRetillConfirmation(Farm farm)
+    {
+        if (!farm.CanRetill)
+        {
+            return;
+        }
+
+        retillTargetFarm = farm;
+        showRetillConfirmation = true;
+    }
+
+    private void CancelRetill()
+    {
+        showRetillConfirmation = false;
+        retillTargetFarm = null;
+    }
+
+    private async Task ExecuteRetillAsync()
+    {
+        if (retillTargetFarm is null)
+        {
+            return;
+        }
+
+        bool retilled = game.RetillFarm(retillTargetFarm);
+        if (!retilled)
+        {
+            showRetillConfirmation = false;
+            retillTargetFarm = null;
+
+            return;
+        }
+
+        showRetillConfirmation = false;
+        retillTargetFarm = null;
+
+        await SaveGameAsync();
+    }
+
+    public double FieldCostMultiplier
+    {
+        get
+        {
+            double reduction = game.FieldCostReductionUpgradeLevel * GameConstants.FieldCostReductionPerLevel;
+
+            reduction = Math.Min(reduction, 0.10);
+
+            return 1.0 - reduction;
+        }
+    }
+
+    private bool CanBuyFieldCostReductionUpgrade()
+    {
+        return !game.IsFieldCostReductionUpgradeMax && game.SeedPotato >= game.FieldCostReductionUpgradeCost;
+    }
+
+    private async Task BuyFieldEfficiencyUpgradeAsync()
+    {
+        if (game.BuyFieldEfficiencyUpgrade())
+        {
+            CheckAchievements();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task BuyFieldCostReductionUpgradeAsync()
+    {
+        if (game.BuyFieldCostReductionUpgrade())
+        {
+            CheckAchievements();
+
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task DebugBuyFieldEfficiencyUpgradeAsync()
+    {
+        if (game.BuyFieldEfficiencyUpgrade())
+        {
+            await SaveGameAsync();
+        }
+    }
+
+    private async Task DebugBuyFieldCostReductionUpgradeAsync()
+    {
+        if (game.BuyFieldCostReductionUpgrade())
+        {
+            await SaveGameAsync();
         }
     }
 }
