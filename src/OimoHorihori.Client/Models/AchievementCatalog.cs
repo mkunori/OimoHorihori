@@ -7,12 +7,14 @@ public static class AchievementCatalog
 
     public static IReadOnlyList<AchievementDefinition> All { get; } = new List<AchievementDefinition>
         {
+            // ゲーム開始
             new(
                 "first_dig",
                 "はじめの一掘り",
                 "初めて「掘る！」を押す",
                 game => game.DigButtonCount >= 1),
 
+            // 累計生産
             new(
                 "total_1e3",
                 "芋が増えてきた",
@@ -43,6 +45,7 @@ public static class AchievementCatalog
                 "総生産 1.000e+15 芋",
                 game => game.TotalPotato >= 1.0e15),
 
+            // 畑
             new(
                 "farm1_level_10",
                 "畑仕事入門",
@@ -118,7 +121,7 @@ public static class AchievementCatalog
             new(
                 "farm7_first",
                 "七枚目の畑",
-                "七7を初購入",
+                "畑7を初購入",
                 game => game.Farm7TotalPurchases >= 1),
 
             new(
@@ -139,6 +142,7 @@ public static class AchievementCatalog
                 "畑8 Lv.100",
                 game => game.Farm8BestLevel >= 100),
 
+            // 生産速度
             new(
                 "production_1e1",
                 "1秒で芋10個",
@@ -158,11 +162,39 @@ public static class AchievementCatalog
                 "生産速度 1.000e+6 /sec",
                 game => game.BestProductionPerSecond >= 1.0e6),
 
+            // RETILL
+            new(
+                "retill_1",
+                "耕し直し",
+                "初めてRETILLを行う",
+                game => game.Farms.Any(
+                    farm => farm.RetillCount >= 1)),
+
+            new(
+                "retill_10",
+                "土づくりの極み",
+                "1つの畑でRETILL 10回",
+                game => game.Farms.Any(
+                    farm => farm.RetillCount >= 10)),
+
+            // REPLANT 種芋
             new(
                 "seed_available",
                 "最初の種芋",
                 "初めて種芋を1個以上獲得可能になる",
                 game => game.MaxRunProducedPotato >= GameConstants.ReplantBaseProduction),
+
+            new(
+                "run_seed_5",
+                "まだ植え直さない",
+                "1周で種芋5個分まで到達",
+                game => game.MaxRunProducedPotato >= GameConstants.ReplantBaseProduction * 25),
+
+            new(
+                "run_1e9",
+                "長期栽培",
+                "1周の生産量 1.000e+21",
+                game => game.MaxRunProducedPotato >= 1.0e21),
 
             new(
                 "replant_1",
@@ -194,6 +226,7 @@ public static class AchievementCatalog
                 "累計種芋100個獲得",
                 game => game.TotalSeedPotatoEarned >= 100),
 
+            // 恒久強化
             new(
                 "production_upgrade_1",
                 "永久に2%",
@@ -219,17 +252,18 @@ public static class AchievementCatalog
                 game => game.OfflineUpgradeLevel >= 16),
 
             new(
-                "run_seed_5",
-                "まだ植え直さない",
-                "1周で種芋5個分まで到達",
-                game => game.MaxRunProducedPotato >= GameConstants.ReplantBaseProduction * 25),
+                "retill_efficiency_10",
+                "耕すほど強く",
+                "RETILL効率強化 Lv.10",
+                game => game.RetillEfficiencyUpgradeLevel >= 10),
 
             new(
-                "run_1e9",
-                "長期栽培",
-                "1周の生産量 1.000e+21",
-                game => game.MaxRunProducedPotato >= 1.0e21),
+                "field_cost_reduction_10",
+                "節約農法",
+                "畑コスト軽減 Lv.10",
+                game => game.FieldCostReductionUpgradeLevel >= 10),
 
+            // 操作系
             new(
                 "purchase_ten",
                 "まとめ買い",
@@ -242,6 +276,7 @@ public static class AchievementCatalog
                 "MAX購入を初めて使用",
                 game => game.HasUsedMaxPurchaseMode),
 
+            // 図鑑
             new(
                 "oimo_first",
                 "いも発見！",
@@ -260,6 +295,7 @@ public static class AchievementCatalog
                 "図鑑20種類発見",
                 game => game.DiscoveredOimoSpeciesCount >= 20),
 
+            // 長期プレイ
             new(
                 "days_7",
                 "一週間の芋",
@@ -277,33 +313,6 @@ public static class AchievementCatalog
                 "百日の芋",
                 "ゲーム開始から100日",
                 game => HasElapsedDays(game, 100)),
-
-            new(
-                "retill_1",
-                "耕し直し",
-                "初めてRETILLを行う",
-                game => game.Farms.Any(
-                    farm => farm.RetillCount >= 1)),
-
-            new(
-                "retill_10",
-                "土づくりの極み",
-                "1つの畑でRETILL 10回",
-                game => game.Farms.Any(
-                    farm => farm.RetillCount >= 10)),
-
-            new(
-                "retill_efficiency_10",
-                "耕すほど強く",
-                "RETILL効率強化 Lv.10",
-                game => game.RetillEfficiencyUpgradeLevel >= 10),
-
-            new(
-                "field_cost_reduction_10",
-                "節約農法",
-                "畑コスト軽減 Lv.10",
-                game => game.FieldCostReductionUpgradeLevel >= 10),
-
         };
 
     private static bool HasElapsedDays(GameState game, int days)
