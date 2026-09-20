@@ -249,7 +249,7 @@
                 </button>
 
                 <button class="menu-item" @onclick="OpenReplantHistory">
-                    <span>REPLANET履歴</span>
+                    <span>REPLANT履歴</span>
                     <span>›</span>
                 </button>
 
@@ -1046,7 +1046,7 @@
                     ‹
                 </button>
 
-                <h2>REPLANET HISTORY</h2>
+                <h2>REPLANT HISTORY</h2>
 
             </div>
 
@@ -1055,7 +1055,7 @@
                 <h3>BEST RECORDS</h3>
 
                 <div class="replant-record-row">
-                    <span>最短REPLANET</span>
+                    <span>最短REPLANT</span>
 
                     <span>
                         @FormatReplantDuration(
@@ -1088,7 +1088,7 @@
                 @if (game.ReplantHistory.Count == 0)
                 {
                     <div class="replant-history-empty">
-                        REPLANET履歴はまだありません。
+                        REPLANT履歴はまだありません。
                     </div>
                 }
                 else
@@ -1172,7 +1172,7 @@
                         @onclick="() => LoadRankingAsync(RankingCategory.BestProductionPerSecond)">BEST / SEC</button>
 
                 <button class="@GetRankingTabClass(RankingCategory.Replant)"
-                        @onclick="() => LoadRankingAsync(RankingCategory.Replant)">REPLANET</button>
+                        @onclick="() => LoadRankingAsync(RankingCategory.Replant)">REPLANT</button>
 
             </div>
 
@@ -1309,7 +1309,7 @@
                     </div>
 
                     <div class="profile-row">
-                        <span>REPLANET</span>
+                        <span>REPLANT</span>
                         <span>
                             @game.ReplantCount 回
                         </span>
@@ -1455,7 +1455,7 @@
                     </div>
 
                     <div class="profile-row">
-                        <span>REPLANET</span>
+                        <span>REPLANT</span>
 
                         <span>
                             @(selectedPublicProfile.ReplantCount) 回
@@ -1551,17 +1551,20 @@
         </div>
     }
 
-    <nav class="bottom-nav">
+    @if (!isInitializing)
+    {
+        <nav class="bottom-nav">
 
-        <button class="@GetBottomNavClass(true)" @onclick="OpenHorihori">
-            HORIHORI
-        </button>
+            <button class="@GetBottomNavClass(true)" @onclick="OpenHorihori">
+                HORIHORI
+            </button>
 
-        <button class="@GetBottomNavClass(false)" @onclick="OpenMenu">
-            MENU
-        </button>
+            <button class="@GetBottomNavClass(false)" @onclick="OpenMenu">
+                MENU
+            </button>
 
-    </nav>
+        </nav>
+    }
 
 </main>
 
@@ -3635,18 +3638,6 @@
         retillTargetFarm = null;
 
         await SaveGameAsync();
-    }
-
-    public double FieldCostMultiplier
-    {
-        get
-        {
-            double reduction = game.FieldCostReductionUpgradeLevel * GameConstants.FieldCostReductionPerLevel;
-
-            reduction = Math.Min(reduction, 0.10);
-
-            return 1.0 - reduction;
-        }
     }
 
     private bool CanBuyFieldCostReductionUpgrade()
