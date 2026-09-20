@@ -2255,6 +2255,11 @@
                     continue;
                 }
 
+                if (isInitializing)
+                {
+                    continue;
+                }
+
                 if (game.GameStartedAtUtc != default && double.IsFinite(elapsedSeconds) && elapsedSeconds > 0)
                 {
                     game.TotalPlayTimeSeconds += elapsedSeconds;
@@ -2358,6 +2363,7 @@
             if (result.Success && result.Save is not null)
             {
                 serverRevision = result.Save.Revision;
+                serverSaveReady = true;
 
                 // localStorageはキャッシュとして保持
                 await SaveService.SaveAsync(result.Save.Save);
@@ -3098,6 +3104,8 @@
 
     private async Task InitializeServerSaveAsync()
     {
+        serverSaveReady = false;
+
         if (currentUser is null)
         {
             serverSaveReady = false;
@@ -3126,8 +3134,7 @@
                 }
 
                 serverRevision = serverSave.Revision;
-                serverSaveReady = true;
-
+                
                 // v1～v3を読み込んだ場合、
                 // GameState内ではすでにv4へ移行済み
                 if (loadedVersion < GameConstants.SaveVersion)
@@ -3138,6 +3145,7 @@
                     if (result.Success && result.Save is not null)
                     {
                         serverRevision = result.Save.Revision;
+                        serverSaveReady = true;
 
                         await SaveService.SaveAsync(result.Save.Save);
 
