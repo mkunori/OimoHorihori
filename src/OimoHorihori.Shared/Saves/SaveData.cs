@@ -42,6 +42,6 @@ public class SaveData
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; set; } = new();
     public List<FarmSaveData> Farms { get; set; } = new();
-    public int FieldEfficiencyUpgradeLevel { get; set; }
+    public int RetillEfficiencyUpgradeLevel { get; set; }
     public int FieldCostReductionUpgradeLevel { get; set; }
 }

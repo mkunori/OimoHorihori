@@ -402,29 +402,29 @@
 
                 </button>
 
-                <button class="upgrade-card" disabled="@(game.SeedPotato < game.FieldEfficiencyUpgradeCost)"
-                        @onclick="BuyFieldEfficiencyUpgradeAsync">
+                <button class="upgrade-card" disabled="@(game.SeedPotato < game.RetillEfficiencyUpgradeCost)"
+                        @onclick="BuyRetillEfficiencyUpgradeAsync">
 
                     <div class="upgrade-header">
 
                         <span class="upgrade-name">
-                            畑効率強化
+                            RETILL効率強化
                         </span>
 
                         <span class="upgrade-level">
-                            Lv.@game.FieldEfficiencyUpgradeLevel
+                            Lv.@game.RetillEfficiencyUpgradeLevel
                         </span>
 
                     </div>
 
                     <div class="upgrade-effect">
-                        全畑生産
-                        +@((game.FieldEfficiencyUpgradeLevel * 2.0).ToString("0"))%
+                        RETILL 1回につき
+                        +@((game.RetillEfficiencyUpgradeLevel * 0.5).ToString("0.0"))%
                     </div>
 
                     <div class="upgrade-cost">
                         NEXT
-                        @game.FieldEfficiencyUpgradeCost
+                        @game.RetillEfficiencyUpgradeCost
                         種芋
                     </div>
 
@@ -1635,8 +1635,8 @@
             放置強化
         </button>
 
-        <button @onclick="DebugBuyFieldEfficiencyUpgradeAsync">
-            畑効率強化
+        <button @onclick="DebugBuyRetillEfficiencyUpgradeAsync">
+            RETILL効率強化
         </button>
 
         <button @onclick="DebugBuyFieldCostReductionUpgradeAsync">
@@ -3645,9 +3645,9 @@
         return !game.IsFieldCostReductionUpgradeMax && game.SeedPotato >= game.FieldCostReductionUpgradeCost;
     }
 
-    private async Task BuyFieldEfficiencyUpgradeAsync()
+    private async Task BuyRetillEfficiencyUpgradeAsync()
     {
-        if (game.BuyFieldEfficiencyUpgrade())
+        if (game.BuyRetillEfficiencyUpgrade())
         {
             CheckAchievements();
 
@@ -3665,9 +3665,9 @@
         }
     }
 
-    private async Task DebugBuyFieldEfficiencyUpgradeAsync()
+    private async Task DebugBuyRetillEfficiencyUpgradeAsync()
     {
-        if (game.BuyFieldEfficiencyUpgrade())
+        if (game.BuyRetillEfficiencyUpgrade())
         {
             await SaveGameAsync();
         }

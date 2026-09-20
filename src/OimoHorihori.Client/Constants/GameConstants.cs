@@ -14,7 +14,7 @@ public static class GameConstants
     public const double OfflineUpgradeSecondsPerLevel = 3_600;
     public const double MaxOfflineLimitSeconds = 86_400;
     public const int OfflineUpgradeMaxLevel = 16;
-    public const double FieldEfficiencyBonusPerLevel = 0.02;
+    public const double RetillEfficiencyBonusPerLevelPerRetill = 0.005;
     public const double FieldCostReductionPerLevel = 0.0025;
     public const int FieldCostReductionMaxLevel = 40;
     public const double OimoOfflineDiscoveryLimitSeconds = 86_400;

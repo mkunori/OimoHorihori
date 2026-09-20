@@ -19,7 +19,7 @@ public class GameState
     public int ProductionUpgradeLevel { get; set; }
     public int DigUpgradeLevel { get; set; }
     public int OfflineUpgradeLevel { get; set; }
-    public int FieldEfficiencyUpgradeLevel { get; set; }
+    public int RetillEfficiencyUpgradeLevel { get; set; }
     public int FieldCostReductionUpgradeLevel { get; set; }
     public double TotalConsumedPotato { get; set; }
     public double BestProductionPerSecond { get; set; }
@@ -59,10 +59,9 @@ public class GameState
     public int DigUpgradeCost => GetUpgradeCost(DigUpgradeLevel);
     public int OfflineUpgradeCost => GetUpgradeCost(OfflineUpgradeLevel);
     public bool IsOfflineUpgradeMax => OfflineUpgradeLevel >= GameConstants.OfflineUpgradeMaxLevel;
-    public double FieldEfficiencyMultiplier => 1.0 + FieldEfficiencyUpgradeLevel * GameConstants.FieldEfficiencyBonusPerLevel;
-    public int FieldEfficiencyUpgradeCost => GetUpgradeCost(FieldEfficiencyUpgradeLevel);
     public int FieldCostReductionUpgradeCost => GetUpgradeCost(FieldCostReductionUpgradeLevel);
     public bool IsFieldCostReductionUpgradeMax => FieldCostReductionUpgradeLevel >= GameConstants.FieldCostReductionMaxLevel;
+    public int RetillEfficiencyUpgradeCost => GetUpgradeCost(RetillEfficiencyUpgradeLevel);
 
     public double ProductionPerSecond
     {
@@ -71,7 +70,7 @@ public class GameState
             double total = BaseProductionPerSecond;
             foreach (Farm farm in Farms)
             {
-                total += farm.ProductionPerSecond * FieldEfficiencyMultiplier;
+                total += farm.ProductionPerSecond * GetRetillEfficiencyMultiplier(farm);
             }
 
             return total * ProductionMultiplier;
@@ -217,7 +216,7 @@ public class GameState
                 RunProducedPotato = entry.RunProducedPotato,
                 EarnedSeedPotato = entry.EarnedSeedPotato
             }).ToList(),
-            FieldEfficiencyUpgradeLevel = FieldEfficiencyUpgradeLevel,
+            RetillEfficiencyUpgradeLevel = RetillEfficiencyUpgradeLevel,
             FieldCostReductionUpgradeLevel = FieldCostReductionUpgradeLevel,
         };
     }
@@ -285,7 +284,7 @@ public class GameState
         GameStartedAtUtc = migrationTime;
         TotalPlayTimeSeconds = 0;
         BestProductionPerSecond = ProductionPerSecond;
-        FieldEfficiencyUpgradeLevel = 0;
+        RetillEfficiencyUpgradeLevel = 0;
         FieldCostReductionUpgradeLevel = 0;
 
         return true;
@@ -369,7 +368,7 @@ public class GameState
         HasUsedTenPurchaseMode = save.HasUsedTenPurchaseMode;
         HasUsedMaxPurchaseMode = save.HasUsedMaxPurchaseMode;
         ShortestReplantSeconds = 0;
-        FieldEfficiencyUpgradeLevel = 0;
+        RetillEfficiencyUpgradeLevel = 0;
         FieldCostReductionUpgradeLevel = 0;
 
         ReplantHistory.Clear();
@@ -473,7 +472,7 @@ public class GameState
         HasUsedTenPurchaseMode = save.HasUsedTenPurchaseMode;
         HasUsedMaxPurchaseMode = save.HasUsedMaxPurchaseMode;
         ShortestReplantSeconds = save.ShortestReplantSeconds;
-        FieldEfficiencyUpgradeLevel = 0;
+        RetillEfficiencyUpgradeLevel = 0;
         FieldCostReductionUpgradeLevel = 0;
 
         ReplantHistory.Clear();
@@ -513,7 +512,7 @@ public class GameState
         ProductionUpgradeLevel = save.ProductionUpgradeLevel;
         DigUpgradeLevel = save.DigUpgradeLevel;
         OfflineUpgradeLevel = save.OfflineUpgradeLevel;
-        FieldEfficiencyUpgradeLevel = save.FieldEfficiencyUpgradeLevel;
+        RetillEfficiencyUpgradeLevel = save.RetillEfficiencyUpgradeLevel;
         FieldCostReductionUpgradeLevel = save.FieldCostReductionUpgradeLevel;
         for (int i = 0; i < Farms.Count; i++)
         {
@@ -959,21 +958,21 @@ public class GameState
         return true;
     }
 
-    public double GetFarmProductionPerSecond(
-    Farm farm)
+    public double GetFarmProductionPerSecond(Farm farm)
     {
-        return farm.ProductionPerSecond * FieldEfficiencyMultiplier;
+        return farm.ProductionPerSecond * GetRetillEfficiencyMultiplier(farm);
     }
 
-    public bool BuyFieldEfficiencyUpgrade()
+    public bool BuyRetillEfficiencyUpgrade()
     {
-        int cost = FieldEfficiencyUpgradeCost;
+        int cost = RetillEfficiencyUpgradeCost;
         if (!TrySpendSeedPotato(cost))
         {
             return false;
         }
 
-        FieldEfficiencyUpgradeLevel++;
+        RetillEfficiencyUpgradeLevel++;
+
         BestProductionPerSecond = Math.Max(BestProductionPerSecond, ProductionPerSecond);
 
         return true;
@@ -1031,7 +1030,7 @@ public class GameState
             return false;
         }
 
-        if (save.ProductionUpgradeLevel < 0 || save.DigUpgradeLevel < 0 || save.OfflineUpgradeLevel < 0 || save.FieldEfficiencyUpgradeLevel < 0 || save.FieldCostReductionUpgradeLevel < 0)
+        if (save.ProductionUpgradeLevel < 0 || save.DigUpgradeLevel < 0 || save.OfflineUpgradeLevel < 0 || save.RetillEfficiencyUpgradeLevel < 0 || save.FieldCostReductionUpgradeLevel < 0)
         {
             return false;
         }
@@ -1073,5 +1072,10 @@ public class GameState
         }
 
         return true;
+    }
+
+    public double GetRetillEfficiencyMultiplier(Farm farm)
+    {
+        return 1.0 + farm.RetillCount * RetillEfficiencyUpgradeLevel * GameConstants.RetillEfficiencyBonusPerLevelPerRetill;
     }
 }
