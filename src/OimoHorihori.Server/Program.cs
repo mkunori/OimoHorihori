@@ -328,8 +328,14 @@ app.MapPut("/api/save",
 
         if (oldSave is null)
         {
-            return Results.Problem(
-                "セーブデータを読み込めませんでした。");
+            return Results.Problem("セーブデータを読み込めませんでした。");
+        }
+
+        // 新しいVersionのセーブを
+        // 古いClientで上書きさせない
+        if (saveRequest.Save.Version < oldSave.Version)
+        {
+            return Results.Conflict(new ServerSaveResponse(currentSave.Revision, oldSave, currentSave.UpdatedAtUtc));
         }
 
         if (saveRequest.Save.TotalPotato < oldSave.TotalPotato || saveRequest.Save.BestProductionPerSecond < oldSave.BestProductionPerSecond || saveRequest.Save.ReplantCount < oldSave.ReplantCount)
