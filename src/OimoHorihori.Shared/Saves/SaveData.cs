@@ -25,9 +25,19 @@ public class SaveData
     public int Farm1TotalPurchases { get; set; }
     public int Farm2TotalPurchases { get; set; }
     public int Farm3TotalPurchases { get; set; }
+    public int Farm4TotalPurchases { get; set; }
+    public int Farm5TotalPurchases { get; set; }
+    public int Farm6TotalPurchases { get; set; }
+    public int Farm7TotalPurchases { get; set; }
+    public int Farm8TotalPurchases { get; set; }
     public int Farm1BestLevel { get; set; }
     public int Farm2BestLevel { get; set; }
     public int Farm3BestLevel { get; set; }
+    public int Farm4BestLevel { get; set; }
+    public int Farm5BestLevel { get; set; }
+    public int Farm6BestLevel { get; set; }
+    public int Farm7BestLevel { get; set; }
+    public int Farm8BestLevel { get; set; }
     public double TotalOfflineProducedPotato { get; set; }
     public double MaxOfflineProducedPotato { get; set; }
     public int DigButtonCount { get; set; }

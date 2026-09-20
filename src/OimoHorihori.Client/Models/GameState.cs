@@ -26,9 +26,19 @@ public class GameState
     public int Farm1TotalPurchases { get; set; }
     public int Farm2TotalPurchases { get; set; }
     public int Farm3TotalPurchases { get; set; }
+    public int Farm4TotalPurchases { get; set; }
+    public int Farm5TotalPurchases { get; set; }
+    public int Farm6TotalPurchases { get; set; }
+    public int Farm7TotalPurchases { get; set; }
+    public int Farm8TotalPurchases { get; set; }
     public int Farm1BestLevel { get; set; }
     public int Farm2BestLevel { get; set; }
     public int Farm3BestLevel { get; set; }
+    public int Farm4BestLevel { get; set; }
+    public int Farm5BestLevel { get; set; }
+    public int Farm6BestLevel { get; set; }
+    public int Farm7BestLevel { get; set; }
+    public int Farm8BestLevel { get; set; }
     public double TotalOfflineProducedPotato { get; set; }
     public double MaxOfflineProducedPotato { get; set; }
     public int DigButtonCount { get; set; }
@@ -119,6 +129,26 @@ public class GameState
                 Farm3TotalPurchases += purchasedLevels;
                 Farm3BestLevel = Math.Max(Farm3BestLevel, farm.Level);
                 break;
+            case 3:
+                Farm4TotalPurchases += purchasedLevels;
+                Farm4BestLevel = Math.Max(Farm4BestLevel, farm.Level);
+                break;
+            case 4:
+                Farm5TotalPurchases += purchasedLevels;
+                Farm5BestLevel = Math.Max(Farm5BestLevel, farm.Level);
+                break;
+            case 5:
+                Farm6TotalPurchases += purchasedLevels;
+                Farm6BestLevel = Math.Max(Farm6BestLevel, farm.Level);
+                break;
+            case 6:
+                Farm7TotalPurchases += purchasedLevels;
+                Farm7BestLevel = Math.Max(Farm7BestLevel, farm.Level);
+                break;
+            case 7:
+                Farm8TotalPurchases += purchasedLevels;
+                Farm8BestLevel = Math.Max(Farm8BestLevel, farm.Level);
+                break;
         }
     }
 
@@ -194,9 +224,19 @@ public class GameState
             Farm1TotalPurchases = Farm1TotalPurchases,
             Farm2TotalPurchases = Farm2TotalPurchases,
             Farm3TotalPurchases = Farm3TotalPurchases,
+            Farm4TotalPurchases = Farm4TotalPurchases,
+            Farm5TotalPurchases = Farm5TotalPurchases,
+            Farm6TotalPurchases = Farm6TotalPurchases,
+            Farm7TotalPurchases = Farm7TotalPurchases,
+            Farm8TotalPurchases = Farm8TotalPurchases,
             Farm1BestLevel = Farm1BestLevel,
             Farm2BestLevel = Farm2BestLevel,
             Farm3BestLevel = Farm3BestLevel,
+            Farm4BestLevel = Farm4BestLevel,
+            Farm5BestLevel = Farm5BestLevel,
+            Farm6BestLevel = Farm6BestLevel,
+            Farm7BestLevel = Farm7BestLevel,
+            Farm8BestLevel = Farm8BestLevel,
             TotalOfflineProducedPotato = TotalOfflineProducedPotato,
             MaxOfflineProducedPotato = MaxOfflineProducedPotato,
             DigButtonCount = DigButtonCount,
@@ -526,9 +566,19 @@ public class GameState
         Farm1TotalPurchases = save.Farm1TotalPurchases;
         Farm2TotalPurchases = save.Farm2TotalPurchases;
         Farm3TotalPurchases = save.Farm3TotalPurchases;
+        Farm4TotalPurchases = save.Farm4TotalPurchases;
+        Farm5TotalPurchases = save.Farm5TotalPurchases;
+        Farm6TotalPurchases = save.Farm6TotalPurchases;
+        Farm7TotalPurchases = save.Farm7TotalPurchases;
+        Farm8TotalPurchases = save.Farm8TotalPurchases;
         Farm1BestLevel = save.Farm1BestLevel;
         Farm2BestLevel = save.Farm2BestLevel;
         Farm3BestLevel = save.Farm3BestLevel;
+        Farm4BestLevel = save.Farm4BestLevel;
+        Farm5BestLevel = save.Farm5BestLevel;
+        Farm6BestLevel = save.Farm6BestLevel;
+        Farm7BestLevel = save.Farm7BestLevel;
+        Farm8BestLevel = save.Farm8BestLevel;
         TotalOfflineProducedPotato = save.TotalOfflineProducedPotato;
         MaxOfflineProducedPotato = save.MaxOfflineProducedPotato;
         DigButtonCount = save.DigButtonCount;
