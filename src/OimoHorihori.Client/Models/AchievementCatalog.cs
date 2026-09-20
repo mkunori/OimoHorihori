@@ -80,10 +80,71 @@ public static class AchievementCatalog
                 game => game.Farm3BestLevel >= 100),
 
             new(
+                "farm4_first",
+                "四枚目の畑",
+                "畑4を初購入",
+                game => game.Farm4TotalPurchases >= 1),
+
+            new(
+                "farm4_level_100",
+                "畑4の主",
+                "畑4 Lv.100",
+                game => game.Farm4BestLevel >= 100),
+
+            new(
+                "farm5_first",
+                "五枚目の畑",
+                "畑5を初購入",
+                game => game.Farm5TotalPurchases >= 1),
+
+            new(
+                "farm5_level_100",
+                "畑5の主",
+                "畑5 Lv.100",
+                game => game.Farm5BestLevel >= 100),
+
+            new(
+                "farm6_first",
+                "六枚目の畑",
+                "畑6を初購入",
+                game => game.Farm6TotalPurchases >= 1),
+
+            new(
+                "farm6_level_100",
+                "畑6の主",
+                "畑6 Lv.100",
+                game => game.Farm6BestLevel >= 100),
+
+            new(
+                "farm7_first",
+                "七枚目の畑",
+                "七7を初購入",
+                game => game.Farm7TotalPurchases >= 1),
+
+            new(
+                "farm7_level_100",
+                "畑7の主",
+                "畑7 Lv.100",
+                game => game.Farm7BestLevel >= 100),
+
+            new(
+                "farm8_first",
+                "八枚目の畑",
+                "畑8を初購入",
+                game => game.Farm8TotalPurchases >= 1),
+
+            new(
+                "farm8_level_100",
+                "畑8の主",
+                "畑8 Lv.100",
+                game => game.Farm8BestLevel >= 100),
+
+            new(
                 "production_1e1",
                 "1秒で芋10個",
                 "生産速度 1.000e+1 /sec",
                 game => game.BestProductionPerSecond >= 1.0e1),
+
 
             new(
                 "production_1e3",
@@ -135,13 +196,13 @@ public static class AchievementCatalog
 
             new(
                 "production_upgrade_1",
-                "永久に0.5%",
+                "永久に2%",
                 "生産力強化 Lv.1",
                 game => game.ProductionUpgradeLevel >= 1),
 
             new(
                 "production_upgrade_10",
-                "積み重なる0.5%",
+                "積み重なる20%",
                 "生産力強化 Lv.10",
                 game => game.ProductionUpgradeLevel >= 10),
 
@@ -154,8 +215,8 @@ public static class AchievementCatalog
             new(
                 "offline_upgrade_32",
                 "24時間戦えます",
-                "放置強化 Lv.32到達",
-                game => game.OfflineUpgradeLevel >= 32),
+                "放置強化 Lv.16到達",
+                game => game.OfflineUpgradeLevel >= 16),
 
             new(
                 "run_seed_5",
@@ -215,7 +276,34 @@ public static class AchievementCatalog
                 "days_100",
                 "百日の芋",
                 "ゲーム開始から100日",
-                game => HasElapsedDays(game, 100))
+                game => HasElapsedDays(game, 100)),
+
+            new(
+                "retill_1",
+                "耕し直し",
+                "初めてRETILLを行う",
+                game => game.Farms.Any(
+                    farm => farm.RetillCount >= 1)),
+
+            new(
+                "retill_10",
+                "土づくりの極み",
+                "1つの畑でRETILL 10回",
+                game => game.Farms.Any(
+                    farm => farm.RetillCount >= 10)),
+
+            new(
+                "retill_efficiency_10",
+                "耕すほど強く",
+                "RETILL効率強化 Lv.10",
+                game => game.RetillEfficiencyUpgradeLevel >= 10),
+
+            new(
+                "field_cost_reduction_10",
+                "節約農法",
+                "畑コスト軽減 Lv.10",
+                game => game.FieldCostReductionUpgradeLevel >= 10),
+
         };
 
     private static bool HasElapsedDays(GameState game, int days)
