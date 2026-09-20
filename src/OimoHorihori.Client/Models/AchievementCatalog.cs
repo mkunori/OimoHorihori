@@ -1,7 +1,10 @@
+using OimoHorihori.Constants;
+
 namespace OimoHorihori.Models;
 
 public static class AchievementCatalog
 {
+
     public static IReadOnlyList<AchievementDefinition> All { get; } = new List<AchievementDefinition>
         {
             new(
@@ -98,7 +101,7 @@ public static class AchievementCatalog
                 "seed_available",
                 "最初の種芋",
                 "初めて種芋を1個以上獲得可能になる",
-                game => game.MaxRunProducedPotato >= 1.0e7),
+                game => game.MaxRunProducedPotato >= GameConstants.ReplantBaseProduction),
 
             new(
                 "replant_1",
@@ -158,13 +161,13 @@ public static class AchievementCatalog
                 "run_seed_5",
                 "まだ植え直さない",
                 "1周で種芋5個分まで到達",
-                game => game.MaxRunProducedPotato >= 2.5e8),
+                game => game.MaxRunProducedPotato >= GameConstants.ReplantBaseProduction * 25),
 
             new(
                 "run_1e9",
                 "長期栽培",
-                "1周の生産量 1.000e+9",
-                game => game.MaxRunProducedPotato >= 1.0e9),
+                "1周の生産量 1.000e+21",
+                game => game.MaxRunProducedPotato >= 1.0e21),
 
             new(
                 "purchase_ten",
