@@ -193,8 +193,8 @@ public static class AchievementCatalog
             new(
                 "run_1e9",
                 "長期栽培",
-                "1周の生産量 1.000e+21",
-                game => game.MaxRunProducedPotato >= 1.0e21),
+                "1周で種芋10個分まで到達",
+                game => game.MaxRunProducedPotato >= GameConstants.ReplantBaseProduction * 100),
 
             new(
                 "replant_1",

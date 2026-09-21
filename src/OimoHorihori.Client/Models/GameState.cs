@@ -52,13 +52,13 @@ public class GameState
     public List<Farm> Farms { get; } = new()
     {
         new Farm("畑1", 1.000e1,  1.000e-1),
-        new Farm("畑2", 1.600e3,  1.000e1),
-        new Farm("畑3", 2.600e5,  1.000e3),
-        new Farm("畑4", 4.200e7,  1.000e5),
-        new Farm("畑5", 6.800e9,  1.000e7),
-        new Farm("畑6", 1.100e12, 1.000e9),
-        new Farm("畑7", 1.800e14, 1.000e11),
-        new Farm("畑8", 2.900e16, 1.000e13)
+        new Farm("畑2", 1.500e2,  1.000e0),
+        new Farm("畑3", 3.000e3,  1.000e1),
+        new Farm("畑4", 4.500e4,  1.000e2),
+        new Farm("畑5", 6.000e5,  1.000e3),
+        new Farm("畑6", 1.300e7,  1.000e4),
+        new Farm("畑7", 2.000e8,  1.000e5),
+        new Farm("畑8", 1.100e10, 1.000e6)
     };
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; } = new();

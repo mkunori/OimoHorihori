@@ -7,7 +7,7 @@ public static class GameConstants
     public const double FarmCostMultiplier = 1.005;
     public const double AutoSaveIntervalSeconds = 5;
     public const int GameLoopIntervalMilliseconds = 250;
-    public const double ReplantBaseProduction = 5.000e19;
+    public const double ReplantBaseProduction = 9.000e10;
     public const double ProductionUpgradeBonusPerLevel = 0.02;
     public const double DigUpgradeBonusPerLevel = 0.5;
     public const double InitialOfflineLimitSeconds = 28_800;
