@@ -151,8 +151,7 @@
 
 .farm-card {
     width: 100%;
-
-    padding: 14px 16px;
+    padding: 10px 12px;
 
     border: 1px solid #a99170;
     border-radius: 10px;
@@ -162,12 +161,7 @@
 
     text-align: left;
 
-    cursor: default;
-    ;
-
-    transition:
-        transform 0.05s ease,
-        opacity 0.15s ease;
+    scroll-margin-top: 12px;
 }
 
 .farm-card:not(:disabled):active {
@@ -186,21 +180,35 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    gap: 8px;
 }
 
 .farm-name {
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 700;
 }
 
 .farm-level {
-    font-size: 0.95rem;
+    flex-shrink: 0;
+
+    font-size: 0.85rem;
+}
+
+.farm-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-top: 5px;
 }
 
 .farm-production {
-    margin-top: 9px;
+    margin-top: 0;
 
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 
 .farm-cost {
@@ -552,6 +560,27 @@
 
     cursor: default;
     ;
+}
+
+.upgrade-card:not(:disabled) {
+    border-color: #8a6a3f;
+    background: #fff7df;
+
+    box-shadow:
+        0 2px 8px rgba(90, 65, 35, 0.12);
+
+    cursor: pointer;
+}
+
+.upgrade-card:not(:disabled):hover {
+    border-color: #6f512e;
+
+    box-shadow:
+        0 3px 10px rgba(90, 65, 35, 0.18);
+}
+
+.upgrade-card:not(:disabled):active {
+    transform: scale(0.985);
 }
 
 .upgrade-card:not(:disabled):active {
@@ -1424,39 +1453,46 @@
 
 .farm-retill-info {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
 
-    margin-top: 6px;
+    gap: 5px;
 
-    font-size: 0.8rem;
-    opacity: 0.8;
+    margin-top: 0;
+
+    font-size: 0.72rem;
+    opacity: 0.75;
+
+    white-space: nowrap;
 }
 
 .retill-ready {
-    margin-top: 10px;
+    margin-top: 0;
 
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 700;
 }
 
 .farm-buy-button,
 .retill-button {
-    width: 100%;
+    width: auto;
+    min-width: 72px;
 
-    margin-top: 10px;
-    padding: 9px 12px;
+    flex-shrink: 0;
+
+    margin-top: 0;
+    padding: 7px 12px;
 
     border: 1px solid #a99170;
-    border-radius: 8px;
+    border-radius: 7px;
 
     background: #fff3d6;
     color: #35281f;
 }
 
 .farm-complete {
-    margin-top: 10px;
+    margin-top: 0;
 
-    text-align: center;
+    font-size: 0.78rem;
     font-weight: 700;
 }
 
@@ -1595,4 +1631,74 @@
     display: inline-block;
     margin: 0 5px;
     opacity: 0.65;
+}
+
+.farm-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-top: 7px;
+}
+
+.farm-purchase-info {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    font-size: 0.78rem;
+}
+
+.farm-purchase-level {
+    flex-shrink: 0;
+
+    font-weight: 700;
+}
+
+.farm-cost {
+    margin-top: 0;
+
+    font-size: 0.78rem;
+
+    opacity: 0.8;
+
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 380px) {
+    .farm-card {
+        padding: 9px 10px;
+    }
+
+    .farm-summary {
+        gap: 5px;
+    }
+
+    .farm-production {
+        font-size: 0.8rem;
+    }
+
+    .farm-retill-info {
+        font-size: 0.68rem;
+    }
+
+    .farm-purchase-info {
+        gap: 5px;
+        font-size: 0.72rem;
+    }
+
+    .farm-cost {
+        font-size: 0.72rem;
+    }
+
+    .farm-buy-button,
+    .retill-button {
+        min-width: 66px;
+        padding: 7px 9px;
+    }
 }

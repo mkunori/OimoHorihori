@@ -141,72 +141,89 @@
                     <div id="@GetFarmElementId(farm)" class="farm-card @(canBuy || farm.CanRetill ? "" : "unavailable")">
 
                         <div class="farm-header">
-
                             <span class="farm-name">
                                 @farm.Name
                             </span>
 
                             <span class="farm-level">
-                                Lv. @farm.Level / @farm.MaxLevel
-                            </span>
-
-                        </div>
-
-                        <div class="farm-retill-info">
-                            @if (farm.IsRetillMax)
-                            {
-                                <span>
-                                    RETILL MAX
-                                </span>
-                            }
-                            else
-                            {
-                                <span>
-                                    RETILL @farm.RetillCount / @GameConstants.RetillMaxCount
-                                </span>
-                            }
-
-                            <span>
-                                ×@farm.RetillMultiplier.ToString("0.000")
+                                Lv.@farm.Level / @farm.MaxLevel
                             </span>
                         </div>
 
-                        <div class="farm-production">
-                            +@NumberFormatter.Format(game.GetFarmProductionPerSecond(farm))
-                            / sec
+                        <div class="farm-summary">
+
+                            <span class="farm-production">
+                                +@NumberFormatter.Format(
+                                                game.GetFarmProductionPerSecond(farm))
+                                / sec
+                            </span>
+
+                            <span class="farm-retill-info">
+                                @if (farm.IsRetillMax)
+                                {
+                                    <span>RETILL MAX</span>
+                                }
+                                else
+                                {
+                                    <span>
+                                        RETILL @farm.RetillCount/@GameConstants.RetillMaxCount
+                                    </span>
+                                }
+
+                                <span>
+                                    ×@farm.RetillMultiplier.ToString("0.000")
+                                </span>
+                            </span>
+
                         </div>
 
                         @if (farm.CanRetill)
                         {
-                            <div class="retill-ready">
-                                RETILL READY
-                            </div>
+                            <div class="farm-action-row">
 
-                            <button class="retill-button" @onclick="() => OpenRetillConfirmation(farm)">
-                                RETILL
-                            </button>
+                                <span class="retill-ready">
+                                    RETILL READY
+                                </span>
+
+                                <button class="retill-button" @onclick="() => OpenRetillConfirmation(farm)">
+                                    RETILL
+                                </button>
+
+                            </div>
                         }
                         else if (farm.IsRetillMax && farm.IsMaxLevel)
                         {
-                            <div class="farm-complete">
-                                MAX
+                            <div class="farm-action-row">
+
+                                <span class="farm-complete">
+                                    FARM COMPLETE
+                                </span>
+
                             </div>
                         }
                         else
                         {
-                            <div class="farm-purchase-level">
-                                @GetPurchaseLevelText(farm)
-                            </div>
+                            <div class="farm-action-row">
 
-                            <div class="farm-cost">
-                                COST
-                                @NumberFormatter.Format(purchaseCost)
-                                芋
-                            </div>
+                                <div class="farm-purchase-info">
 
-                            <button class="farm-buy-button" disabled="@(!canBuy)" @onclick="() => BuyFarm(farm)">
-                                購入
-                            </button>
+                                    <span class="farm-purchase-level">
+                                        @GetPurchaseLevelText(farm)
+                                    </span>
+
+                                    <span class="farm-cost">
+                                        COST
+                                        @NumberFormatter.Format(purchaseCost)
+                                        芋
+                                    </span>
+
+                                </div>
+
+                                <button class="farm-buy-button" disabled="@(!canBuy)" @onclick="() => BuyFarm(farm)">
+                                    購入
+                                </button>
+
+                            </div>
                         }
 
                     </div>
