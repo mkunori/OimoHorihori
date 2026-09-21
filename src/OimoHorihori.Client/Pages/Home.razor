@@ -36,7 +36,11 @@
         @if (isInitializing)
         {
             <div class="loading-panel">
-                <div>セーブデータを読み込み中...</div>
+                <div class="loading-spinner"></div>
+
+                <div>
+                    @initializationMessage
+                </div>
             </div>
         }
         else if (!game.HasStarted)
@@ -74,6 +78,26 @@
 
             </section>
 
+            @if (saveStatus != SaveStatus.None)
+            {
+                <div class="save-status @GetSaveStatusClass()">
+
+                    <span class="save-status-dot"></span>
+
+                    <span>
+                        @GetSaveStatusText()
+                    </span>
+
+                    @if (lastSaveCompletedAtUtc is not null)
+                    {
+                        <span class="save-status-time">
+                            @GetLastSaveTimeText()
+                        </span>
+                    }
+
+                </div>
+            }
+
             <section class="purchase-mode">
 
                 <button class="@GetPurchaseModeClass(PurchaseMode.One)" @onclick="() => SetPurchaseMode(PurchaseMode.One)">
@@ -90,6 +114,22 @@
 
             </section>
 
+            @if (RetillReadyCount > 0)
+            {
+                <div class="retill-ready-summary">
+
+                    <div>
+                        RETILL READY
+                        <strong>@RetillReadyCount</strong>
+                    </div>
+
+                    <a class="retill-ready-jump" href="@($"#{GetFirstRetillReadyFarmId()}")">
+                        最初の畑へ
+                    </a>
+
+                </div>
+            }
+
             <section class="farm-list">
 
                 @foreach (Farm farm in game.Farms)
@@ -98,7 +138,7 @@
                     bool canBuy = purchaseLevels > 0;
                     double purchaseCost = GetPurchaseDisplayCost(farm);
 
-                    <div class="farm-card @(canBuy || farm.CanRetill ? "" : "unavailable")">
+                    <div id="@GetFarmElementId(farm)" class="farm-card @(canBuy || farm.CanRetill ? "" : "unavailable")">
 
                         <div class="farm-header">
 
@@ -324,7 +364,9 @@
 
                     <div class="upgrade-effect">
                         全生産
-                        +@((game.ProductionUpgradeLevel * 2.0).ToString("0"))%
+                        +@FormatProductionUpgradeBonus(game.ProductionUpgradeLevel)
+                        <span class="upgrade-arrow">→</span>
+                        +@FormatProductionUpgradeBonus(game.ProductionUpgradeLevel + 1)
                     </div>
 
                     <div class="upgrade-cost">
@@ -352,7 +394,10 @@
 
                     <div class="upgrade-effect">
                         基礎
-                        +@((game.DigUpgradeLevel * 0.5).ToString("0.0"))
+                        +@FormatDigUpgradeBonus(game.DigUpgradeLevel)
+                        / sec
+                        <span class="upgrade-arrow">→</span>
+                        +@FormatDigUpgradeBonus(game.DigUpgradeLevel + 1)
                         / sec
                     </div>
 
@@ -379,8 +424,20 @@
                     </div>
 
                     <div class="upgrade-effect">
-                        最大
-                        @FormatOfflineUpgradeHours()
+                        @if (game.IsOfflineUpgradeMax)
+                        {
+                            <span>
+                                最大 @FormatOfflineUpgradeHours()
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                @FormatOfflineUpgradeHours()
+                                <span class="upgrade-arrow">→</span>
+                                @FormatOfflineUpgradeHours(game.OfflineUpgradeLevel + 1)
+                            </span>
+                        }
                     </div>
 
                     <div class="upgrade-cost">
@@ -419,7 +476,9 @@
 
                     <div class="upgrade-effect">
                         RETILL 1回につき
-                        +@((game.RetillEfficiencyUpgradeLevel * 0.5).ToString("0.0"))%
+                        +@FormatRetillEfficiencyBonus(game.RetillEfficiencyUpgradeLevel)
+                        <span class="upgrade-arrow">→</span>
+                        +@FormatRetillEfficiencyBonus(game.RetillEfficiencyUpgradeLevel + 1)
                     </div>
 
                     <div class="upgrade-cost">
@@ -446,8 +505,22 @@
                     </div>
 
                     <div class="upgrade-effect">
-                        畑価格
-                        -@((game.FieldCostReductionUpgradeLevel * 0.25).ToString("0.00"))%
+                        @if (game.IsFieldCostReductionUpgradeMax)
+                        {
+                            <span>
+                                畑価格
+                                -@FormatFieldCostReduction(game.FieldCostReductionUpgradeLevel)
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                畑価格
+                                -@FormatFieldCostReduction(game.FieldCostReductionUpgradeLevel)
+                                <span class="upgrade-arrow">→</span>
+                                -@FormatFieldCostReduction(game.FieldCostReductionUpgradeLevel + 1)
+                            </span>
+                        }
                     </div>
 
                     <div class="upgrade-cost">
@@ -2183,6 +2256,19 @@
     private bool showRetillConfirmation;
     private Farm? retillTargetFarm;
     private bool isInitializing = true;
+    private string initializationMessage = "セーブデータを読み込み中...";
+    private SaveStatus saveStatus = SaveStatus.None;
+    private DateTimeOffset? lastSaveCompletedAtUtc;
+    private enum SaveStatus
+    {
+        None,
+        Saving,
+        LocalSaved,
+        ServerSaved,
+        ServerUnavailable,
+        Conflict,
+        Error
+    }
 
     private void SetPurchaseMode(PurchaseMode mode)
     {
@@ -2193,6 +2279,8 @@
     {
         try
         {
+            initializationMessage = "セーブデータを読み込み中...";
+
             try
             {
                 currentUser = await AuthService.GetCurrentUserAsync();
@@ -2266,6 +2354,10 @@
 
             if (currentUser is not null && newerSaveVersion is null)
             {
+                initializationMessage = "サーバーと同期中...";
+
+                await InvokeAsync(StateHasChanged);
+
                 await InitializeServerSaveAsync();
             }
 
@@ -2273,6 +2365,7 @@
             lastAutoSaveTime = now;
 
             visibilityReference = DotNetObjectReference.Create(this);
+            initializationMessage = "ゲームを準備中...";
 
             await JS.InvokeVoidAsync("oimoVisibility.register", visibilityReference);
 
@@ -2441,9 +2534,14 @@
     {
         if (showSaveConflict)
         {
+            saveStatus = SaveStatus.Conflict;
             return;
         }
 
+        saveStatus = SaveStatus.Saving;
+
+        await InvokeAsync(StateHasChanged);
+    
         SaveData save = game.CreateSaveData();
 
         //
@@ -2453,15 +2551,21 @@
         {
             await SaveService.SaveAsync(save);
 
+            lastSaveCompletedAtUtc = DateTimeOffset.UtcNow;
+            saveStatus = SaveStatus.LocalSaved;
+
             return;
         }
 
         //
-        // 初回引き継ぎ確認中など
+        // Server Save準備前
         //
         if (!serverSaveReady)
         {
             await SaveService.SaveAsync(save);
+
+            lastSaveCompletedAtUtc = DateTimeOffset.UtcNow;
+            saveStatus = SaveStatus.LocalSaved;
 
             return;
         }
@@ -2471,7 +2575,7 @@
             ServerSaveResult result = await ServerSave.SaveAsync(serverRevision, save);
 
             //
-            // 正常保存
+            // Server保存成功
             //
             if (result.Success && result.Save is not null)
             {
@@ -2481,11 +2585,14 @@
                 // localStorageはキャッシュとして保持
                 await SaveService.SaveAsync(result.Save.Save);
 
+                lastSaveCompletedAtUtc = DateTimeOffset.UtcNow;
+                saveStatus = SaveStatus.ServerSaved;
+
                 return;
             }
 
             //
-            // 別端末との競合
+            // Revision競合
             //
             if (result.Conflict && result.Save is not null)
             {
@@ -2493,16 +2600,36 @@
 
                 showSaveConflict = true;
 
+                saveStatus = SaveStatus.Conflict;
+
                 return;
             }
         }
         catch (HttpRequestException)
         {
             //
-            // 通信不能時はlocalStorageへ
-            // 一時キャッシュ
+            // Serverへ到達できなければ
+            // localStorageへ退避
             //
-            await SaveService.SaveAsync(save);
+            try
+            {
+                await SaveService.SaveAsync(save);
+
+                lastSaveCompletedAtUtc = DateTimeOffset.UtcNow;
+                saveStatus = SaveStatus.ServerUnavailable;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Local save failed: {ex}");
+
+                saveStatus = SaveStatus.Error;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Save failed: {ex}");
+
+            saveStatus = SaveStatus.Error;
         }
     }
     private static string FormatOfflineTime(TimeSpan time)
@@ -2750,9 +2877,7 @@
 
     private string FormatOfflineUpgradeHours()
     {
-        double hours = game.OfflineLimitSeconds / 3600.0;
-
-        return $"{hours:0.#}時間";
+        return FormatOfflineUpgradeHours(game.OfflineUpgradeLevel);
     }
 
     private async Task BuyProductionUpgradeAsync()
@@ -3277,8 +3402,9 @@
                 }
 
                 // もともとv4ならそのままキャッシュ
-                await SaveService.SaveAsync(
-                    serverSave.Save);
+                await SaveService.SaveAsync(serverSave.Save);
+
+                serverSaveReady = true;
 
                 return;
             }
@@ -3792,8 +3918,108 @@
         if (game.BuyFieldCostReductionUpgrade())
         {
             CheckAchievements();
-            
+
             await SaveGameAsync();
         }
+    }
+
+    private string GetSaveStatusText()
+    {
+        return saveStatus switch
+        {
+            SaveStatus.Saving => "SAVING...",
+            SaveStatus.LocalSaved => "LOCAL SAVED",
+            SaveStatus.ServerSaved => "SYNCED",
+            SaveStatus.ServerUnavailable => "LOCAL SAVED / SYNC OFFLINE",
+            SaveStatus.Conflict => "SYNC CONFLICT",
+            SaveStatus.Error => "SAVE ERROR",
+            _ => string.Empty
+        };
+    }
+
+    private string GetSaveStatusClass()
+    {
+        return saveStatus switch
+        {
+            SaveStatus.Saving => "saving",
+            SaveStatus.ServerSaved => "synced",
+            SaveStatus.LocalSaved => "local",
+            SaveStatus.ServerUnavailable => "offline",
+            SaveStatus.Conflict => "warning",
+            SaveStatus.Error => "error",
+            _ => string.Empty
+        };
+    }
+
+    private string GetLastSaveTimeText()
+    {
+        if (lastSaveCompletedAtUtc is null)
+        {
+            return string.Empty;
+        }
+
+        return lastSaveCompletedAtUtc.Value.ToLocalTime().ToString("HH:mm:ss");
+    }
+
+    private int RetillReadyCount => game.Farms.Count(farm => farm.CanRetill);
+
+    private string GetFarmElementId(Farm farm)
+    {
+        int index = game.Farms.IndexOf(farm);
+
+        return $"farm-{index + 1}";
+    }
+
+    private string GetFirstRetillReadyFarmId()
+    {
+        Farm? farm = game.Farms.FirstOrDefault(farm => farm.CanRetill);
+
+        if (farm is null)
+        {
+            return string.Empty;
+        }
+
+        return GetFarmElementId(farm);
+    }
+
+    private static string FormatProductionUpgradeBonus(int level)
+    {
+        double percent = level * GameConstants.ProductionUpgradeBonusPerLevel * 100.0;
+
+        return $"{percent:0}%";
+    }
+
+    private static string FormatDigUpgradeBonus(int level)
+    {
+        double bonus = level * GameConstants.DigUpgradeBonusPerLevel;
+
+        return $"{bonus:0.0}";
+    }
+
+    private string FormatOfflineUpgradeHours(int level)
+    {
+        double seconds = GameConstants.InitialOfflineLimitSeconds + level * GameConstants.OfflineUpgradeSecondsPerLevel;
+
+        seconds = Math.Min(seconds, GameConstants.MaxOfflineLimitSeconds);
+
+        double hours = seconds / 3600.0;
+
+        return $"{hours:0.#}時間";
+    }
+
+    private static string FormatRetillEfficiencyBonus(int level)
+    {
+        double percent = level * GameConstants.RetillEfficiencyBonusPerLevelPerRetill * 100.0;
+
+        return $"{percent:0.0}%";
+    }
+
+    private static string FormatFieldCostReduction(int level)
+    {
+        double percent = level * GameConstants.FieldCostReductionPerLevel * 100.0;
+
+        percent = Math.Min(percent, 10.0);
+
+        return $"{percent:0.00}%";
     }
 }
