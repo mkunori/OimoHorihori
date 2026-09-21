@@ -80,4 +80,22 @@ public class ServerSaveService
 
         return new ServerSaveResult(true, false, saved);
     }
+
+    public async Task<bool> DeleteAsync()
+    {
+        string? token = await authService.GetTokenAsync();
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        using HttpRequestMessage request = new(HttpMethod.Delete, "api/save");
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using HttpResponseMessage response = await http.SendAsync(request);
+
+        return response.IsSuccessStatusCode;
+    }
 }

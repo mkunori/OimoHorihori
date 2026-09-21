@@ -33,7 +33,7 @@
     </header>
     @if (currentView == HomeView.Horihori)
     {
-        @if (isInitializing)
+        if (isInitializing || isResetting)
         {
             <div class="loading-panel">
                 <div class="loading-spinner"></div>
@@ -154,7 +154,7 @@
 
                             <span class="farm-production">
                                 +@NumberFormatter.Format(
-                                                game.GetFarmProductionPerSecond(farm))
+                                                                                                                                                                                                                                                                                game.GetFarmProductionPerSecond(farm))
                                 / sec
                             </span>
 
@@ -1912,6 +1912,13 @@
 
             <p>
                 本当にセーブデータを初期化しますか？
+
+                @if (!string.IsNullOrEmpty(resetError))
+                {
+                    <div class="error-message">
+                        @resetError
+                    </div>
+                }
             </p>
 
             <div class="confirm-actions">
@@ -1920,8 +1927,10 @@
                     キャンセル
                 </button>
 
-                <button class="danger-button" @onclick="ResetGameAsync">
-                    初期化する
+                <button class="danger-button" disabled="@isResetting" @onclick="ResetGameAsync">
+
+                    @(isResetting ? "初期化中..." : "初期化する")
+
                 </button>
 
             </div>
@@ -2276,6 +2285,8 @@
     private string initializationMessage = "セーブデータを読み込み中...";
     private SaveStatus saveStatus = SaveStatus.None;
     private DateTimeOffset? lastSaveCompletedAtUtc;
+    private bool isResetting;
+    private string? resetError;
     private enum SaveStatus
     {
         None,
@@ -2410,7 +2421,7 @@
 
     private async Task StartGame()
     {
-        if (isInitializing)
+        if (isInitializing || isResetting)
         {
             return;
         }
@@ -2478,7 +2489,7 @@
                     continue;
                 }
 
-                if (isInitializing)
+                if (isInitializing || isResetting)
                 {
                     continue;
                 }
@@ -2680,18 +2691,100 @@
 
     private async Task ResetGameAsync()
     {
-        await SaveService.DeleteAsync();
+        if (isResetting)
+        {
+            return;
+        }
 
-        game = new GameState();
-        showResetConfirmation = false;
-        showOfflineResult = false;
-        showOimoDiscovery = false;
-        offlineOimoDiscoveries.Clear();
-        currentView = HomeView.Horihori;
-        purchaseMode = PurchaseMode.One;
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        lastUpdateTime = now;
-        lastAutoSaveTime = now;
+        isResetting = true;
+        resetError = null;
+
+        try
+        {
+            //
+            // ログイン中なら
+            // 先にServer Saveを削除する
+            //
+            if (currentUser is not null)
+            {
+                bool deleted = await ServerSave.DeleteAsync();
+
+                if (!deleted)
+                {
+                    resetError = "サーバーのセーブデータを初期化できませんでした。";
+                    saveStatus = SaveStatus.Error;
+
+                    return;
+                }
+            }
+
+            //
+            // GameStateを完全初期化
+            //
+            game = new GameState();
+
+            serverRevision = 0;
+            serverSaveReady = false;
+
+            pendingLocalSave = null;
+            conflictingServerSave = null;
+
+            showSaveConflict = false;
+            showLocalSaveMigration = false;
+
+            //
+            // localStorageも初期状態へ
+            //
+            SaveData initialSave = game.CreateSaveData();
+
+            await SaveService.SaveAsync(initialSave);
+
+            //
+            // ログイン中なら
+            // 新しい初期状態をServerにも作る
+            //
+            if (currentUser is not null)
+            {
+                await CreateInitialServerSaveAsync();
+            }
+            else
+            {
+                saveStatus = SaveStatus.LocalSaved;
+                lastSaveCompletedAtUtc = DateTimeOffset.UtcNow;
+            }
+
+            showResetConfirmation = false;
+            showOfflineResult = false;
+            showOimoDiscovery = false;
+
+            offlineOimoDiscoveries.Clear();
+
+            currentView = HomeView.Horihori;
+            purchaseMode = PurchaseMode.One;
+
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+
+            lastUpdateTime = now;
+            lastAutoSaveTime = now;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Save reset failed: {ex}");
+
+            resetError = "サーバーへ接続できないため初期化できませんでした。";
+            saveStatus = SaveStatus.Error;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Save reset failed: {ex}");
+
+            resetError = "セーブデータの初期化に失敗しました。";
+            saveStatus = SaveStatus.Error;
+        }
+        finally
+        {
+            isResetting = false;
+        }
     }
 
     private async Task DebugAddPotatoAsync(double amount)

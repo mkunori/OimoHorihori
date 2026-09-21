@@ -356,6 +356,31 @@ app.MapPut("/api/save",
         return Results.Ok(new ServerSaveResponse(currentSave.Revision, saveRequest.Save, currentSave.UpdatedAtUtc));
     });
 
+app.MapDelete("/api/save",
+    async (HttpRequest request, AppDbContext db, SessionService sessionService) =>
+    {
+        UserAccount? user = await sessionService.GetCurrentUserAsync(request);
+
+        if (user is null)
+        {
+            return Results.Unauthorized();
+        }
+
+        GameSave? gameSave = await db.GameSaves.SingleOrDefaultAsync(save => save.UserId == user.Id);
+
+        if (gameSave is not null)
+        {
+            db.GameSaves.Remove(gameSave);
+        }
+
+        // 実績由来の称号も初期化
+        user.EquippedTitleId = null;
+
+        await db.SaveChangesAsync();
+
+        return Results.NoContent();
+    });
+
 app.MapGet("/api/rankings/{category}",
     async (string category, HttpRequest request, SessionService sessionService, RankingService rankingService) =>
     {
