@@ -371,34 +371,6 @@ app.MapPut("/api/save",
             }
         }
 
-        if (saveRequest.Save.Version >= 5)
-        {
-            int usedRoot =
-                saveRequest.Save.RootAbundanceLevel
-                + saveRequest.Save.RootFertilityLevel
-                + saveRequest.Save.RootRetillLevel
-                + saveRequest.Save.RootSeedBlessingLevel
-                + (saveRequest.Save.AutoBuyUnlocked ? 1 : 0)
-                + (saveRequest.Save.AutoRetillUnlocked ? 1 : 0);
-
-            if (saveRequest.Save.AscentCount < 0
-                || saveRequest.Save.TotalRootEarned < 0
-                || saveRequest.Save.CurrentRoot < 0
-                || usedRoot < 0)
-            {
-                return Results.BadRequest(new ApiErrorResponse("ROOTデータが不正です。"));
-            }
-
-            if (saveRequest.Save.TotalRootEarned != saveRequest.Save.AscentCount)
-            {
-                return Results.BadRequest(new ApiErrorResponse("ASCENTとROOTの整合性を確認できませんでした。"));
-            }
-
-            if (saveRequest.Save.CurrentRoot + usedRoot != saveRequest.Save.TotalRootEarned)
-            {
-                return Results.BadRequest(new ApiErrorResponse("ROOT残高の整合性を確認できませんでした。"));
-            }
-        }
 
         //
         // 保存成功
@@ -770,10 +742,22 @@ static bool IsValidAscentProgress(SaveData save)
         return false;
     }
 
-    if (save.RootAbundanceLevel < 0
-        || save.RootFertilityLevel < 0
-        || save.RootRetillLevel < 0
-        || save.RootSeedBlessingLevel < 0)
+    if (save.RootAbundanceLevel is < 0 or > 30)
+    {
+        return false;
+    }
+
+    if (save.RootFertilityLevel is < 0 or > 20)
+    {
+        return false;
+    }
+
+    if (save.RootRetillLevel is < 0 or > 24)
+    {
+        return false;
+    }
+
+    if (save.RootSeedBlessingLevel is < 0 or > 24)
     {
         return false;
     }
