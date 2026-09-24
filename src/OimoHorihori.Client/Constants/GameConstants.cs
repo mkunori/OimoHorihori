@@ -2,7 +2,7 @@ namespace OimoHorihori.Constants;
 
 public static class GameConstants
 {
-    public const int SaveVersion = 4;
+    public const int SaveVersion = 5;
     public const double BaseProductionPerSecond = 0.1;
     public const double FarmCostMultiplier = 1.005;
     public const double AutoSaveIntervalSeconds = 5;
@@ -24,4 +24,15 @@ public static class GameConstants
     public const int RetillMaxCount = 10;
     public const int RetillLevelCapBonus = 10;
     public const double RetillProductionMultiplier = 1.25;
+    public const double AscentTargetProduction = 9.000e14;
+    public const int RootAbundanceMaxLevel = 30;
+    public const int RootFertilityMaxLevel = 20;
+    public const int RootRetillMaxLevel = 24;
+    public const int RootSeedBlessingMaxLevel = 24;
+    public const int AscentHistoryMaxCount = 10;
+    public const double RootAbundanceMultiplierPerLevel = 1.25;
+    public const double RootFertilityReductionPerLevel = 0.025;
+    public const double RootRetillBaseBonusPerLevel = 0.015;
+    public const double RootSeedBlessingMultiplierPerLevel = 1.12;
+    public const double AutoActionIntervalSeconds = 0.25;
 }

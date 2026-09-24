@@ -14,8 +14,7 @@ public class Farm
     public bool IsMaxLevel => Level >= MaxLevel;
     public bool IsRetillMax => RetillCount >= GameConstants.RetillMaxCount;
     public bool CanRetill => !IsRetillMax && Level >= MaxLevel;
-    public double RetillMultiplier => Math.Pow(GameConstants.RetillProductionMultiplier, RetillCount);
-    public double ProductionPerSecond => ProductionPerLevel * Level * RetillMultiplier;
+    public double BaseProductionPerSecond => ProductionPerLevel * Level;
 
     public Farm(string name, double baseCost, double productionPerLevel)
     {

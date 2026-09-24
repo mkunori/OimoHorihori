@@ -2,7 +2,7 @@ namespace OimoHorihori.Shared.Saves;
 
 public class SaveData
 {
-    public int Version { get; set; } = 4;
+    public int Version { get; set; } = 5;
     public bool HasStarted { get; set; }
     public double Potato { get; set; }
     public double TotalPotato { get; set; }
@@ -54,4 +54,19 @@ public class SaveData
     public List<FarmSaveData> Farms { get; set; } = new();
     public int RetillEfficiencyUpgradeLevel { get; set; }
     public int FieldCostReductionUpgradeLevel { get; set; }
+    public int AscentCount { get; set; }
+    public int CurrentRoot { get; set; }
+    public int TotalRootEarned { get; set; }
+    public int RootAbundanceLevel { get; set; }
+    public int RootFertilityLevel { get; set; }
+    public int RootRetillLevel { get; set; }
+    public int RootSeedBlessingLevel { get; set; }
+    public bool AutoBuyUnlocked { get; set; }
+    public bool AutoBuyEnabled { get; set; }
+    public bool AutoRetillUnlocked { get; set; }
+    public bool AutoRetillEnabled { get; set; }
+    public int CurrentAscentReplantCount { get; set; }
+    public DateTimeOffset CurrentAscentStartedAtUtc { get; set; }
+    public double BestAscentSeconds { get; set; }
+    public List<AscentHistoryEntry> AscentHistory { get; set; } = new();
 }

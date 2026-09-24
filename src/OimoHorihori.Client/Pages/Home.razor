@@ -154,7 +154,7 @@
 
                             <span class="farm-production">
                                 +@NumberFormatter.Format(
-                                                                                                                                                                                                                                                                                game.GetFarmProductionPerSecond(farm))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                game.GetFarmProductionPerSecond(farm))
                                 / sec
                             </span>
 
@@ -171,7 +171,7 @@
                                 }
 
                                 <span>
-                                    ×@farm.RetillMultiplier.ToString("0.000")
+                                    ×@game.GetRetillBaseMultiplier(farm).ToString("0.000")
                                 </span>
                             </span>
 
@@ -2037,9 +2037,9 @@
 
             <p>
                 生産倍率
-                ×@retillTargetFarm.RetillMultiplier.ToString("0.000")
+                ×@game.GetRetillBaseMultiplier(retillTargetFarm).ToString("0.000")
                 →
-                ×@((retillTargetFarm.RetillMultiplier * GameConstants.RetillProductionMultiplier).ToString("0.000"))
+                ×@game.GetRetillBaseMultiplier(retillTargetFarm.RetillCount + 1).ToString("0.000")
             </p>
 
             <p>
@@ -2232,6 +2232,7 @@
     private CancellationTokenSource cancellationTokenSource = new();
     private DateTimeOffset lastUpdateTime;
     private DateTimeOffset lastAutoSaveTime;
+    private DateTimeOffset lastAutoActionTime;
     private bool showOfflineResult;
     private TimeSpan offlineDuration;
     private double offlineReward;
@@ -2391,6 +2392,7 @@
 
             lastUpdateTime = now;
             lastAutoSaveTime = now;
+            lastAutoActionTime = now;
 
             visibilityReference = DotNetObjectReference.Create(this);
             initializationMessage = "ゲームを準備中...";
@@ -2519,6 +2521,18 @@
                     game.ProduceForSeconds(elapsedSeconds);
                     game.BestProductionPerSecond = Math.Max(game.BestProductionPerSecond, game.ProductionPerSecond);
                     CheckAchievements();
+                }
+
+                if (game.HasStarted && (now - lastAutoActionTime).TotalSeconds >= GameConstants.AutoActionIntervalSeconds)
+                {
+                    bool automationChanged = game.ProcessAutomation();
+
+                    lastAutoActionTime = now;
+
+                    if (automationChanged)
+                    {
+                        CheckAchievements();
+                    }
                 }
 
                 if (game.GameStartedAtUtc != default && (now - lastAutoSaveTime).TotalSeconds >= GameConstants.AutoSaveIntervalSeconds)
@@ -2766,6 +2780,7 @@
 
             lastUpdateTime = now;
             lastAutoSaveTime = now;
+            lastAutoActionTime = now;
         }
         catch (HttpRequestException ex)
         {
@@ -2895,9 +2910,11 @@
         showReplantConfirmation = false;
         showReplant = false;
         purchaseMode = PurchaseMode.One;
+        
         DateTimeOffset now = DateTimeOffset.UtcNow;
         lastUpdateTime = now;
         lastAutoSaveTime = now;
+        lastAutoActionTime = now;
 
         await SaveGameAsync();
     }
@@ -3198,6 +3215,7 @@
             pageHiddenAtUtc = now;
             lastUpdateTime = now;
             lastAutoSaveTime = now;
+            lastAutoActionTime = now;
 
             await SaveGameAsync();
 
@@ -3634,6 +3652,7 @@
         DateTimeOffset now = DateTimeOffset.UtcNow;
         lastUpdateTime = now;
         lastAutoSaveTime = now;
+        lastAutoActionTime = now;
     }
 
     private void OpenReplantHistory()
@@ -4131,5 +4150,65 @@
         percent = Math.Min(percent, 10.0);
 
         return $"{percent:0.00}%";
+    }
+
+    private async Task UnlockAutoBuyAsync()
+    {
+        if (!game.UnlockAutoBuy())
+        {
+            return;
+        }
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private async Task UnlockAutoRetillAsync()
+    {
+        if (!game.UnlockAutoRetill())
+        {
+            return;
+        }
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private async Task ToggleAutoBuyAsync()
+    {
+        if (!game.AutoBuyUnlocked)
+        {
+            return;
+        }
+
+        if (!game.SetAutoBuyEnabled(
+            !game.AutoBuyEnabled))
+        {
+            return;
+        }
+
+        lastAutoActionTime = DateTimeOffset.UtcNow;
+
+        await SaveGameAsync();
+    }
+
+    private async Task ToggleAutoRetillAsync()
+    {
+        if (!game.AutoRetillUnlocked)
+        {
+            return;
+        }
+
+        if (!game.SetAutoRetillEnabled(
+            !game.AutoRetillEnabled))
+        {
+            return;
+        }
+
+        lastAutoActionTime = DateTimeOffset.UtcNow;
+
+        await SaveGameAsync();
     }
 }

@@ -62,6 +62,22 @@ public class GameState
     };
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; } = new();
+    public int AscentCount { get; set; }
+    public int CurrentRoot { get; set; }
+    public int TotalRootEarned { get; set; }
+    public int RootAbundanceLevel { get; set; }
+    public int RootFertilityLevel { get; set; }
+    public int RootRetillLevel { get; set; }
+    public int RootSeedBlessingLevel { get; set; }
+    public bool AutoBuyUnlocked { get; set; }
+    public bool AutoBuyEnabled { get; set; }
+    public bool AutoRetillUnlocked { get; set; }
+    public bool AutoRetillEnabled { get; set; }
+    public int CurrentAscentReplantCount { get; set; }
+    public DateTimeOffset CurrentAscentStartedAtUtc { get; set; }
+    public double BestAscentSeconds { get; set; }
+    public List<AscentHistoryEntry> AscentHistory { get; } = new();
+
     public double BaseProductionPerSecond => GameConstants.BaseProductionPerSecond + DigUpgradeLevel * GameConstants.DigUpgradeBonusPerLevel;
     public double ProductionMultiplier => 1.0 + ProductionUpgradeLevel * GameConstants.ProductionUpgradeBonusPerLevel;
     public double ProductionUntilNextSeedPotato => Math.Max(0, NextSeedPotatoRequiredProduction - RunProducedPotato);
@@ -72,18 +88,30 @@ public class GameState
     public int FieldCostReductionUpgradeCost => GetUpgradeCost(FieldCostReductionUpgradeLevel);
     public bool IsFieldCostReductionUpgradeMax => FieldCostReductionUpgradeLevel >= GameConstants.FieldCostReductionMaxLevel;
     public int RetillEfficiencyUpgradeCost => GetUpgradeCost(RetillEfficiencyUpgradeLevel);
+    public int UsedRoot => RootAbundanceLevel + RootFertilityLevel + RootRetillLevel + RootSeedBlessingLevel + (AutoBuyUnlocked ? 1 : 0) + (AutoRetillUnlocked ? 1 : 0);
+    public int RootPower => UsedRoot;
+    public bool CanAscent => RunProducedPotato >= GameConstants.AscentTargetProduction;
+    public double RootAbundanceMultiplier => Math.Pow(GameConstants.RootAbundanceMultiplierPerLevel, RootAbundanceLevel);
+    public double RootFertilityMultiplier => 1.0 - RootFertilityLevel * GameConstants.RootFertilityReductionPerLevel;
+    public double RootAdjustedRetillBase => GameConstants.RetillProductionMultiplier + RootRetillLevel * GameConstants.RootRetillBaseBonusPerLevel;
+    public double RootSeedBlessingMultiplier => Math.Pow(GameConstants.RootSeedBlessingMultiplierPerLevel, RootSeedBlessingLevel);
+    public bool IsRootAbundanceMax => RootAbundanceLevel >= GameConstants.RootAbundanceMaxLevel;
+    public bool IsRootFertilityMax => RootFertilityLevel >= GameConstants.RootFertilityMaxLevel;
+    public bool IsRootRetillMax => RootRetillLevel >= GameConstants.RootRetillMaxLevel;
+    public bool IsRootSeedBlessingMax => RootSeedBlessingLevel >= GameConstants.RootSeedBlessingMaxLevel;
 
     public double ProductionPerSecond
     {
         get
         {
             double total = BaseProductionPerSecond;
+
             foreach (Farm farm in Farms)
             {
-                total += farm.ProductionPerSecond * GetRetillEfficiencyMultiplier(farm);
+                total += GetFarmProductionPerSecond(farm);
             }
 
-            return total * ProductionMultiplier;
+            return total * ProductionMultiplier * RootAbundanceMultiplier;
         }
     }
 
@@ -258,6 +286,28 @@ public class GameState
             }).ToList(),
             RetillEfficiencyUpgradeLevel = RetillEfficiencyUpgradeLevel,
             FieldCostReductionUpgradeLevel = FieldCostReductionUpgradeLevel,
+            AscentCount = AscentCount,
+            CurrentRoot = CurrentRoot,
+            TotalRootEarned = TotalRootEarned,
+            RootAbundanceLevel = RootAbundanceLevel,
+            RootFertilityLevel = RootFertilityLevel,
+            RootRetillLevel = RootRetillLevel,
+            RootSeedBlessingLevel = RootSeedBlessingLevel,
+            AutoBuyUnlocked = AutoBuyUnlocked,
+            AutoBuyEnabled = AutoBuyEnabled,
+            AutoRetillUnlocked = AutoRetillUnlocked,
+            AutoRetillEnabled = AutoRetillEnabled,
+            CurrentAscentReplantCount = CurrentAscentReplantCount,
+            CurrentAscentStartedAtUtc = CurrentAscentStartedAtUtc,
+            BestAscentSeconds = BestAscentSeconds,
+            AscentHistory = AscentHistory.Select(entry => new AscentHistoryEntry
+            {
+                AscentNumber = entry.AscentNumber,
+                AscendedAtUtc = entry.AscendedAtUtc,
+                AscentDurationSeconds = entry.AscentDurationSeconds,
+                ReplantCount = entry.ReplantCount,
+                FinalRunProducedPotato = entry.FinalRunProducedPotato
+            }).ToList(),
         };
     }
 
@@ -269,6 +319,7 @@ public class GameState
             2 => TryLoadVersion2(save),
             3 => TryLoadVersion3(save),
             4 => TryLoadVersion4(save),
+            5 => TryLoadVersion5(save),
             _ => false
         };
     }
@@ -531,13 +582,8 @@ public class GameState
         return true;
     }
 
-    private bool TryLoadVersion4(SaveData save)
+    private void LoadVersion4Fields(SaveData save)
     {
-        if (!IsValidVersion4SaveData(save))
-        {
-            return false;
-        }
-
         HasStarted = save.HasStarted;
         Potato = save.Potato;
         TotalPotato = save.TotalPotato;
@@ -618,6 +664,157 @@ public class GameState
                 EarnedSeedPotato = entry.EarnedSeedPotato
             });
         }
+    }
+
+    private bool TryLoadVersion4(SaveData save)
+    {
+        if (!IsValidVersion4SaveData(save))
+        {
+            return false;
+        }
+
+        LoadVersion4Fields(save);
+        InitializeVersion5MigrationState();
+
+        return true;
+    }
+
+    private bool TryLoadVersion5(SaveData save)
+    {
+        if (!IsValidVersion5SaveData(save))
+        {
+            return false;
+        }
+
+        LoadVersion4Fields(save);
+
+        AscentCount = save.AscentCount;
+        CurrentRoot = save.CurrentRoot;
+        TotalRootEarned = save.TotalRootEarned;
+        RootAbundanceLevel = save.RootAbundanceLevel;
+        RootFertilityLevel = save.RootFertilityLevel;
+        RootRetillLevel = save.RootRetillLevel;
+        RootSeedBlessingLevel = save.RootSeedBlessingLevel;
+        AutoBuyUnlocked = save.AutoBuyUnlocked;
+        AutoBuyEnabled = save.AutoBuyEnabled;
+        AutoRetillUnlocked = save.AutoRetillUnlocked;
+        AutoRetillEnabled = save.AutoRetillEnabled;
+        CurrentAscentReplantCount = save.CurrentAscentReplantCount;
+        CurrentAscentStartedAtUtc = save.CurrentAscentStartedAtUtc;
+        BestAscentSeconds = save.BestAscentSeconds;
+
+        AscentHistory.Clear();
+
+        foreach (AscentHistoryEntry entry in save.AscentHistory)
+        {
+            AscentHistory.Add(new AscentHistoryEntry
+            {
+                AscentNumber = entry.AscentNumber,
+                AscendedAtUtc = entry.AscendedAtUtc,
+                AscentDurationSeconds = entry.AscentDurationSeconds,
+                ReplantCount = entry.ReplantCount,
+                FinalRunProducedPotato = entry.FinalRunProducedPotato
+            });
+        }
+
+        return true;
+    }
+
+    private void InitializeVersion5MigrationState()
+    {
+        AscentCount = 0;
+        CurrentRoot = 0;
+        TotalRootEarned = 0;
+        RootAbundanceLevel = 0;
+        RootFertilityLevel = 0;
+        RootRetillLevel = 0;
+        RootSeedBlessingLevel = 0;
+        AutoBuyUnlocked = false;
+        AutoBuyEnabled = false;
+        AutoRetillUnlocked = false;
+        AutoRetillEnabled = false;
+        CurrentAscentReplantCount = 0;
+
+        // v5移行後からASCENT時間を計測する。
+        CurrentAscentStartedAtUtc = DateTimeOffset.UtcNow;
+
+        BestAscentSeconds = 0;
+
+        AscentHistory.Clear();
+    }
+
+    private static bool IsValidVersion5SaveData(SaveData save)
+    {
+        if (!IsValidVersion4SaveData(save))
+        {
+            return false;
+        }
+
+        if (save.AscentCount < 0 || save.CurrentRoot < 0 || save.TotalRootEarned < 0 || save.CurrentAscentReplantCount < 0)
+        {
+            return false;
+        }
+
+        if (save.RootAbundanceLevel < 0 || save.RootAbundanceLevel > GameConstants.RootAbundanceMaxLevel)
+        {
+            return false;
+        }
+
+        if (save.RootFertilityLevel < 0 || save.RootFertilityLevel > GameConstants.RootFertilityMaxLevel)
+        {
+            return false;
+        }
+
+        if (save.RootRetillLevel < 0 || save.RootRetillLevel > GameConstants.RootRetillMaxLevel)
+        {
+            return false;
+        }
+
+        if (save.RootSeedBlessingLevel < 0 || save.RootSeedBlessingLevel > GameConstants.RootSeedBlessingMaxLevel)
+        {
+            return false;
+        }
+
+        if (!double.IsFinite(save.BestAscentSeconds) || save.BestAscentSeconds < 0)
+        {
+            return false;
+        }
+
+        if (save.AscentHistory is null || save.AscentHistory.Count > GameConstants.AscentHistoryMaxCount)
+        {
+            return false;
+        }
+
+        int usedRoot =
+            save.RootAbundanceLevel + save.RootFertilityLevel + save.RootRetillLevel + save.RootSeedBlessingLevel + (save.AutoBuyUnlocked ? 1 : 0) + (save.AutoRetillUnlocked ? 1 : 0);
+
+        if (usedRoot > save.TotalRootEarned)
+        {
+            return false;
+        }
+
+        if (save.CurrentRoot != save.TotalRootEarned - usedRoot)
+        {
+            return false;
+        }
+
+        foreach (AscentHistoryEntry entry in save.AscentHistory)
+        {
+            if (entry.AscentNumber <= 0 || entry.ReplantCount < 0 || !double.IsFinite(entry.AscentDurationSeconds) || entry.AscentDurationSeconds < 0 || !double.IsFinite(entry.FinalRunProducedPotato) || entry.FinalRunProducedPotato < 0)
+            {
+                return false;
+            }
+        }
+
+        if (!save.AutoBuyUnlocked && save.AutoBuyEnabled)
+        {
+            return false;
+        }
+
+        if (!save.AutoRetillUnlocked && save.AutoRetillEnabled)
+        {
+            return false;
+        }
 
         return true;
     }
@@ -677,7 +874,7 @@ public class GameState
         return true;
     }
 
-    public int ReplantSeedPotato
+    public int BaseReplantSeedPotato
     {
         get
         {
@@ -687,19 +884,30 @@ public class GameState
             }
 
             double value = Math.Sqrt(RunProducedPotato / GameConstants.ReplantBaseProduction);
+
             return (int)Math.Floor(value);
         }
     }
 
-    public bool CanReplant => ReplantSeedPotato >= 1;
+    public int ReplantSeedPotato
+    {
+        get
+        {
+            double value = BaseReplantSeedPotato * RootSeedBlessingMultiplier;
+
+            return (int)Math.Floor(value);
+        }
+    }
+
+    public bool CanReplant => BaseReplantSeedPotato >= 1;
 
     public double NextSeedPotatoRequiredProduction
     {
         get
         {
-            int nextSeedPotato = ReplantSeedPotato + 1;
+            int nextBaseSeedPotato = BaseReplantSeedPotato + 1;
 
-            return GameConstants.ReplantBaseProduction * nextSeedPotato * nextSeedPotato;
+            return GameConstants.ReplantBaseProduction * nextBaseSeedPotato * nextBaseSeedPotato;
         }
     }
 
@@ -749,18 +957,8 @@ public class GameState
         TotalSeedPotatoEarned += earnedSeedPotato;
         MaxSeedPotatoPerReplant = Math.Max(MaxSeedPotatoPerReplant, earnedSeedPotato);
         ReplantCount++;
-        Potato = 0;
 
-        foreach (Farm farm in Farms)
-        {
-            farm.Level = 0;
-            farm.PurchaseCount = 0;
-            farm.RetillCount = 0;
-        }
-
-        RunProducedPotato = 0;
-        RunStartedAtUtc = default;
-        HasStarted = false;
+        ResetRunProgress();
 
         return earnedSeedPotato;
     }
@@ -1010,7 +1208,11 @@ public class GameState
 
     public double GetFarmProductionPerSecond(Farm farm)
     {
-        return farm.ProductionPerSecond * GetRetillEfficiencyMultiplier(farm);
+        double farmBase = farm.BaseProductionPerSecond;
+        double retillMultiplier = GetRetillBaseMultiplier(farm);
+        double seedRetillEfficiencyMultiplier = GetRetillEfficiencyMultiplier(farm);
+
+        return farmBase * retillMultiplier * seedRetillEfficiencyMultiplier;
     }
 
     public bool BuyRetillEfficiencyUpgrade()
@@ -1046,7 +1248,7 @@ public class GameState
         return true;
     }
 
-    public double FieldCostMultiplier
+    public double SeedFieldCostMultiplier
     {
         get
         {
@@ -1057,6 +1259,8 @@ public class GameState
             return 1.0 - reduction;
         }
     }
+
+    public double FieldCostMultiplier => SeedFieldCostMultiplier * RootFertilityMultiplier;
 
     private static bool IsValidVersion4SaveData(SaveData save)
     {
@@ -1127,5 +1331,335 @@ public class GameState
     public double GetRetillEfficiencyMultiplier(Farm farm)
     {
         return 1.0 + farm.RetillCount * RetillEfficiencyUpgradeLevel * GameConstants.RetillEfficiencyBonusPerLevelPerRetill;
+    }
+
+    private void ResetRunProgress()
+    {
+        Potato = 0;
+
+        foreach (Farm farm in Farms)
+        {
+            farm.Level = 0;
+            farm.PurchaseCount = 0;
+            farm.RetillCount = 0;
+        }
+
+        RunProducedPotato = 0;
+        RunStartedAtUtc = default;
+        HasStarted = false;
+    }
+
+    private void ResetReplantLayer()
+    {
+        SeedPotato = 0;
+        ProductionUpgradeLevel = 0;
+        DigUpgradeLevel = 0;
+        OfflineUpgradeLevel = 0;
+        RetillEfficiencyUpgradeLevel = 0;
+        FieldCostReductionUpgradeLevel = 0;
+        CurrentAscentReplantCount = 0;
+    }
+
+    public bool Ascent()
+    {
+        if (!CanAscent)
+        {
+            return false;
+        }
+
+        DateTimeOffset ascendedAtUtc = DateTimeOffset.UtcNow;
+
+        double ascentDurationSeconds = 0;
+
+        if (CurrentAscentStartedAtUtc != default)
+        {
+            ascentDurationSeconds = Math.Max(0, (ascendedAtUtc - CurrentAscentStartedAtUtc).TotalSeconds);
+        }
+
+        double finalRunProducedPotato = RunProducedPotato;
+        int ascentReplantCount = CurrentAscentReplantCount;
+        int nextAscentNumber = AscentCount + 1;
+
+        if (ascentDurationSeconds > 0)
+        {
+            if (BestAscentSeconds <= 0
+                || ascentDurationSeconds < BestAscentSeconds)
+            {
+                BestAscentSeconds = ascentDurationSeconds;
+            }
+        }
+
+        AscentHistory.Insert(
+            0,
+            new AscentHistoryEntry
+            {
+                AscentNumber = nextAscentNumber,
+                AscendedAtUtc = ascendedAtUtc,
+                AscentDurationSeconds = ascentDurationSeconds,
+                ReplantCount = ascentReplantCount,
+                FinalRunProducedPotato = finalRunProducedPotato
+            });
+
+        if (AscentHistory.Count > GameConstants.AscentHistoryMaxCount)
+        {
+            AscentHistory.RemoveRange(GameConstants.AscentHistoryMaxCount, AscentHistory.Count - GameConstants.AscentHistoryMaxCount);
+        }
+
+        AscentCount++;
+        CurrentRoot++;
+        TotalRootEarned++;
+
+        ResetRunProgress();
+        ResetReplantLayer();
+
+        CurrentAscentStartedAtUtc = ascendedAtUtc;
+
+        return true;
+    }
+
+    public double GetRetillBaseMultiplier(Farm farm)
+    {
+        return GetRetillBaseMultiplier(farm.RetillCount);
+    }
+
+    public double GetRetillBaseMultiplier(int retillCount)
+    {
+        return Math.Pow(RootAdjustedRetillBase, retillCount);
+    }
+
+    private bool TrySpendRoot(int cost)
+    {
+        if (cost <= 0 || CurrentRoot < cost)
+        {
+            return false;
+        }
+
+        CurrentRoot -= cost;
+
+        return true;
+    }
+
+    public bool BuyRootAbundanceUpgrade()
+    {
+        if (RootAbundanceLevel >= GameConstants.RootAbundanceMaxLevel)
+        {
+            return false;
+        }
+
+        if (!TrySpendRoot(1))
+        {
+            return false;
+        }
+
+        RootAbundanceLevel++;
+        BestProductionPerSecond = Math.Max(BestProductionPerSecond, ProductionPerSecond);
+
+        return true;
+    }
+
+    public bool BuyRootFertilityUpgrade()
+    {
+        if (RootFertilityLevel >= GameConstants.RootFertilityMaxLevel)
+        {
+            return false;
+        }
+
+        if (!TrySpendRoot(1))
+        {
+            return false;
+        }
+
+        RootFertilityLevel++;
+
+        return true;
+    }
+
+    public bool BuyRootRetillUpgrade()
+    {
+        if (RootRetillLevel >= GameConstants.RootRetillMaxLevel)
+        {
+            return false;
+        }
+
+        if (!TrySpendRoot(1))
+        {
+            return false;
+        }
+
+        RootRetillLevel++;
+        BestProductionPerSecond = Math.Max(BestProductionPerSecond, ProductionPerSecond);
+
+        return true;
+    }
+
+    public bool BuyRootSeedBlessingUpgrade()
+    {
+        if (RootSeedBlessingLevel >= GameConstants.RootSeedBlessingMaxLevel)
+        {
+            return false;
+        }
+
+        if (!TrySpendRoot(1))
+        {
+            return false;
+        }
+
+        RootSeedBlessingLevel++;
+
+        return true;
+    }
+
+    public bool UnlockAutoBuy()
+    {
+        if (AutoBuyUnlocked)
+        {
+            return false;
+        }
+
+        if (!TrySpendRoot(1))
+        {
+            return false;
+        }
+
+        AutoBuyUnlocked = true;
+        AutoBuyEnabled = false;
+
+        return true;
+    }
+
+    public bool SetAutoBuyEnabled(bool enabled)
+    {
+        if (!AutoBuyUnlocked)
+        {
+            AutoBuyEnabled = false;
+            return false;
+        }
+
+        if (AutoBuyEnabled == enabled)
+        {
+            return false;
+        }
+
+        AutoBuyEnabled = enabled;
+
+        return true;
+    }
+
+    public bool UnlockAutoRetill()
+    {
+        if (AutoRetillUnlocked)
+        {
+            return false;
+        }
+
+        if (!TrySpendRoot(1))
+        {
+            return false;
+        }
+
+        AutoRetillUnlocked = true;
+        AutoRetillEnabled = false;
+
+        return true;
+    }
+
+    public bool SetAutoRetillEnabled(bool enabled)
+    {
+        if (!AutoRetillUnlocked)
+        {
+            AutoRetillEnabled = false;
+            return false;
+        }
+
+        if (AutoRetillEnabled == enabled)
+        {
+            return false;
+        }
+
+        AutoRetillEnabled = enabled;
+
+        return true;
+    }
+
+    public bool ProcessAutoBuy()
+    {
+        if (!AutoBuyUnlocked || !AutoBuyEnabled)
+        {
+            return false;
+        }
+
+        for (int i = Farms.Count - 1; i >= 0; i--)
+        {
+            Farm farm = Farms[i];
+
+            if (farm.IsMaxLevel)
+            {
+                continue;
+            }
+
+            int affordableLevels = farm.GetAffordableLevels(Potato, 1, FieldCostMultiplier);
+
+            if (affordableLevels <= 0)
+            {
+                continue;
+            }
+
+            int purchasedLevels = BuyFarm(farm, 1);
+
+            return purchasedLevels > 0;
+        }
+
+        return false;
+    }
+
+    public int ProcessAutoRetill()
+    {
+        if (!AutoRetillUnlocked || !AutoRetillEnabled)
+        {
+            return 0;
+        }
+
+        int retillCount = 0;
+
+        foreach (Farm farm in Farms)
+        {
+            if (!farm.CanRetill)
+            {
+                continue;
+            }
+
+            if (RetillFarm(farm))
+            {
+                retillCount++;
+            }
+        }
+
+        return retillCount;
+    }
+
+    public bool ProcessAutomation()
+    {
+        bool changed = false;
+
+        // すでにLv上限なら先にRETILLする
+        if (ProcessAutoRetill() > 0)
+        {
+            changed = true;
+        }
+
+        // 1回の処理につき購入は1Lvだけ
+        if (ProcessAutoBuy())
+        {
+            changed = true;
+        }
+
+        // 今回の+1でLv上限に届いた場合、
+        // 同じ処理内でRETILLする
+        if (ProcessAutoRetill() > 0)
+        {
+            changed = true;
+        }
+
+        return changed;
     }
 }
