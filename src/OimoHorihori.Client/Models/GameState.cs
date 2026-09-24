@@ -52,13 +52,13 @@ public class GameState
     public List<Farm> Farms { get; } = new()
     {
         new Farm("畑1", 1.000e1,  1.000e-1),
-        new Farm("畑2", 1.500e2,  1.000e0),
-        new Farm("畑3", 3.000e3,  1.000e1),
-        new Farm("畑4", 4.500e4,  1.000e2),
-        new Farm("畑5", 6.000e5,  1.000e3),
-        new Farm("畑6", 1.300e7,  1.000e4),
-        new Farm("畑7", 2.000e8,  1.000e5),
-        new Farm("畑8", 1.100e10, 1.000e6)
+        new Farm("畑2", 1.000e2,  1.000e0),
+        new Farm("畑3", 1.000e3,  1.000e1),
+        new Farm("畑4", 8.000e3,  1.000e2),
+        new Farm("畑5", 6.000e4,  1.000e3),
+        new Farm("畑6", 5.000e5,  1.000e4),
+        new Farm("畑7", 3.000e6,  1.000e5),
+        new Farm("畑8", 2.500e7,  1.000e6)
     };
     public double ShortestReplantSeconds { get; set; }
     public List<ReplantHistoryEntry> ReplantHistory { get; } = new();
@@ -90,7 +90,7 @@ public class GameState
     public int RetillEfficiencyUpgradeCost => GetUpgradeCost(RetillEfficiencyUpgradeLevel);
     public int UsedRoot => RootAbundanceLevel + RootFertilityLevel + RootRetillLevel + RootSeedBlessingLevel + (AutoBuyUnlocked ? 1 : 0) + (AutoRetillUnlocked ? 1 : 0);
     public int RootPower => UsedRoot;
-    public bool CanAscent => RunProducedPotato >= GameConstants.AscentTargetProduction;
+    public bool CanAscent => CurrentAscentReplantCount >= 1 && RunProducedPotato >= GameConstants.AscentTargetProduction;
     public double RootAbundanceMultiplier => GetRootAbundanceMultiplier(RootAbundanceLevel);
     public double RootFertilityMultiplier => GetRootFertilityMultiplier(RootFertilityLevel);
     public double RootAdjustedRetillBase => GetRootAdjustedRetillBase(RootRetillLevel);
@@ -1270,7 +1270,7 @@ public class GameState
         {
             double reduction = FieldCostReductionUpgradeLevel * GameConstants.FieldCostReductionPerLevel;
 
-            reduction = Math.Min(reduction, 0.10);
+            reduction = Math.Min(reduction, 0.40);
 
             return 1.0 - reduction;
         }
@@ -1639,7 +1639,7 @@ public class GameState
 
         foreach (Farm farm in Farms)
         {
-            if (!farm.CanRetill)
+            if (!CanRetillFarm(farm))
             {
                 continue;
             }
@@ -1720,5 +1720,12 @@ public class GameState
 
             return Math.Max(0, seconds);
         }
+    }
+
+    public bool IsRetillUnlockedThisRun => Farms.Count >= 8 && Farms[7].PurchaseCount > 0;
+
+    public bool CanRetillFarm(Farm farm)
+    {
+        return IsRetillUnlockedThisRun && farm.CanRetill;
     }
 }

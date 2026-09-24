@@ -78,6 +78,21 @@
 
             </section>
 
+            @if (game.AscentCount == 0)
+            {
+                <section class="next-goal-panel">
+
+                    <span class="next-goal-label">
+                        NEXT GOAL
+                    </span>
+
+                    <strong>
+                        @GetEarlyGameGoalText()
+                    </strong>
+
+                </section>
+            }
+
             @if (saveStatus != SaveStatus.None)
             {
                 <div class="save-status @GetSaveStatusClass()">
@@ -153,7 +168,7 @@
                     bool canBuy = purchaseLevels > 0;
                     double purchaseCost = GetPurchaseDisplayCost(farm);
 
-                    <div id="@GetFarmElementId(farm)" class="farm-card @(canBuy || farm.CanRetill ? "" : "unavailable")">
+                    <div id="@GetFarmElementId(farm)" class="farm-card @(canBuy || game.CanRetillFarm(farm) ? "" : "unavailable")">
 
                         <div class="farm-header">
                             <span class="farm-name">
@@ -191,7 +206,17 @@
 
                         </div>
 
-                        @if (farm.CanRetill)
+                        @if (farm.CanRetill && !game.IsRetillUnlockedThisRun)
+                        {
+                            <div class="farm-action-row">
+
+                                <span class="retill-ready">
+                                    畑8購入でRETILL解放
+                                </span>
+
+                            </div>
+                        }
+                        else if (game.CanRetillFarm(farm))
                         {
                             <div class="farm-action-row">
 
@@ -199,7 +224,7 @@
                                     RETILL READY
                                 </span>
 
-                                <button class="retill-button" @onclick="() => OpenRetillConfirmation(farm)">
+                                <button class="retill-button" @onclick="() => ExecuteRetillAsync(farm)">
                                     RETILL
                                 </button>
 
@@ -1891,7 +1916,17 @@
 
             <section class="ascent-action-card">
 
-                @if (game.CanAscent)
+                @if (game.CurrentAscentReplantCount == 0)
+                {
+                    <div class="ascent-remaining-label">
+                        ASCENT条件
+                    </div>
+
+                    <div class="ascent-remaining-value">
+                        REPLANTを1回行う
+                    </div>
+                }
+                else if (game.CanAscent)
                 {
                     <div class="ascent-ready-label">
                         ASCENT READY
@@ -2648,62 +2683,6 @@
     </div>
 }
 
-@if (showRetillConfirmation && retillTargetFarm is not null)
-{
-    <div class="modal-backdrop">
-
-        <div class="confirm-modal">
-
-            <h2>
-                RETILL
-            </h2>
-
-            <p>
-                @retillTargetFarm.Name を
-                RETILLしますか？
-            </p>
-
-            <p>
-                Lv.@retillTargetFarm.Level
-                →
-                Lv.0
-            </p>
-
-            <p>
-                Lv上限
-                @retillTargetFarm.MaxLevel
-                →
-                @(retillTargetFarm.MaxLevel + GameConstants.RetillLevelCapBonus)
-            </p>
-
-            <p>
-                生産倍率
-                ×@game.GetRetillBaseMultiplier(retillTargetFarm).ToString("0.000")
-                →
-                ×@game.GetRetillBaseMultiplier(retillTargetFarm.RetillCount + 1).ToString("0.000")
-            </p>
-
-            <p>
-                購入コストは引き継がれます。
-            </p>
-
-            <div class="confirm-actions">
-
-                <button @onclick="CancelRetill">
-                    CANCEL
-                </button>
-
-                <button @onclick="ExecuteRetillAsync">
-                    RETILL
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-}
-
 @if (showReplantConfirmation)
 {
     <div class="modal-backdrop">
@@ -3044,8 +3023,6 @@
     private bool showDeleteAccountConfirmation;
     private bool isDeletingAccount;
     private string? deleteAccountError;
-    private bool showRetillConfirmation;
-    private Farm? retillTargetFarm;
     private bool isInitializing = true;
     private string initializationMessage = "セーブデータを読み込み中...";
     private SaveStatus saveStatus = SaveStatus.None;
@@ -4745,43 +4722,14 @@
         }
     }
 
-    private void OpenRetillConfirmation(Farm farm)
+    private async Task ExecuteRetillAsync(Farm farm)
     {
-        if (!farm.CanRetill)
+        if (!game.RetillFarm(farm))
         {
-            return;
-        }
-
-        retillTargetFarm = farm;
-        showRetillConfirmation = true;
-    }
-
-    private void CancelRetill()
-    {
-        showRetillConfirmation = false;
-        retillTargetFarm = null;
-    }
-
-    private async Task ExecuteRetillAsync()
-    {
-        if (retillTargetFarm is null)
-        {
-            return;
-        }
-
-        bool retilled = game.RetillFarm(retillTargetFarm);
-        if (!retilled)
-        {
-            showRetillConfirmation = false;
-            retillTargetFarm = null;
-
             return;
         }
 
         CheckAchievements();
-    
-        showRetillConfirmation = false;
-        retillTargetFarm = null;
 
         await SaveGameAsync();
     }
@@ -4926,7 +4874,7 @@
     {
         double percent = level * GameConstants.FieldCostReductionPerLevel * 100.0;
 
-        percent = Math.Min(percent, 10.0);
+        percent = Math.Min(percent, 40.0);
 
         return $"{percent:0.00}%";
     }
@@ -5158,12 +5106,16 @@
 
     private async Task DebugAscentReadyAsync()
     {
+        game.CurrentAscentReplantCount = Math.Max(1, game.CurrentAscentReplantCount);
+
         double remaining = Math.Max(0, GameConstants.AscentTargetProduction - game.RunProducedPotato);
 
         if (remaining > 0)
         {
             game.ProducePotato(remaining);
         }
+
+        CheckAchievements();
 
         await SaveGameAsync();
     }
@@ -5176,5 +5128,36 @@
     private static string FormatAscentDate(DateTimeOffset date)
     {
         return date.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+
+    private string GetEarlyGameGoalText()
+    {
+        Farm farm8 = game.Farms[7];
+
+        if (farm8.PurchaseCount == 0)
+        {
+            return "畑8を購入する";
+        }
+
+        if (game.CurrentAscentReplantCount == 0)
+        {
+            if (game.CanReplant)
+            {
+                return "REPLANTして種芋を獲得する";
+            }
+
+            return
+                $"種芋まであと " + $"{NumberFormatter.Format(game.ProductionUntilNextSeedPotato)} 芋";
+        }
+
+        if (game.CanAscent)
+        {
+            return "ASCENTする";
+        }
+
+        double remaining = Math.Max(0, GameConstants.AscentTargetProduction - game.RunProducedPotato);
+
+        return
+            $"ASCENTまであと " + $"{NumberFormatter.Format(remaining)} 芋";
     }
 }
