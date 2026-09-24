@@ -114,6 +114,21 @@
 
             </section>
 
+            @if (game.CanAscent)
+            {
+                <button class="ascent-ready-banner" @onclick="OpenAscent">
+
+                    <span>
+                        ASCENT READY
+                    </span>
+
+                    <span>
+                        ROOT +1 ›
+                    </span>
+
+                </button>
+            }
+
             @if (RetillReadyCount > 0)
             {
                 <div class="retill-ready-summary">
@@ -153,8 +168,7 @@
                         <div class="farm-summary">
 
                             <span class="farm-production">
-                                +@NumberFormatter.Format(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                game.GetFarmProductionPerSecond(farm))
+                                +@NumberFormatter.Format(game.GetFarmProductionPerSecond(farm))
                                 / sec
                             </span>
 
@@ -308,6 +322,21 @@
                 <button class="menu-item" @onclick="OpenReplantHistory">
                     <span>REPLANT履歴</span>
                     <span>›</span>
+                </button>
+
+                <button class="menu-item" @onclick="OpenAscent">
+                    <span>ASCENT</span>
+
+                    @if (game.CanAscent)
+                    {
+                        <span>READY</span>
+                    }
+                    else
+                    {
+                        <span>
+                            ROOT @game.CurrentRoot
+                        </span>
+                    }
                 </button>
 
                 <button class="menu-item" @onclick="ShareGameAsync">
@@ -1697,6 +1726,382 @@
 
         </section>
     }
+    else if (currentView == HomeView.Ascent)
+    {
+        <section class="ascent-screen">
+
+            <div class="subpage-header">
+                <button class="back-button" @onclick="OpenMenu">
+                    ‹
+                </button>
+
+                <h2>ASCENT</h2>
+            </div>
+
+            <section class="ascent-status-card">
+
+                <div class="ascent-status-row">
+                    <span>CURRENT RUN</span>
+                    <strong>
+                        @NumberFormatter.Format(game.RunProducedPotato)
+                    </strong>
+                </div>
+
+                <div class="ascent-status-row">
+                    <span>TARGET</span>
+                    <strong>
+                        @NumberFormatter.Format(
+                            GameConstants.AscentTargetProduction)
+                    </strong>
+                </div>
+
+                <div class="ascent-status-row">
+                    <span>ASCENT COUNT</span>
+                    <strong>@game.AscentCount</strong>
+                </div>
+
+                <div class="ascent-status-row">
+                    <span>ROOT</span>
+                    <strong>@game.CurrentRoot</strong>
+                </div>
+
+                <div class="ascent-status-row">
+                    <span>ROOT POWER</span>
+                    <strong>
+                        @game.RootPower
+                        /
+                        @GameConstants.RootPowerMax
+                    </strong>
+                </div>
+
+            </section>
+
+            <section class="ascent-action-card">
+
+                @if (game.CanAscent)
+                {
+                    <div class="ascent-ready-label">
+                        ASCENT READY
+                    </div>
+
+                    <div class="ascent-replant-preview">
+                        REPLANT IF NOW
+
+                        <strong>
+                            SEED POTATO +@game.ReplantSeedPotato
+                        </strong>
+                    </div>
+
+                    <button class="ascent-button" @onclick="OpenAscentConfirmation">
+                        ASCENT
+                    </button>
+                }
+                else
+                {
+                    <div class="ascent-remaining-label">
+                        あと
+                    </div>
+
+                    <div class="ascent-remaining-value">
+                        @NumberFormatter.Format(
+                            GetAscentRemainingProduction())
+                        芋
+                    </div>
+                }
+
+            </section>
+
+            <div class="root-section-header">
+
+                <div>
+                    ROOT POWER
+                    @game.RootPower
+                    /
+                    @GameConstants.RootPowerMax
+                </div>
+
+                <div>
+                    ROOT @game.CurrentRoot
+                </div>
+
+            </div>
+
+            <div class="root-upgrade-list">
+                <button class="upgrade-card" disabled="@(game.IsRootAbundanceMax || game.CurrentRoot < 1)"
+                        @onclick="BuyRootAbundanceAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            豊穣
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.RootAbundanceLevel
+                            /
+                            @GameConstants.RootAbundanceMaxLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+
+                        @if (game.IsRootAbundanceMax)
+                        {
+                            <span>
+                                全生産
+                                ×@FormatRootMultiplier(game.RootAbundanceMultiplier)
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                全生産
+                                ×@FormatRootMultiplier(game.RootAbundanceMultiplier)
+
+                                <span class="upgrade-arrow">→</span>
+
+                                ×@FormatRootMultiplier(game.GetRootAbundanceMultiplier(game.RootAbundanceLevel + 1))
+                            </span>
+                        }
+
+                    </div>
+
+                    <div class="upgrade-cost">
+                        @(game.IsRootAbundanceMax ? "MAX" : "ROOT 1")
+                    </div>
+
+                </button>
+
+                <button class="upgrade-card" disabled="@(game.IsRootFertilityMax || game.CurrentRoot < 1)"
+                        @onclick="BuyRootFertilityAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            肥沃
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.RootFertilityLevel
+                            /
+                            @GameConstants.RootFertilityMaxLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+
+                        @if (game.IsRootFertilityMax)
+                        {
+                            <span>
+                                畑価格
+                                -@FormatRootFertilityReduction(game.RootFertilityLevel)
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                畑価格
+                                -@FormatRootFertilityReduction(game.RootFertilityLevel)
+
+                                <span class="upgrade-arrow">→</span>
+
+                                -@FormatRootFertilityReduction(game.RootFertilityLevel + 1)
+                            </span>
+                        }
+
+                    </div>
+
+                    <div class="upgrade-cost">
+                        @(game.IsRootFertilityMax
+                            ? "MAX"
+                            : "ROOT 1")
+                    </div>
+
+                </button>
+
+                <button class="upgrade-card" disabled="@(game.IsRootRetillMax || game.CurrentRoot < 1)"
+                        @onclick="BuyRootRetillAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            再耕
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.RootRetillLevel
+                            /
+                            @GameConstants.RootRetillMaxLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+
+                        @if (game.IsRootRetillMax)
+                        {
+                            <span>
+                                RETILL基礎
+                                ×@game.RootAdjustedRetillBase.ToString("0.000")
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                RETILL基礎
+                                ×@game.RootAdjustedRetillBase.ToString("0.000")
+
+                                <span class="upgrade-arrow">→</span>
+
+                                ×@(game.GetRootAdjustedRetillBase(game.RootRetillLevel + 1).ToString("0.000"))
+                            </span>
+                        }
+
+                    </div>
+
+                    <div class="upgrade-cost">
+                        @(game.IsRootRetillMax ? "MAX" : "ROOT 1")
+                    </div>
+
+                </button>
+
+                <button class="upgrade-card" disabled="@(game.IsRootSeedBlessingMax || game.CurrentRoot < 1)"
+                        @onclick="BuyRootSeedBlessingAsync">
+
+                    <div class="upgrade-header">
+
+                        <span class="upgrade-name">
+                            種の祝福
+                        </span>
+
+                        <span class="upgrade-level">
+                            Lv.@game.RootSeedBlessingLevel
+                            /
+                            @GameConstants.RootSeedBlessingMaxLevel
+                        </span>
+
+                    </div>
+
+                    <div class="upgrade-effect">
+
+                        @if (game.IsRootSeedBlessingMax)
+                        {
+                            <span>
+                                種芋獲得
+                                ×@FormatRootMultiplier(game.RootSeedBlessingMultiplier)
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                種芋獲得
+                                ×@FormatRootMultiplier(game.RootSeedBlessingMultiplier)
+
+                                <span class="upgrade-arrow">→</span>
+
+                                ×@FormatRootMultiplier(game.GetRootSeedBlessingMultiplier(game.RootSeedBlessingLevel + 1))
+                            </span>
+                        }
+
+                    </div>
+
+                    <div class="upgrade-cost">
+                        @(game.IsRootSeedBlessingMax
+                            ? "MAX"
+                            : "ROOT 1")
+                    </div>
+
+                </button>
+
+            </div>
+
+            <section class="auto-root-card">
+
+                <div class="auto-root-header">
+
+                    <span>
+                        AUTO BUY
+                    </span>
+
+                    <span>
+                        @(game.AutoBuyUnlocked
+                            ? "UNLOCKED"
+                            : "LOCKED")
+                    </span>
+
+                </div>
+
+                <div class="auto-root-description">
+                    購入可能な最上位畑を自動で+1します。
+                </div>
+
+                @if (!game.AutoBuyUnlocked)
+                {
+                    <button disabled="@(game.CurrentRoot < 1)" @onclick="UnlockAutoBuyAsync">
+
+                        ROOT 1で解放
+
+                    </button>
+                }
+                else
+                {
+                    <button class="@(game.AutoBuyEnabled ? "auto-toggle on" : "auto-toggle")" @onclick="ToggleAutoBuyAsync">
+
+                        @(game.AutoBuyEnabled
+                            ? "ON"
+                            : "OFF")
+
+                    </button>
+                }
+
+            </section>
+
+            <section class="auto-root-card">
+
+                <div class="auto-root-header">
+
+                    <span>
+                        AUTO RETILL
+                    </span>
+
+                    <span>
+                        @(game.AutoRetillUnlocked
+                            ? "UNLOCKED"
+                            : "LOCKED")
+                    </span>
+
+                </div>
+
+                <div class="auto-root-description">
+                    Lv上限へ到達した畑を自動でRETILLします。
+                </div>
+
+                @if (!game.AutoRetillUnlocked)
+                {
+                    <button disabled="@(game.CurrentRoot < 1)" @onclick="UnlockAutoRetillAsync">
+
+                        ROOT 1で解放
+
+                    </button>
+                }
+                else
+                {
+                    <button class="@(game.AutoRetillEnabled ? "auto-toggle on" : "auto-toggle")"
+                            @onclick="ToggleAutoRetillAsync">
+
+                        @(game.AutoRetillEnabled
+                            ? "ON"
+                            : "OFF")
+
+                    </button>
+                }
+
+            </section>
+
+        </section>
+    }
     @if (showDeleteAccountConfirmation)
     {
         <div class="modal-backdrop">
@@ -1765,7 +2170,7 @@
 
         </nav>
     }
-
+    
 </main>
 
 @if (currentAchievementNotification is not null)
@@ -2099,6 +2504,129 @@
     </div>
 }
 
+@if (showAscentConfirmation)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal ascent-confirm-modal">
+
+            <h2>
+                ASCENT
+            </h2>
+
+            <p>
+                ASCENTしますか？
+            </p>
+
+            <div class="ascent-reset-list">
+
+                <div>以下がリセットされます。</div>
+
+                <ul>
+                    <li>現在芋</li>
+                    <li>畑1〜8</li>
+                    <li>RETILL</li>
+                    <li>現在保有種芋</li>
+                    <li>種芋強化5種類</li>
+                    <li>今回ASCENT中のREPLANT進行</li>
+                </ul>
+
+            </div>
+
+            <div class="ascent-confirm-reward">
+                獲得
+                <strong>ROOT +1</strong>
+            </div>
+
+            <p class="ascent-confirm-note">
+                ROOT・ROOT強化・AUTO能力・
+                実績・図鑑・長期記録は維持されます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="CancelAscent">
+                    CANCEL
+                </button>
+
+                <button class="danger-button" @onclick="ExecuteAscentAsync">
+                    ASCENT
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@if (showAscentResult
+&& lastAscentResult is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="ascent-result-modal">
+
+            <div class="ascent-complete-label">
+                ASCENT COMPLETE
+            </div>
+
+            <h2>
+                ASCENT #@lastAscentResult.AscentNumber
+            </h2>
+
+            <div class="ascent-result-root">
+                ROOT
+                <strong>+1</strong>
+            </div>
+
+            <div class="ascent-result-row">
+
+                <span>
+                    ASCENT TIME
+                </span>
+
+                <span>
+                    @FormatAscentDuration(
+                        lastAscentResult.AscentDurationSeconds)
+                </span>
+
+            </div>
+
+            <div class="ascent-result-row">
+
+                <span>
+                    REPLANT
+                </span>
+
+                <span>
+                    @lastAscentResult.ReplantCount
+                </span>
+
+            </div>
+
+            <div class="ascent-result-row">
+
+                <span>
+                    FINAL RUN
+                </span>
+
+                <span>
+                    @NumberFormatter.Format(
+                        lastAscentResult.FinalRunProducedPotato)
+                </span>
+
+            </div>
+
+            <button class="close-button" @onclick="CloseAscentResult">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
 @if (showOimoDiscovery && lastDiscoveredOimo is not null)
 {
     <div class="modal-backdrop">
@@ -2288,6 +2816,9 @@
     private DateTimeOffset? lastSaveCompletedAtUtc;
     private bool isResetting;
     private string? resetError;
+    private bool showAscentConfirmation;
+    private bool showAscentResult;
+    private AscentHistoryEntry? lastAscentResult;
     private enum SaveStatus
     {
         None,
@@ -2441,6 +2972,7 @@
         game.ProducePotato(0.1);
         CheckAchievements();
         lastUpdateTime = now;
+        lastAutoActionTime = now;
 
         await SaveGameAsync();
     }
@@ -2968,6 +3500,7 @@
         Horihori,
         Menu,
         SeedUpgrades,
+        Ascent,
         Statistics,
         Achievements,
         OimoBook,
@@ -3287,6 +3820,7 @@
         // 二重計上させない
         lastUpdateTime = now;
         lastAutoSaveTime = now;
+        lastAutoActionTime = now;
 
         await SaveGameAsync();
 
@@ -4208,6 +4742,183 @@
         }
 
         lastAutoActionTime = DateTimeOffset.UtcNow;
+
+        await SaveGameAsync();
+    }
+
+    private void OpenAscent()
+    {
+        currentView = HomeView.Ascent;
+    }
+
+    private double GetAscentRemainingProduction()
+    {
+        return Math.Max(0, GameConstants.AscentTargetProduction - game.RunProducedPotato);
+    }
+
+    private async Task BuyRootAbundanceAsync()
+    {
+        if (!game.BuyRootAbundanceUpgrade())
+        {
+            return;
+        }
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private async Task BuyRootFertilityAsync()
+    {
+        if (!game.BuyRootFertilityUpgrade())
+        {
+            return;
+        }
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private async Task BuyRootRetillAsync()
+    {
+        if (!game.BuyRootRetillUpgrade())
+        {
+            return;
+        }
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private async Task BuyRootSeedBlessingAsync()
+    {
+        if (!game.BuyRootSeedBlessingUpgrade())
+        {
+            return;
+        }
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private static string FormatRootMultiplier(double multiplier)
+    {
+        if (!double.IsFinite(multiplier))
+        {
+            return "-";
+        }
+
+        if (multiplier >= 100)
+        {
+            return multiplier.ToString("0.0");
+        }
+
+        if (multiplier >= 10)
+        {
+            return multiplier.ToString("0.00");
+        }
+
+        return multiplier.ToString("0.000");
+    }
+
+    private static string FormatRootFertilityReduction(int level)
+    {
+        double reduction = level * GameConstants.RootFertilityReductionPerLevel * 100.0;
+
+        return $"{reduction:0.0}%";
+    }
+
+    private void OpenAscentConfirmation()
+    {
+        if (!game.CanAscent)
+        {
+            return;
+        }
+
+        showAscentConfirmation = true;
+    }
+
+    private void CancelAscent()
+    {
+        showAscentConfirmation = false;
+    }
+
+    private async Task ExecuteAscentAsync()
+    {
+        if (!game.CanAscent)
+        {
+            showAscentConfirmation = false;
+            return;
+        }
+
+        bool ascended = game.Ascent();
+
+        if (!ascended)
+        {
+            showAscentConfirmation = false;
+            return;
+        }
+
+        lastAscentResult =
+            game.AscentHistory.FirstOrDefault();
+
+        showAscentConfirmation = false;
+        showAscentResult = true;
+
+        purchaseMode = PurchaseMode.One;
+
+        DateTimeOffset now =
+            DateTimeOffset.UtcNow;
+
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+        lastAutoActionTime = now;
+
+        CheckAchievements();
+
+        await SaveGameAsync();
+    }
+
+    private void CloseAscentResult()
+    {
+        showAscentResult = false;
+        lastAscentResult = null;
+
+        currentView = HomeView.Horihori;
+    }
+
+    private static string FormatAscentDuration(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds)
+            || totalSeconds <= 0)
+        {
+            return "--:--:--";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int days = (int)time.TotalDays;
+
+        if (days > 0)
+        {
+            return
+                $"{days:00}d " + $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+        }
+
+        return $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private async Task DebugAscentReadyAsync()
+    {
+        double remaining = Math.Max(0, GameConstants.AscentTargetProduction - game.RunProducedPotato);
+
+        if (remaining > 0)
+        {
+            game.ProducePotato(remaining);
+        }
 
         await SaveGameAsync();
     }

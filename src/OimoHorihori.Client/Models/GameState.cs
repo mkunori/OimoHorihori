@@ -91,10 +91,10 @@ public class GameState
     public int UsedRoot => RootAbundanceLevel + RootFertilityLevel + RootRetillLevel + RootSeedBlessingLevel + (AutoBuyUnlocked ? 1 : 0) + (AutoRetillUnlocked ? 1 : 0);
     public int RootPower => UsedRoot;
     public bool CanAscent => RunProducedPotato >= GameConstants.AscentTargetProduction;
-    public double RootAbundanceMultiplier => Math.Pow(GameConstants.RootAbundanceMultiplierPerLevel, RootAbundanceLevel);
-    public double RootFertilityMultiplier => 1.0 - RootFertilityLevel * GameConstants.RootFertilityReductionPerLevel;
-    public double RootAdjustedRetillBase => GameConstants.RetillProductionMultiplier + RootRetillLevel * GameConstants.RootRetillBaseBonusPerLevel;
-    public double RootSeedBlessingMultiplier => Math.Pow(GameConstants.RootSeedBlessingMultiplierPerLevel, RootSeedBlessingLevel);
+    public double RootAbundanceMultiplier => GetRootAbundanceMultiplier(RootAbundanceLevel);
+    public double RootFertilityMultiplier => GetRootFertilityMultiplier(RootFertilityLevel);
+    public double RootAdjustedRetillBase => GetRootAdjustedRetillBase(RootRetillLevel);
+    public double RootSeedBlessingMultiplier => GetRootSeedBlessingMultiplier(RootSeedBlessingLevel);
     public bool IsRootAbundanceMax => RootAbundanceLevel >= GameConstants.RootAbundanceMaxLevel;
     public bool IsRootFertilityMax => RootFertilityLevel >= GameConstants.RootFertilityMaxLevel;
     public bool IsRootRetillMax => RootRetillLevel >= GameConstants.RootRetillMaxLevel;
@@ -1661,5 +1661,33 @@ public class GameState
         }
 
         return changed;
+    }
+
+    public double GetRootAbundanceMultiplier(int level)
+    {
+        int safeLevel = Math.Clamp(level, 0, GameConstants.RootAbundanceMaxLevel);
+
+        return Math.Pow(GameConstants.RootAbundanceMultiplierPerLevel, safeLevel);
+    }
+
+    public double GetRootFertilityMultiplier(int level)
+    {
+        int safeLevel = Math.Clamp(level, 0, GameConstants.RootFertilityMaxLevel);
+
+        return 1.0 - safeLevel * GameConstants.RootFertilityReductionPerLevel;
+    }
+
+    public double GetRootAdjustedRetillBase(int level)
+    {
+        int safeLevel = Math.Clamp(level, 0, GameConstants.RootRetillMaxLevel);
+
+        return GameConstants.RetillProductionMultiplier + safeLevel * GameConstants.RootRetillBaseBonusPerLevel;
+    }
+
+    public double GetRootSeedBlessingMultiplier(int level)
+    {
+        int safeLevel = Math.Clamp(level, 0, GameConstants.RootSeedBlessingMaxLevel);
+        return Math.Pow(
+            GameConstants.RootSeedBlessingMultiplierPerLevel, safeLevel);
     }
 }

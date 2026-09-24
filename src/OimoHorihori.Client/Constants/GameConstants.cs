@@ -35,4 +35,5 @@ public static class GameConstants
     public const double RootRetillBaseBonusPerLevel = 0.015;
     public const double RootSeedBlessingMultiplierPerLevel = 1.12;
     public const double AutoActionIntervalSeconds = 0.25;
+    public const int RootPowerMax = 100;
 }

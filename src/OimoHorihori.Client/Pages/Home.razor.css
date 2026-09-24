@@ -1701,4 +1701,245 @@
         min-width: 66px;
         padding: 7px 9px;
     }
+
+    .ascent-ready-banner {
+        width: 100%;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        margin-bottom: 12px;
+        padding: 12px 14px;
+
+        border: 1px solid #765276;
+        border-radius: 10px;
+
+        background: #f7eef7;
+        color: #35281f;
+
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .ascent-screen {
+        padding-bottom: 12px;
+    }
+
+    .ascent-status-card,
+    .ascent-action-card,
+    .auto-root-card {
+        margin-top: 12px;
+        padding: 14px 16px;
+
+        border: 1px solid #b9a78b;
+        border-radius: 10px;
+
+        background: #fffaf0;
+    }
+
+    .ascent-status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 12px;
+
+        padding: 4px 0;
+
+        font-size: 0.85rem;
+    }
+
+    .ascent-status-row strong {
+        text-align: right;
+    }
+
+    .ascent-action-card {
+        text-align: center;
+    }
+
+    .ascent-ready-label {
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    .ascent-replant-preview {
+        margin-top: 8px;
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 3px;
+
+        font-size: 0.8rem;
+    }
+
+    .ascent-button {
+        width: 100%;
+
+        margin-top: 14px;
+        padding: 12px;
+
+        border: 1px solid #604060;
+        border-radius: 8px;
+
+        background: #765276;
+        color: white;
+
+        font-weight: 700;
+    }
+
+    .ascent-remaining-label {
+        font-size: 0.8rem;
+        opacity: 0.7;
+    }
+
+    .ascent-remaining-value {
+        margin-top: 5px;
+
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .root-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 8px;
+
+        margin: 18px 0 10px;
+
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .root-upgrade-list {
+        display: flex;
+        flex-direction: column;
+
+        gap: 10px;
+    }
+
+    .auto-root-header {
+        display: flex;
+        justify-content: space-between;
+
+        gap: 8px;
+
+        font-weight: 700;
+    }
+
+    .auto-root-description {
+        margin: 7px 0 12px;
+
+        font-size: 0.8rem;
+        opacity: 0.75;
+    }
+
+    .auto-root-card button {
+        width: 100%;
+
+        min-height: 42px;
+
+        border: 1px solid #a99170;
+        border-radius: 8px;
+
+        background: #fff7df;
+        color: #35281f;
+
+        font-weight: 700;
+    }
+
+    .auto-root-card button:disabled {
+        opacity: 0.42;
+    }
+
+    .auto-toggle.on {
+        border-color: #604060;
+
+        background: #765276;
+        color: white;
+    }
+
+    .ascent-reset-list {
+        margin: 14px 0;
+
+        font-size: 0.85rem;
+    }
+
+    .ascent-reset-list ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+    }
+
+    .ascent-confirm-reward {
+        margin: 16px 0;
+
+        text-align: center;
+    }
+
+    .ascent-confirm-reward strong {
+        display: block;
+
+        margin-top: 4px;
+
+        font-size: 1.3rem;
+    }
+
+    .ascent-confirm-note {
+        font-size: 0.8rem;
+        opacity: 0.75;
+    }
+
+    .ascent-result-modal {
+        width: 100%;
+        max-width: 320px;
+
+        padding: 24px;
+
+        border: 1px solid #765276;
+        border-radius: 12px;
+
+        background: #fff8e8;
+        color: #35281f;
+
+        text-align: center;
+    }
+
+    .ascent-result-modal h2 {
+        margin: 8px 0 18px;
+    }
+
+    .ascent-complete-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+
+        letter-spacing: 0.08em;
+    }
+
+    .ascent-result-root {
+        margin-bottom: 18px;
+
+        font-size: 0.9rem;
+    }
+
+    .ascent-result-root strong {
+        display: block;
+
+        margin-top: 3px;
+
+        font-size: 1.6rem;
+    }
+
+    .ascent-result-row {
+        display: flex;
+        justify-content: space-between;
+
+        gap: 12px;
+
+        padding: 5px 0;
+
+        font-size: 0.85rem;
+    }
 }
