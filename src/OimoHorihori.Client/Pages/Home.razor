@@ -4817,7 +4817,7 @@
         return lastSaveCompletedAtUtc.Value.ToLocalTime().ToString("HH:mm:ss");
     }
 
-    private int RetillReadyCount => game.Farms.Count(farm => farm.CanRetill);
+    private int RetillReadyCount => game.Farms.Count(farm => game.CanRetillFarm(farm));
 
     private string GetFarmElementId(Farm farm)
     {
@@ -4828,7 +4828,7 @@
 
     private string GetFirstRetillReadyFarmId()
     {
-        Farm? farm = game.Farms.FirstOrDefault(farm => farm.CanRetill);
+        Farm? farm = game.Farms.FirstOrDefault(farm => game.CanRetillFarm(farm));
 
         if (farm is null)
         {
@@ -5106,16 +5106,34 @@
 
     private async Task DebugAscentReadyAsync()
     {
-        game.CurrentAscentReplantCount = Math.Max(1, game.CurrentAscentReplantCount);
-
-        double remaining = Math.Max(0, GameConstants.AscentTargetProduction - game.RunProducedPotato);
-
-        if (remaining > 0)
+        if (game.CurrentAscentReplantCount == 0)
         {
-            game.ProducePotato(remaining);
+            double replantRemaining = Math.Max(0, GameConstants.ReplantBaseProduction - game.RunProducedPotato);
+
+            if (replantRemaining > 0)
+            {
+                game.ProducePotato(replantRemaining);
+            }
+
+            game.Replant();
+
+            game.HasStarted = true;
+            game.RunStartedAtUtc = DateTimeOffset.UtcNow;
+        }
+
+        double ascentRemaining = Math.Max(0, GameConstants.AscentTargetProduction - game.RunProducedPotato);
+
+        if (ascentRemaining > 0)
+        {
+            game.ProducePotato(ascentRemaining);
         }
 
         CheckAchievements();
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
+        lastUpdateTime = now;
+        lastAutoActionTime = now;
 
         await SaveGameAsync();
     }

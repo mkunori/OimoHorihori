@@ -1210,6 +1210,11 @@ public class GameState
 
     public bool RetillFarm(Farm farm)
     {
+        if (!CanRetillFarm(farm))
+        {
+            return false;
+        }
+
         bool retilled = farm.TryRetill();
 
         if (!retilled)
