@@ -692,6 +692,69 @@
 
                 <section class="statistics-section">
 
+                    <h3>ASCENT</h3>
+
+                    <div class="stat-row">
+                        <span>ASCENT回数</span>
+                        <span>
+                            @game.AscentCount
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>現在ROOT</span>
+                        <span>
+                            @game.CurrentRoot
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>累計獲得ROOT</span>
+                        <span>
+                            @game.TotalRootEarned
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>使用ROOT</span>
+                        <span>
+                            @game.UsedRoot
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>ROOT POWER</span>
+                        <span>
+                            @game.RootPower
+                            /
+                            @GameConstants.RootPowerMax
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>最短ASCENT</span>
+                        <span>
+                            @FormatAscentDuration(game.BestAscentSeconds)
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>現在ASCENT時間</span>
+                        <span>
+                            @FormatAscentDuration(game.CurrentAscentElapsedSeconds)
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>今回のREPLANT</span>
+                        <span>
+                            @game.CurrentAscentReplantCount
+                        </span>
+                    </div>
+
+                </section>
+                <section class="statistics-section">
+
                     <h3>畑</h3>
 
                     <div class="farm-stat">
@@ -1545,6 +1608,24 @@
                     </div>
 
                     <div class="profile-row">
+                        <span>ASCENT</span>
+
+                        <span>
+                            @game.AscentCount 回
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>ROOT POWER</span>
+
+                        <span>
+                            @game.RootPower
+                            /
+                            @GameConstants.RootPowerMax
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
                         <span>実績</span>
                         <span>
                             @game.AchievementUnlockedAtUtc.Count
@@ -1775,6 +1856,20 @@
                 </div>
 
             </section>
+
+            <button class="ascent-history-link" @onclick="OpenAscentHistory">
+
+                <span>
+                    ASCENT HISTORY
+                </span>
+
+                <span>
+                    @game.AscentHistory.Count
+                    / @GameConstants.AscentHistoryMaxCount
+                    ›
+                </span>
+
+            </button>
 
             <section class="ascent-action-card">
 
@@ -2099,6 +2194,125 @@
                 }
 
             </section>
+
+        </section>
+    }
+    else if (currentView == HomeView.AscentHistory)
+    {
+        <section class="ascent-history-screen">
+
+            <div class="subpage-header">
+
+                <button class="back-button" @onclick="OpenAscent">
+                    ‹
+                </button>
+
+                <h2>ASCENT HISTORY</h2>
+
+            </div>
+
+            <section class="ascent-record-card">
+
+                <h3>BEST RECORD</h3>
+
+                <div class="ascent-history-row">
+
+                    <span>
+                        最短ASCENT
+                    </span>
+
+                    <span>
+                        @FormatAscentDuration(
+                            game.BestAscentSeconds)
+                    </span>
+
+                </div>
+
+                <div class="ascent-history-row">
+
+                    <span>
+                        ASCENT回数
+                    </span>
+
+                    <span>
+                        @game.AscentCount
+                    </span>
+
+                </div>
+
+            </section>
+
+            <div class="ascent-history-list">
+
+                @if (game.AscentHistory.Count == 0)
+                {
+                    <div class="ascent-history-empty">
+                        ASCENT履歴はまだありません。
+                    </div>
+                }
+                else
+                {
+                    @foreach (
+                        AscentHistoryEntry entry
+                        in game.AscentHistory)
+                    {
+                        <section class="ascent-history-card">
+
+                            <div class="ascent-history-header">
+
+                                <strong>
+                                    ASCENT #@entry.AscentNumber
+                                </strong>
+
+                                <span>
+                                    @FormatAscentDate(entry.AscendedAtUtc)
+                                </span>
+
+                            </div>
+
+                            <div class="ascent-history-row">
+
+                                <span>
+                                    ASCENT時間
+                                </span>
+
+                                <span>
+                                    @FormatAscentDuration(entry.AscentDurationSeconds)
+                                </span>
+
+                            </div>
+
+                            <div class="ascent-history-row">
+
+                                <span>
+                                    REPLANT
+                                </span>
+
+                                <span>
+                                    @entry.ReplantCount 回
+                                </span>
+
+                            </div>
+
+                            <div class="ascent-history-row">
+
+                                <span>
+                                    最終周回生産
+                                </span>
+
+                                <span>
+                                    @NumberFormatter.Format(
+                                        entry.FinalRunProducedPotato)
+                                    芋
+                                </span>
+
+                            </div>
+
+                        </section>
+                    }
+                }
+
+            </div>
 
         </section>
     }
@@ -2960,6 +3174,7 @@
         }
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
+
         game.HasStarted = true;
 
         if (game.GameStartedAtUtc == default)
@@ -2967,10 +3182,17 @@
             game.GameStartedAtUtc = now;
         }
 
+        if (game.CurrentAscentStartedAtUtc == default)
+        {
+            game.CurrentAscentStartedAtUtc = now;
+        }
+
         game.RunStartedAtUtc = now;
         game.DigButtonCount++;
         game.ProducePotato(0.1);
+
         CheckAchievements();
+
         lastUpdateTime = now;
         lastAutoActionTime = now;
 
@@ -3501,6 +3723,7 @@
         Menu,
         SeedUpgrades,
         Ascent,
+        AscentHistory,
         Statistics,
         Achievements,
         OimoBook,
@@ -4921,5 +5144,17 @@
         }
 
         await SaveGameAsync();
+    }
+
+    private void OpenAscentHistory()
+    {
+        currentView = HomeView.AscentHistory;
+    }
+
+    private static string FormatAscentDate(DateTimeOffset date)
+    {
+        return date
+            .ToLocalTime()
+            .ToString("yyyy/MM/dd HH:mm");
     }
 }

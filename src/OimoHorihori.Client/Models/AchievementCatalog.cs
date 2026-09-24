@@ -226,6 +226,43 @@ public static class AchievementCatalog
                 "累計種芋100個獲得",
                 game => game.TotalSeedPotatoEarned >= 100),
 
+            // ASCENT
+            new(
+                "ascent_1",
+                "最初のASCENT",
+                "ASCENTを1回行う",
+                game => game.AscentCount >= 1),
+
+            new(
+                "ascent_10",
+                "ROOTを求めて",
+                "ASCENT 10回",
+                game => game.AscentCount >= 10),
+
+            new(
+                "ascent_100",
+                "百回のASCENT",
+                "ASCENT 100回",
+                game => game.AscentCount >= 100),
+
+            new(
+                "root_power_100",
+                "ROOTの極み",
+                "ROOT POWER 100",
+                game => game.RootPower >= 100),
+
+            new(
+                "auto_buy_unlock",
+                "自動栽培",
+                "AUTO BUYを解放する",
+                game => game.AutoBuyUnlocked),
+
+            new(
+                "auto_retill_unlock",
+                "自動再耕",
+                "AUTO RETILLを解放する",
+                game => game.AutoRetillUnlocked),
+
             // 恒久強化
             new(
                 "production_upgrade_1",

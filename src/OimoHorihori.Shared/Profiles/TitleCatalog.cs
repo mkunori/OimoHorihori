@@ -25,6 +25,11 @@ public static class TitleCatalog
 
             new("run_1e9", "長期栽培", "run_1e9"),
 
-            new("days_100", "百日の芋", "days_100")
+            new("days_100", "百日の芋", "days_100"),
+
+            new("ascent_1", "最初の昇華者", "ascent_1"),
+            new("ascent_10", "ROOT SEEKER", "ascent_10"),
+            new("ascent_100", "百回の昇華者", "ascent_100"),
+            new("root_power_100", "ROOT MASTER", "root_power_100"),
         };
 }

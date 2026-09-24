@@ -957,6 +957,7 @@ public class GameState
         TotalSeedPotatoEarned += earnedSeedPotato;
         MaxSeedPotatoPerReplant = Math.Max(MaxSeedPotatoPerReplant, earnedSeedPotato);
         ReplantCount++;
+        CurrentAscentReplantCount++;
 
         ResetRunProgress();
 
@@ -1689,5 +1690,20 @@ public class GameState
         int safeLevel = Math.Clamp(level, 0, GameConstants.RootSeedBlessingMaxLevel);
         return Math.Pow(
             GameConstants.RootSeedBlessingMultiplierPerLevel, safeLevel);
+    }
+
+    public double CurrentAscentElapsedSeconds
+    {
+        get
+        {
+            if (CurrentAscentStartedAtUtc == default)
+            {
+                return 0;
+            }
+
+            double seconds = (DateTimeOffset.UtcNow - CurrentAscentStartedAtUtc).TotalSeconds;
+
+            return Math.Max(0, seconds);
+        }
     }
 }
