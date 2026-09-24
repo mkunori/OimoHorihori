@@ -343,6 +343,63 @@ app.MapPut("/api/save",
             return Results.BadRequest(new ApiErrorResponse("セーブデータの整合性を確認できませんでした。"));
         }
 
+        if (oldSave.Version >= 5 && saveRequest.Save.Version >= 5)
+        {
+            if (saveRequest.Save.AscentCount < oldSave.AscentCount
+                || saveRequest.Save.TotalRootEarned < oldSave.TotalRootEarned
+                || saveRequest.Save.RootAbundanceLevel < oldSave.RootAbundanceLevel
+                || saveRequest.Save.RootFertilityLevel < oldSave.RootFertilityLevel
+                || saveRequest.Save.RootRetillLevel < oldSave.RootRetillLevel
+                || saveRequest.Save.RootSeedBlessingLevel < oldSave.RootSeedBlessingLevel)
+            {
+                return Results.BadRequest(new ApiErrorResponse("ASCENT進行の整合性を確認できませんでした。"));
+            }
+
+            if (oldSave.AutoBuyUnlocked && !saveRequest.Save.AutoBuyUnlocked)
+            {
+                return Results.BadRequest(new ApiErrorResponse("AUTO BUYの解放状態を確認できませんでした。"));
+            }
+
+            if (oldSave.AutoRetillUnlocked && !saveRequest.Save.AutoRetillUnlocked)
+            {
+                return Results.BadRequest(new ApiErrorResponse("AUTO RETILLの解放状態を確認できませんでした。"));
+            }
+        }
+
+        if (saveRequest.Save.Version >= 5)
+        {
+            int usedRoot =
+                saveRequest.Save.RootAbundanceLevel
+                + saveRequest.Save.RootFertilityLevel
+                + saveRequest.Save.RootRetillLevel
+                + saveRequest.Save.RootSeedBlessingLevel
+                + (saveRequest.Save.AutoBuyUnlocked ? 1 : 0)
+                + (saveRequest.Save.AutoRetillUnlocked ? 1 : 0);
+
+            if (saveRequest.Save.AscentCount < 0
+                || saveRequest.Save.TotalRootEarned < 0
+                || saveRequest.Save.CurrentRoot < 0
+                || usedRoot < 0)
+            {
+                return Results.BadRequest(new ApiErrorResponse("ROOTデータが不正です。"));
+            }
+
+            if (saveRequest.Save.TotalRootEarned != saveRequest.Save.AscentCount)
+            {
+                return Results.BadRequest(new ApiErrorResponse("ASCENTとROOTの整合性を確認できませんでした。"));
+            }
+
+            if (saveRequest.Save.CurrentRoot + usedRoot != saveRequest.Save.TotalRootEarned)
+            {
+                return Results.BadRequest(new ApiErrorResponse("ROOT残高の整合性を確認できませんでした。"));
+            }
+
+            if (saveRequest.Save.TotalRootEarned != saveRequest.Save.AscentCount || saveRequest.Save.CurrentRoot + usedRoot != saveRequest.Save.TotalRootEarned)
+            {
+                return Results.BadRequest(new ApiErrorResponse("ASCENTデータの整合性を確認できませんでした。"));
+            }
+        }
+
         //
         // 保存成功
         //
@@ -506,6 +563,19 @@ app.MapGet("/api/profiles/{userId:guid}",
         string? equippedTitleName = TitleCatalog.All.FirstOrDefault(title => title.Id == user.EquippedTitleId)?.Name;
 
         int achievementCount = saveData?.AchievementUnlockedAtUtc?.Count ?? 0;
+        int ascentCount = saveData?.AscentCount ?? 0;
+        int rootPower = 0;
+
+        if (saveData is not null && saveData.Version >= 5)
+        {
+            rootPower =
+                saveData.RootAbundanceLevel
+                + saveData.RootFertilityLevel
+                + saveData.RootRetillLevel
+                + saveData.RootSeedBlessingLevel
+                + (saveData.AutoBuyUnlocked ? 1 : 0)
+                + (saveData.AutoRetillUnlocked ? 1 : 0);
+        }
 
         int oimoSpeciesCount = saveData?.OimoDiscoveryCounts?.Count(pair => pair.Value > 0) ?? 0;
 
@@ -519,9 +589,12 @@ app.MapGet("/api/profiles/{userId:guid}",
                 saveData?.TotalPotato ?? 0,
                 saveData?.BestProductionPerSecond ?? 0,
                 saveData?.ReplantCount ?? 0,
+                ascentCount,
+                rootPower,
                 achievementCount,
                 oimoSpeciesCount,
-                gameStartedAtUtc));
+                gameStartedAtUtc)
+        );
     });
 
 app.MapDelete("/api/account",

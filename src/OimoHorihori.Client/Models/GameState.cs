@@ -816,6 +816,21 @@ public class GameState
             return false;
         }
 
+        if (save.TotalRootEarned != save.AscentCount)
+        {
+            return false;
+        }
+
+        if (save.CurrentAscentReplantCount > save.ReplantCount)
+        {
+            return false;
+        }
+
+        if (save.AscentHistory.Count > save.AscentCount)
+        {
+            return false;
+        }
+
         return true;
     }
 

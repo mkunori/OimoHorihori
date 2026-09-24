@@ -1773,6 +1773,24 @@
                     </div>
 
                     <div class="profile-row">
+                        <span>ASCENT</span>
+
+                        <span>
+                            @selectedPublicProfile.AscentCount 回
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
+                        <span>ROOT POWER</span>
+
+                        <span>
+                            @selectedPublicProfile.RootPower
+                            /
+                            @GameConstants.RootPowerMax
+                        </span>
+                    </div>
+
+                    <div class="profile-row">
                         <span>実績</span>
 
                         <span>
@@ -5153,8 +5171,6 @@
 
     private static string FormatAscentDate(DateTimeOffset date)
     {
-        return date
-            .ToLocalTime()
-            .ToString("yyyy/MM/dd HH:mm");
+        return date.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
     }
 }

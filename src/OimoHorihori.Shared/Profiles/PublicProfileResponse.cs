@@ -7,6 +7,8 @@ public sealed record PublicProfileResponse(
     double TotalPotato,
     double BestProductionPerSecond,
     int ReplantCount,
+    int AscentCount,
+    int RootPower,
     int AchievementCount,
     int OimoSpeciesCount,
     DateTimeOffset? GameStartedAtUtc);
