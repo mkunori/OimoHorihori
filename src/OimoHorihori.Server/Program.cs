@@ -273,6 +273,11 @@ app.MapPut("/api/save",
             return Results.Unauthorized();
         }
 
+        if (!IsValidAscentProgress(saveRequest.Save))
+        {
+            return Results.BadRequest(new ApiErrorResponse("ASCENTデータの整合性を確認できませんでした。"));
+        }
+
         GameSave? currentSave = await db.GameSaves.SingleOrDefaultAsync(save => save.UserId == user.Id);
 
         //
@@ -392,11 +397,6 @@ app.MapPut("/api/save",
             if (saveRequest.Save.CurrentRoot + usedRoot != saveRequest.Save.TotalRootEarned)
             {
                 return Results.BadRequest(new ApiErrorResponse("ROOT残高の整合性を確認できませんでした。"));
-            }
-
-            if (saveRequest.Save.TotalRootEarned != saveRequest.Save.AscentCount || saveRequest.Save.CurrentRoot + usedRoot != saveRequest.Save.TotalRootEarned)
-            {
-                return Results.BadRequest(new ApiErrorResponse("ASCENTデータの整合性を確認できませんでした。"));
             }
         }
 
@@ -755,3 +755,46 @@ app.MapPut("/api/admin/users/{userId:guid}/disabled",
     });
 
 app.Run();
+
+static bool IsValidAscentProgress(SaveData save)
+{
+    if (save.Version < 5)
+    {
+        return true;
+    }
+
+    if (save.AscentCount < 0
+        || save.TotalRootEarned < 0
+        || save.CurrentRoot < 0)
+    {
+        return false;
+    }
+
+    if (save.RootAbundanceLevel < 0
+        || save.RootFertilityLevel < 0
+        || save.RootRetillLevel < 0
+        || save.RootSeedBlessingLevel < 0)
+    {
+        return false;
+    }
+
+    if (save.AutoBuyEnabled && !save.AutoBuyUnlocked)
+    {
+        return false;
+    }
+
+    if (save.AutoRetillEnabled && !save.AutoRetillUnlocked)
+    {
+        return false;
+    }
+
+    int usedRoot =
+        save.RootAbundanceLevel
+        + save.RootFertilityLevel
+        + save.RootRetillLevel
+        + save.RootSeedBlessingLevel
+        + (save.AutoBuyUnlocked ? 1 : 0)
+        + (save.AutoRetillUnlocked ? 1 : 0);
+
+    return save.TotalRootEarned == save.AscentCount && save.CurrentRoot + usedRoot == save.TotalRootEarned;
+}
