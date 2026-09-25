@@ -1,4 +1,5 @@
 @using OimoHorihori.Models
+@using OimoHorihori.Utilities
 
 <section class="oimo-book-screen">
 
@@ -12,9 +13,7 @@
 
     <div class="oimo-book-list">
 
-        @for (int i = 0;
-              i < OimoSpeciesCatalog.All.Count;
-              i++)
+        @for (int i = 0; i < OimoSpeciesCatalog.All.Count; i++)
         {
             OimoSpeciesDefinition species = OimoSpeciesCatalog.All[i];
 
@@ -44,6 +43,74 @@
                     <div class="oimo-book-count">
                         ×@Game.GetOimoDiscoveryCount(species.Id)
                     </div>
+
+                    @if (Game.IsOimoPowerFeatureUnlocked)
+                    {
+                        bool powerUnlocked = Game.IsOimoPowerUnlocked(species.Id);
+
+                        <div class="@(powerUnlocked ? "oimo-power-card active" : "oimo-power-card")">
+
+                            <div class="oimo-power-header">
+
+                                <span>
+                                    OIMO POWER
+                                </span>
+
+                                @if (powerUnlocked)
+                                {
+                                    <strong>
+                                        ACTIVE
+                                    </strong>
+                                }
+
+                            </div>
+
+                            <div class="oimo-power-effect">
+                                @species.OimoPowerDescription
+                            </div>
+
+                            @if (!powerUnlocked)
+                            {
+                                <div class="oimo-power-cost">
+
+                                    <span>
+                                        必要
+                                    </span>
+
+                                    <strong>
+                                        @NumberFormatter.Format(species.OimoPowerCost)
+                                        芋
+                                    </strong>
+
+                                </div>
+
+                                <button class="oimo-power-unlock-button" disabled="@(!Game.CanUnlockOimoPower(species))"
+                                        @onclick="() => HandleOpenOimoPowerAsync(species)">
+
+                                    解放
+
+                                </button>
+                            }
+
+                        </div>
+                    }
+                    
+                }
+
+                @if (!Game.IsOimoPowerFeatureUnlocked)
+                {
+                    <div class="oimo-power-locked-message">
+                        OIMO POWERはASCENTを1回行うと解放されます。
+                    </div>
+                }
+                else
+                {
+                    <div class="oimo-power-progress">
+                        OIMO POWER
+                        @Game.UnlockedOimoPowerCount
+                        /
+                        @OimoSpeciesCatalog.All.Count
+                    </div>
                 }
 
             </div>
@@ -59,9 +126,17 @@
 
     [Parameter]
     public EventCallback OnBack { get; set; }
+    
+    [Parameter]
+    public EventCallback<OimoSpeciesDefinition> OnOpenOimoPower { get; set; }
 
     private static string GetCardClass(bool discovered)
     {
         return discovered ? "oimo-book-card" : "oimo-book-card locked";
+    }
+
+    private Task HandleOpenOimoPowerAsync(OimoSpeciesDefinition species)
+    {
+        return OnOpenOimoPower.InvokeAsync(species);
     }
 }

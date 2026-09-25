@@ -1,0 +1,78 @@
+@using OimoHorihori.Models
+@using OimoHorihori.Utilities
+
+@if (IsOpen && Species is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="oimo-power-confirm-modal">
+
+            <h2>
+                OIMO POWER
+            </h2>
+
+            <p class="oimo-power-confirm-name">
+                @Species.Name の
+                <br />
+                OIMO POWERを解放しますか？
+            </p>
+
+            <div class="oimo-power-confirm-detail">
+
+                <span>
+                    消費
+                </span>
+
+                <strong>
+                    @NumberFormatter.Format(Species.OimoPowerCost)
+                    芋
+                </strong>
+
+            </div>
+
+            <div class="oimo-power-confirm-detail">
+
+                <span>
+                    永久効果
+                </span>
+
+                <strong>
+                    @Species.OimoPowerDescription
+                </strong>
+
+            </div>
+
+            <p class="oimo-power-confirm-note">
+                REPLANT / ASCENT後も維持されます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="OnCancel">
+                    CANCEL
+                </button>
+
+                <button class="unlock-button" @onclick="OnConfirm">
+                    解放
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public OimoSpeciesDefinition? Species { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+}

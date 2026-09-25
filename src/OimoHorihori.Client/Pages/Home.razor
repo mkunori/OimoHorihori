@@ -53,7 +53,7 @@
     }
     else if (currentView == HomeView.OimoBook)
     {
-        <OimoBookView Game="game" OnBack="OpenMenu" />
+        < OimoBookView Game="game" OnBack="OpenMenu" OnOpenOimoPower="OpenOimoPowerConfirmation" />
     }
     else if (currentView == HomeView.Account)
     {
@@ -129,7 +129,7 @@
                         OnCancel="CancelReset" OnConfirm="ResetGameAsync" />
 
 <ReplantModal Game="game" IsOpen="showReplant" IsConfirming="showReplantConfirmation" OnClose="CloseReplant"
-              OnCancelConfirmation="CancelReplant" OnConfirm="ExecuteReplantAsync" />
+              OnOpenConfirmation="OpenReplantConfirmation" OnCancelConfirmation="CancelReplant" OnConfirm="ExecuteReplantAsync" />
 
 <AscentConfirmationModal IsOpen="showAscentConfirmation" OnCancel="CancelAscent" OnConfirm="ExecuteAscentAsync" />
 
@@ -143,3 +143,6 @@
 <LocalSaveMigrationModal IsOpen="showLocalSaveMigration" OnConfirm="MigrateLocalSaveAsync" />
 
 <SaveConflictModal IsOpen="showSaveConflict" OnLoad="LoadConflictingSaveAsync" />
+
+<OimoPowerConfirmationModal IsOpen="showOimoPowerConfirmation" Species="selectedOimoPowerSpecies"
+                            OnCancel="CancelOimoPowerConfirmation" OnConfirm="ConfirmOimoPowerAsync" />

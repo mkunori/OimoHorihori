@@ -1,0 +1,105 @@
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 16px;
+
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.oimo-power-confirm-modal {
+    width: 100%;
+    max-width: 320px;
+
+    padding: 24px;
+
+    border: 1px solid #b9a78b;
+    border-radius: 12px;
+
+    background: #fff8e8;
+    color: #35281f;
+}
+
+.oimo-power-confirm-modal h2 {
+    margin-top: 0;
+
+    text-align: center;
+}
+
+.oimo-power-confirm-name {
+    text-align: center;
+
+    font-weight: 700;
+}
+
+.oimo-power-confirm-detail {
+    margin-top: 16px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+.oimo-power-confirm-detail span {
+    font-size: 0.78rem;
+
+    opacity: 0.7;
+}
+
+.oimo-power-confirm-detail strong {
+    font-size: 1rem;
+}
+
+.oimo-power-confirm-note {
+    margin-top: 18px;
+
+    font-size: 0.8rem;
+
+    opacity: 0.75;
+}
+
+.confirm-actions {
+    display: flex;
+
+    gap: 8px;
+
+    margin-top: 20px;
+}
+
+.confirm-actions button {
+    flex: 1;
+
+    min-height: 44px;
+
+    border-radius: 8px;
+}
+
+.unlock-button {
+    border: 1px solid #765276;
+
+    background: #765276;
+    color: white;
+
+    font-weight: 700;
+}
+
+@media (max-width: 390px) {
+    .modal-backdrop {
+        padding: 10px;
+    }
+
+    .oimo-power-confirm-modal {
+        max-height: calc(100dvh - 20px);
+
+        overflow-y: auto;
+
+        padding: 18px;
+    }
+}
