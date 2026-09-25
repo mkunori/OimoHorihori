@@ -55,7 +55,7 @@
                     閉じる
                 </button>
 
-                <button disabled="@(!Game.CanReplant)" @onclick="OnOpenConfirmation">
+                <button disabled="@(!Game.CanReplant)">
                     REPLANT
                 </button>
 
@@ -113,9 +113,6 @@ else if (IsConfirming)
 
     [Parameter]
     public EventCallback OnClose { get; set; }
-
-    [Parameter]
-    public EventCallback OnOpenConfirmation { get; set; }
 
     [Parameter]
     public EventCallback OnCancelConfirmation { get; set; }

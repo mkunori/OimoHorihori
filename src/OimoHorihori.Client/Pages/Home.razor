@@ -27,15 +27,14 @@
                       InitializationMessage="@initializationMessage" CurrentSaveStatus="saveStatus"
                       LastSaveCompletedAtUtc="lastSaveCompletedAtUtc" CurrentPurchaseMode="purchaseMode" OnStartGame="StartGame"
                       OnPurchaseModeChanged="SetPurchaseMode" OnBuyFarm="BuyFarm" OnRetillFarm="ExecuteRetillAsync"
-                      OnOpenReplant="OpenReplant" OnOpenAscent="OpenAscentConfirmation" OnToggleAutoBuy="ToggleAutoBuyAsync"
-                      OnToggleAutoRetill="ToggleAutoRetillAsync" />
+                      OnOpenReplant="OpenReplant" OnOpenAscent="OpenAscentConfirmation" />
     }
     else if (currentView == HomeView.Menu)
     {
         <MenuView Game="game" ShareResultMessage="@shareResultMessage" OnOpenSeedUpgrades="OpenSeedUpgrades"
-                  OnOpenOimoBook="OpenOimoBook" OnOpenAchievements="OpenAchievements" OnOpenStatistics="OpenStatistics"
-                  OnOpenProfile="OpenProfileAsync" OnOpenRanking="OpenRankingAsync" OnOpenReplantHistory="OpenReplantHistory"
-                  OnOpenAscent="OpenAscent" OnShare="ShareGameAsync" OnOpenSettings="OpenSettings" OnOpenAccount="OpenAccount" />
+                  OnOpenRootUpgrades="OpenRootUpgrades" OnOpenOimoBook="OpenOimoBook" OnOpenAchievements="OpenAchievements"
+                  OnOpenStatistics="OpenStatistics" OnOpenProfile="OpenProfileAsync" OnOpenRanking="OpenRankingAsync"
+                  OnShare="ShareGameAsync" OnOpenSettings="OpenSettings" OnOpenAccount="OpenAccount" />
     }
     else if (currentView == HomeView.SeedUpgrades)
     {
@@ -69,10 +68,6 @@
     {
         <SettingsView Game="game" OnBack="OpenMenu" OnOpenResetConfirmation="OpenResetConfirmation" />
     }
-    else if (currentView == HomeView.ReplantHistory)
-    {
-        <ReplantHistoryView Game="game" OnBack="OpenMenu" />
-    }
     else if (currentView == HomeView.Ranking)
     {
         <RankingView CurrentCategory="rankingCategory" Response="rankingResponse" IsLoading="isRankingLoading"
@@ -89,22 +84,17 @@
         <PublicProfileView Profile="selectedPublicProfile" IsLoading="isPublicProfileLoading" Error="@publicProfileError"
                            OnBack="BackToRanking" />
     }
-    else if (currentView == HomeView.Ascent)
+    else if (currentView == HomeView.RootUpgrades)
     {
-        <AscentView Game="game" OnBack="OpenMenu" OnOpenHistory="OpenAscentHistory"
-                    OnOpenConfirmation="OpenAscentConfirmation" OnBuyRootAbundance="BuyRootAbundanceAsync"
-                    OnBuyRootFertility="BuyRootFertilityAsync" OnBuyRootRetill="BuyRootRetillAsync"
-                    OnBuyRootSeedBlessing="BuyRootSeedBlessingAsync" OnUnlockAutoBuy="UnlockAutoBuyAsync"
-                    OnToggleAutoBuy="ToggleAutoBuyAsync" OnUnlockAutoRetill="UnlockAutoRetillAsync"
-                    OnToggleAutoRetill="ToggleAutoRetillAsync" />
-    }
-    else if (currentView == HomeView.AscentHistory)
-    {
-        <AscentHistoryView Game="game" OnBack="OpenAscent" />
+        <RootUpgradesView Game="game" OnBack="OpenMenu" OnBuyRootAbundance="BuyRootAbundanceAsync"
+                          OnBuyRootFertility="BuyRootFertilityAsync" OnBuyRootRetill="BuyRootRetillAsync"
+                          OnBuyRootSeedBlessing="BuyRootSeedBlessingAsync" OnUnlockAutoBuy="UnlockAutoBuyAsync"
+                          OnUnlockAutoRetill="UnlockAutoRetillAsync" />
     }
 
     <DeleteAccountConfirmationModal IsOpen="showDeleteAccountConfirmation" IsDeleting="isDeletingAccount"
                                     Error="@deleteAccountError" OnCancel="CloseDeleteAccountConfirmation" OnConfirm="DeleteAccountAsync" />
+
 
     @if (!isInitializing)
     {
@@ -139,7 +129,7 @@
                         OnCancel="CancelReset" OnConfirm="ResetGameAsync" />
 
 <ReplantModal Game="game" IsOpen="showReplant" IsConfirming="showReplantConfirmation" OnClose="CloseReplant"
-              OnOpenConfirmation="OpenReplantConfirmation" OnCancelConfirmation="CancelReplant" OnConfirm="ExecuteReplantAsync" />
+              OnCancelConfirmation="CancelReplant" OnConfirm="ExecuteReplantAsync" />
 
 <AscentConfirmationModal IsOpen="showAscentConfirmation" OnCancel="CancelAscent" OnConfirm="ExecuteAscentAsync" />
 

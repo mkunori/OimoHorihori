@@ -234,6 +234,20 @@
     color: white;
 }
 
+.auto-root-unlocked {
+    padding: 10px 12px;
+
+    border: 1px solid #b9a78b;
+    border-radius: 8px;
+
+    text-align: center;
+
+    font-size: 0.82rem;
+    font-weight: 700;
+
+    opacity: 0.75;
+}
+
 @media (max-width: 390px) {
 
     .ascent-status-card,

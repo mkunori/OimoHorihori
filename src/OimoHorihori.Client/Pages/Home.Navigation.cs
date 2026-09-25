@@ -7,12 +7,10 @@ public partial class Home
         Horihori,
         Menu,
         SeedUpgrades,
-        Ascent,
-        AscentHistory,
+        RootUpgrades,
         Statistics,
         Achievements,
         OimoBook,
-        ReplantHistory,
         Ranking,
         Profile,
         PublicProfile,
@@ -64,21 +62,6 @@ public partial class Home
         currentView = HomeView.Account;
     }
 
-    private void OpenReplantHistory()
-    {
-        currentView = HomeView.ReplantHistory;
-    }
-
-    private void OpenAscent()
-    {
-        currentView = HomeView.Ascent;
-    }
-
-    private void OpenAscentHistory()
-    {
-        currentView = HomeView.AscentHistory;
-    }
-
     private void BackToRanking()
     {
         currentView = HomeView.Ranking;
@@ -89,5 +72,10 @@ public partial class Home
         bool selected = horihori ? currentView == HomeView.Horihori : currentView != HomeView.Horihori;
 
         return selected ? "bottom-nav-button selected" : "bottom-nav-button";
+    }
+
+    private void OpenRootUpgrades()
+    {
+        currentView = HomeView.RootUpgrades;
     }
 }

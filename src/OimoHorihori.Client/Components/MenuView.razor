@@ -11,6 +11,14 @@
             <span>›</span>
         </button>
 
+        <button class="menu-item" @onclick="OnOpenRootUpgrades">
+            <span>ROOT強化</span>
+
+            <span>
+                ROOT @Game.CurrentRoot
+            </span>
+        </button>
+
         <button class="menu-item" @onclick="OnOpenOimoBook">
             <span>いも図鑑</span>
 
@@ -38,30 +46,6 @@
         <button class="menu-item" @onclick="OnOpenRanking">
             <span>ランキング</span>
             <span>›</span>
-        </button>
-
-        <button class="menu-item" @onclick="OnOpenReplantHistory">
-            <span>REPLANT履歴</span>
-            <span>›</span>
-        </button>
-
-        <button class="menu-item" @onclick="OnOpenAscent">
-
-            <span>ASCENT</span>
-
-            @if (Game.CanAscent)
-            {
-                <span>
-                    READY
-                </span>
-            }
-            else
-            {
-                <span>
-                    ROOT @Game.CurrentRoot
-                </span>
-            }
-
         </button>
 
         <button class="menu-item" @onclick="OnShare">
@@ -116,10 +100,7 @@
     public EventCallback OnOpenRanking { get; set; }
 
     [Parameter]
-    public EventCallback OnOpenReplantHistory { get; set; }
-
-    [Parameter]
-    public EventCallback OnOpenAscent { get; set; }
+    public EventCallback OnOpenRootUpgrades { get; set; }
 
     [Parameter]
     public EventCallback OnShare { get; set; }

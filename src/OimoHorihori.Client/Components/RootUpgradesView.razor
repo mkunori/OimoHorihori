@@ -4,36 +4,12 @@
 
 <section class="ascent-screen">
 
-    <SubpageHeader Title="ASCENT" OnBack="OnBack" />
+    <SubpageHeader Title="ROOT強化" OnBack="OnBack" />
 
     <section class="ascent-status-card">
 
         <div class="ascent-status-row">
-            <span>CURRENT RUN</span>
-
-            <strong>
-                @NumberFormatter.Format(Game.RunProducedPotato)
-            </strong>
-        </div>
-
-        <div class="ascent-status-row">
-            <span>TARGET</span>
-
-            <strong>
-                @NumberFormatter.Format(GameConstants.AscentTargetProduction)
-            </strong>
-        </div>
-
-        <div class="ascent-status-row">
-            <span>ASCENT COUNT</span>
-
-            <strong>
-                @Game.AscentCount
-            </strong>
-        </div>
-
-        <div class="ascent-status-row">
-            <span>ROOT</span>
+            <span>現在ROOT</span>
 
             <strong>
                 @Game.CurrentRoot
@@ -49,67 +25,6 @@
                 @GameConstants.RootPowerMax
             </strong>
         </div>
-
-    </section>
-
-    <button class="ascent-history-link" @onclick="OnOpenHistory">
-
-        <span>
-            ASCENT HISTORY
-        </span>
-
-        <span>
-            @Game.AscentHistory.Count
-            /
-            @GameConstants.AscentHistoryMaxCount
-            ›
-        </span>
-
-    </button>
-
-    <section class="ascent-action-card">
-
-        @if (Game.AscentCount == 0 && Game.ReplantCount == 0)
-        {
-            <div class="ascent-remaining-label">
-                ASCENT条件
-            </div>
-
-            <div class="ascent-remaining-value">
-                REPLANTを1回行う
-            </div>
-        }
-        else if (Game.CanAscent)
-        {
-            <div class="ascent-ready-label">
-                ASCENT READY
-            </div>
-
-            <div class="ascent-replant-preview">
-
-                REPLANT IF NOW
-
-                <strong>
-                    SEED POTATO +@Game.ReplantSeedPotato
-                </strong>
-
-            </div>
-
-            <button class="ascent-button" @onclick="OnOpenConfirmation">
-                ASCENT
-            </button>
-        }
-        else
-        {
-            <div class="ascent-remaining-label">
-                あと
-            </div>
-
-            <div class="ascent-remaining-value">
-                @NumberFormatter.Format(AscentRemainingProduction)
-                芋
-            </div>
-        }
 
     </section>
 
@@ -348,11 +263,9 @@
         }
         else
         {
-            <button class="@(Game.AutoBuyEnabled ? "auto-toggle on" : "auto-toggle")" @onclick="OnToggleAutoBuy">
-
-                @(Game.AutoBuyEnabled ? "ON" : "OFF")
-
-            </button>
+            <div class="auto-root-unlocked">
+                HORIHORI画面で設定できます
+            </div>
         }
 
     </section>
@@ -381,11 +294,9 @@
         }
         else
         {
-            <button class="@(Game.AutoRetillEnabled ? "auto-toggle on" : "auto-toggle")" @onclick="OnToggleAutoRetill">
-
-                @(Game.AutoRetillEnabled ? "ON" : "OFF")
-
-            </button>
+            <div class="auto-root-unlocked">
+                HORIHORI画面で設定できます
+            </div>
         }
 
     </section>
@@ -398,12 +309,6 @@
 
     [Parameter]
     public EventCallback OnBack { get; set; }
-
-    [Parameter]
-    public EventCallback OnOpenHistory { get; set; }
-
-    [Parameter]
-    public EventCallback OnOpenConfirmation { get; set; }
 
     [Parameter]
     public EventCallback OnBuyRootAbundance { get; set; }
@@ -421,16 +326,8 @@
     public EventCallback OnUnlockAutoBuy { get; set; }
 
     [Parameter]
-    public EventCallback OnToggleAutoBuy { get; set; }
-
-    [Parameter]
     public EventCallback OnUnlockAutoRetill { get; set; }
-
-    [Parameter]
-    public EventCallback OnToggleAutoRetill { get; set; }
-
-    private double AscentRemainingProduction => Math.Max(0, GameConstants.AscentTargetProduction - Game.RunProducedPotato);
-
+    
     private static string FormatRootMultiplier(double multiplier)
     {
         if (!double.IsFinite(multiplier))

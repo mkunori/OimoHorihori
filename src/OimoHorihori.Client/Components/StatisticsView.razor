@@ -1,5 +1,6 @@
 @using OimoHorihori.Constants
 @using OimoHorihori.Models
+@using OimoHorihori.Shared.Saves
 @using OimoHorihori.Utilities
 
 <section class="statistics-screen">
@@ -232,6 +233,120 @@
 
         </section>
 
+        <section class="statistics-section">
+
+            <h3>転生履歴</h3>
+
+            <div class="history-tabs">
+
+                <button class="@GetHistoryTabClass(HistoryTab.Replant)"
+                        @onclick="() => historyTab = HistoryTab.Replant">
+                    REPLANT
+                </button>
+
+                <button class="@GetHistoryTabClass(HistoryTab.Ascent)" @onclick="() => historyTab = HistoryTab.Ascent">
+                    ASCENT
+                </button>
+
+            </div>
+
+            @if (historyTab == HistoryTab.Replant)
+            {
+                @if (Game.ReplantHistory.Count == 0)
+                {
+                    <div class="history-empty">
+                        REPLANT履歴はまだありません。
+                    </div>
+                }
+                else
+                {
+                    @for (int i = 0; i < Game.ReplantHistory.Count; i++)
+                    {
+                        ReplantHistoryEntry entry = Game.ReplantHistory[i];
+
+                        <div class="history-entry">
+
+                            <div class="history-entry-header">
+                                <strong>
+                                    REPLANT #@(Game.ReplantCount - i)
+                                </strong>
+
+                                <span>
+                                    @FormatHistoryDate(entry.ReplantedAtUtc)
+                                </span>
+                            </div>
+
+                            <div class="stat-row">
+                                <span>周回時間</span>
+                                <span>@FormatReplantDuration(entry.RunDurationSeconds)</span>
+                            </div>
+
+                            <div class="stat-row">
+                                <span>周回生産</span>
+                                <span>
+                                    @NumberFormatter.Format(entry.RunProducedPotato) 芋
+                                </span>
+                            </div>
+
+                            <div class="stat-row">
+                                <span>獲得種芋</span>
+                                <span>+@entry.EarnedSeedPotato</span>
+                            </div>
+
+                        </div>
+                    }
+                }
+            }
+            else
+            {
+                @if (Game.AscentHistory.Count == 0)
+                {
+                    <div class="history-empty">
+                        ASCENT履歴はまだありません。
+                    </div>
+                }
+                else
+                {
+                    @foreach (AscentHistoryEntry entry in Game.AscentHistory)
+                    {
+                        <div class="history-entry">
+
+                            <div class="history-entry-header">
+                                <strong>
+                                    ASCENT #@entry.AscentNumber
+                                </strong>
+
+                                <span>
+                                    @FormatHistoryDate(entry.AscendedAtUtc)
+                                </span>
+                            </div>
+
+                            <div class="stat-row">
+                                <span>ASCENT時間</span>
+                                <span>
+                                    @FormatAscentDuration(entry.AscentDurationSeconds)
+                                </span>
+                            </div>
+
+                            <div class="stat-row">
+                                <span>REPLANT</span>
+                                <span>@entry.ReplantCount 回</span>
+                            </div>
+
+                            <div class="stat-row">
+                                <span>最終周回生産</span>
+                                <span>
+                                    @NumberFormatter.Format(entry.FinalRunProducedPotato) 芋
+                                </span>
+                            </div>
+
+                        </div>
+                    }
+                }
+            }
+
+        </section>
+
     </div>
 
 </section>
@@ -242,6 +357,14 @@
 
     [Parameter]
     public EventCallback OnBack { get; set; }
+
+    private HistoryTab historyTab = HistoryTab.Replant;
+
+    private enum HistoryTab
+    {
+        Replant,
+        Ascent
+    }
 
     private IEnumerable<(string Name, int TotalPurchases, int BestLevel)> FarmStatistics =>
     [
@@ -308,5 +431,29 @@
         }
 
         return $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private string GetHistoryTabClass(HistoryTab tab)
+    {
+        return historyTab == tab ? "history-tab active" : "history-tab";
+    }
+
+    private static string FormatHistoryDate(DateTimeOffset date)
+    {
+        return date.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+
+    private static string FormatReplantDuration(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds <= 0)
+        {
+            return "--:--:--";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int hours = (int)time.TotalHours;
+
+        return $"{hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
     }
 }
