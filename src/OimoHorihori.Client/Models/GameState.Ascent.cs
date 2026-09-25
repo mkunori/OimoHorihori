@@ -5,7 +5,7 @@ namespace OimoHorihori.Models;
 
 public partial class GameState
 {
-    public bool CanAscent => CurrentAscentReplantCount >= 1 && RunProducedPotato >= GameConstants.AscentTargetProduction;
+    public bool CanAscent => (AscentCount > 0 || ReplantCount >= 1) && RunProducedPotato >= GameConstants.AscentTargetProduction;
 
     public double CurrentAscentElapsedSeconds
     {

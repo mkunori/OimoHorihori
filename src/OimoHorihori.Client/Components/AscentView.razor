@@ -69,7 +69,7 @@
 
     <section class="ascent-action-card">
 
-        @if (Game.CurrentAscentReplantCount == 0)
+        @if (Game.AscentCount == 0 && Game.ReplantCount == 0)
         {
             <div class="ascent-remaining-label">
                 ASCENT条件
