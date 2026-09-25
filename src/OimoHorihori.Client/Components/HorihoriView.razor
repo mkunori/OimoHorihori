@@ -50,38 +50,54 @@ else
 
     </section>
 
-    @if (Game.AscentCount == 0)
-    {
-        <section class="next-goal-panel">
+    <section class="next-goal-panel">
 
-            <span class="next-goal-label">
-                NEXT GOAL
-            </span>
+        <span class="next-goal-label">
+            NEXT GOAL
+        </span>
 
-            <strong>
-                @GetEarlyGameGoalText()
-            </strong>
+        <strong>
+            @GetNextGoalText()
+        </strong>
 
-        </section>
-    }
+    </section>
 
     <SaveStatusIndicator Status="CurrentSaveStatus" LastSaveCompletedAtUtc="LastSaveCompletedAtUtc" />
 
     <PurchaseModeSelector CurrentMode="CurrentPurchaseMode" OnModeChanged="HandlePurchaseModeChangedAsync" />
 
-    @if (Game.CanAscent)
+    @if (Game.AutoBuyUnlocked || Game.AutoRetillUnlocked)
     {
-        <button class="ascent-ready-banner" @onclick="HandleOpenAscentAsync">
+        <section class="auto-panel">
 
-            <span>
-                ASCENT READY
+            <span class="auto-label">
+                AUTO
             </span>
 
-            <span>
-                ROOT +1 ›
-            </span>
+            <div class="auto-buttons">
 
-        </button>
+                @if (Game.AutoBuyUnlocked)
+                {
+                    <button class="@(Game.AutoBuyEnabled ? "auto-button on" : "auto-button")" @onclick="HandleToggleAutoBuyAsync">
+
+                        BUY @(Game.AutoBuyEnabled ? "ON" : "OFF")
+
+                    </button>
+                }
+
+                @if (Game.AutoRetillUnlocked)
+                {
+                    <button class="@(Game.AutoRetillEnabled ? "auto-button on" : "auto-button")"
+                            @onclick="HandleToggleAutoRetillAsync">
+
+                        RETILL @(Game.AutoRetillEnabled ? "ON" : "OFF")
+
+                    </button>
+                }
+
+            </div>
+
+        </section>
     }
 
     <RetillReadySummary ReadyCount="RetillReadyCount" TargetFarmId="@GetFirstRetillReadyFarmId()" />
@@ -99,33 +115,53 @@ else
                       OnRetill="HandleRetillFarmAsync" />
         }
 
-        <button class="replant-card" @onclick="HandleOpenReplantAsync">
+        @if (Game.CanReplant)
+        {
+            <button class="replant-card" @onclick="HandleOpenReplantAsync">
 
-            <div class="replant-header">
+                <div class="replant-header">
 
-                <span class="replant-name">
-                    REPLANT
-                </span>
+                    <span class="replant-name">
+                        REPLANT
+                    </span>
 
-                <span class="replant-seed">
-                    種芋 ×@Game.ReplantSeedPotato
-                </span>
+                    <span class="replant-seed">
+                        種芋 +@Game.ReplantSeedPotato
+                    </span>
 
-            </div>
+                </div>
 
-            <div class="replant-production">
-                今回の生産
-                @NumberFormatter.Format(Game.RunProducedPotato)
-                芋
-            </div>
+                <div class="replant-production">
+                    今回の生産
+                    @NumberFormatter.Format(Game.RunProducedPotato)
+                    芋
+                </div>
 
-            <div class="replant-next">
-                次の種芋まで
-                @NumberFormatter.Format(Game.ProductionUntilNextSeedPotato)
-                芋
-            </div>
+            </button>
+        }
 
-        </button>
+        @if (Game.CanAscent)
+        {
+            <button class="ascent-card" @onclick="HandleOpenAscentAsync">
+
+                <div class="ascent-card-header">
+
+                    <span>
+                        ASCENT
+                    </span>
+
+                    <span>
+                        ROOT +1
+                    </span>
+
+                </div>
+
+                <div class="ascent-card-description">
+                    現在のASCENT進行をリセットしてROOTを獲得
+                </div>
+
+            </button>
+        }
 
     </section>
 }
@@ -169,6 +205,12 @@ else
 
     [Parameter]
     public EventCallback OnOpenAscent { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleAutoBuy { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleAutoRetill { get; set; }
 
     private int RetillReadyCount => Game.Farms.Count(farm => Game.CanRetillFarm(farm));
 
@@ -268,7 +310,7 @@ else
         return OnOpenAscent.InvokeAsync();
     }
 
-    private string GetEarlyGameGoalText()
+    private string GetNextGoalText()
     {
         Farm farm8 = Game.Farms[7];
 
@@ -281,19 +323,29 @@ else
         {
             if (Game.CanReplant)
             {
-                return "REPLANTして種芋を獲得する";
+                return "REPLANT可能";
             }
 
-            return $"種芋まであと " + $"{NumberFormatter.Format(Game.ProductionUntilNextSeedPotato)} 芋";
+            return $"REPLANTまであと " + $"{NumberFormatter.Format(Game.ProductionUntilNextSeedPotato)} 芋";
         }
 
         if (Game.CanAscent)
         {
-            return "ASCENTする";
+            return "ASCENT可能";
         }
 
         double remaining = Math.Max(0, GameConstants.AscentTargetProduction - Game.RunProducedPotato);
 
         return $"ASCENTまであと " + $"{NumberFormatter.Format(remaining)} 芋";
+    }
+
+    private Task HandleToggleAutoBuyAsync()
+    {
+        return OnToggleAutoBuy.InvokeAsync();
+    }
+
+    private Task HandleToggleAutoRetillAsync()
+    {
+        return OnToggleAutoRetill.InvokeAsync();
     }
 }
