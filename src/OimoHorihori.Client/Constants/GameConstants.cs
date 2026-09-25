@@ -18,8 +18,8 @@ public static class GameConstants
     public const double FieldCostReductionPerLevel = 0.01;
     public const int FieldCostReductionMaxLevel = 40;
     public const double OimoOfflineDiscoveryLimitSeconds = 86_400;
-    public const double OimoDiscoveryIntervalSeconds = 30;
-    public const double OimoDiscoveryChance = 0.00035;
+    public const double OimoDiscoveryIntervalSeconds = 300;
+    public const double OimoDiscoveryChance = 0.0035;
     public const int InitialFarmMaxLevel = 100;
     public const int RetillLevelCapBonus = 10;
     public const double RetillProductionMultiplier = 1.25;

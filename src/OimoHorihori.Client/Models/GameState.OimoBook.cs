@@ -120,6 +120,34 @@ public partial class GameState
 
         double cappedSeconds = Math.Min(elapsedSeconds, GameConstants.OimoOfflineDiscoveryLimitSeconds);
 
-        return AdvanceOimoDiscovery(cappedSeconds);
+        double totalElapsedSeconds = OimoDiscoveryElapsedSeconds + cappedSeconds;
+
+        int trialCount = (int)Math.Floor(totalElapsedSeconds / GameConstants.OimoDiscoveryIntervalSeconds);
+
+        OimoDiscoveryElapsedSeconds = totalElapsedSeconds - trialCount * GameConstants.OimoDiscoveryIntervalSeconds;
+
+        if (trialCount <= 0)
+        {
+            return Array.Empty<OimoSpeciesDefinition>();
+        }
+
+        double cumulativeChance =
+            1.0
+            - Math.Pow(1.0 - GameConstants.OimoDiscoveryChance, trialCount);
+
+        cumulativeChance = Math.Clamp(cumulativeChance, 0.0, 1.0);
+
+        if (Random.Shared.NextDouble() >= cumulativeChance)
+        {
+            return Array.Empty<OimoSpeciesDefinition>();
+        }
+
+        OimoSpeciesDefinition discovered =
+            DiscoverRandomOimo();
+
+        return new[]
+        {
+            discovered
+        };
     }
 }
