@@ -1,11 +1,11 @@
 using OimoHorihori.Constants;
+using OimoHorihori.Utilities;
 
 namespace OimoHorihori.Models;
 
 public partial class GameState
 {
     public double BaseProductionPerSecond => GameConstants.BaseProductionPerSecond + DigUpgradeLevel * GameConstants.DigUpgradeBonusPerLevel;
-
     public double ProductionMultiplier => 1.0 + ProductionUpgradeLevel * GameConstants.ProductionUpgradeBonusPerLevel;
 
     public double ProductionPerSecond
@@ -16,23 +16,28 @@ public partial class GameState
 
             foreach (Farm farm in Farms)
             {
-                total += GetFarmProductionPerSecond(farm);
+                total = GameMath.Add(total, GetFarmProductionPerSecond(farm));
             }
 
-            return total * ProductionMultiplier * RootAbundanceMultiplier * OimoAllProductionMultiplier;
+            total = GameMath.Multiply(total, ProductionMultiplier);
+            total = GameMath.Multiply(total, RootAbundanceMultiplier);
+            total = GameMath.Multiply(total, OimoAllProductionMultiplier);
+
+            return total;
         }
     }
 
     public void ProducePotato(double amount)
     {
-        if (!double.IsFinite(amount) || amount <= 0)
+        if (!double.IsFinite(amount)
+            || amount <= 0)
         {
             return;
         }
 
-        Potato += amount;
-        TotalPotato += amount;
-        RunProducedPotato += amount;
+        Potato = GameMath.Add(Potato, amount);
+        TotalPotato = GameMath.Add(TotalPotato, amount);
+        RunProducedPotato = GameMath.Add(RunProducedPotato, amount);
 
         MaxRunProducedPotato = Math.Max(MaxRunProducedPotato, RunProducedPotato);
     }

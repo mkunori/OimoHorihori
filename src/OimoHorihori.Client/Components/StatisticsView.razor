@@ -173,6 +173,55 @@
 
         <section class="statistics-section">
 
+            <h3>OIMO POWER</h3>
+
+            <div class="stat-row">
+                <span>解放数</span>
+
+                <span>
+                    @Game.UnlockedOimoPowerCount
+                    /
+                    @OimoSpeciesCatalog.All.Count
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>累計消費芋</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.TotalOimoPowerSpentPotato)
+                    芋
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>全生産倍率</span>
+
+                <span>
+                    ×@FormatMultiplier(Game.OimoAllProductionMultiplier)
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>種芋倍率</span>
+
+                <span>
+                    ×@FormatMultiplier(Game.OimoSeedMultiplier)
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>畑価格倍率</span>
+
+                <span>
+                    ×@FormatMultiplier(Game.OimoFieldCostMultiplier)
+                </span>
+            </div>
+
+        </section>
+
+        <section class="statistics-section">
+
             <h3>OFFLINE</h3>
 
             <div class="stat-row">
@@ -422,8 +471,7 @@
 
         TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
 
-        int days =
-            (int)time.TotalDays;
+        int days = (int)time.TotalDays;
 
         if (days > 0)
         {
@@ -455,5 +503,25 @@
         int hours = (int)time.TotalHours;
 
         return $"{hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private static string FormatMultiplier(double multiplier)
+    {
+        if (!double.IsFinite(multiplier))
+        {
+            return "-";
+        }
+
+        if (multiplier >= 100)
+        {
+            return multiplier.ToString("0.0");
+        }
+
+        if (multiplier >= 10)
+        {
+            return multiplier.ToString("0.00");
+        }
+
+        return multiplier.ToString("0.000");
     }
 }

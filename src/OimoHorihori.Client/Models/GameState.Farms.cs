@@ -1,3 +1,5 @@
+using OimoHorihori.Utilities;
+
 namespace OimoHorihori.Models;
 
 public partial class GameState
@@ -78,10 +80,13 @@ public partial class GameState
 
     public double GetFarmProductionPerSecond(Farm farm)
     {
-        double farmBase = farm.BaseProductionPerSecond;
-        double retillMultiplier = GetRetillBaseMultiplier(farm);
-        double seedRetillEfficiencyMultiplier = GetRetillEfficiencyMultiplier(farm);
+        double production = farm.BaseProductionPerSecond;
 
-        return farmBase * retillMultiplier * seedRetillEfficiencyMultiplier * OimoFarmProductionMultiplier * GetOimoRetillFinalMultiplier(farm);
+        production = GameMath.Multiply(production, GetRetillBaseMultiplier(farm));
+        production = GameMath.Multiply(production, GetRetillEfficiencyMultiplier(farm));
+        production = GameMath.Multiply(production, OimoFarmProductionMultiplier);
+        production = GameMath.Multiply(production, GetOimoRetillFinalMultiplier(farm));
+
+        return production;
     }
 }

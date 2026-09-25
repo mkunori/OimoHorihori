@@ -1,4 +1,5 @@
 using OimoHorihori.Constants;
+using OimoHorihori.Utilities;
 
 namespace OimoHorihori.Models;
 
@@ -26,7 +27,18 @@ public class Farm
     public double GetCostAtPurchaseCount(int purchaseCount, double costMultiplier = 1.0)
     {
         double rawCost = BaseCost * Math.Pow(GameConstants.FarmCostMultiplier, purchaseCount);
+
+        if (!double.IsFinite(rawCost))
+        {
+            return double.MaxValue;
+        }
+
         double finalCost = rawCost * costMultiplier;
+
+        if (!double.IsFinite(finalCost))
+        {
+            return double.MaxValue;
+        }
 
         return Math.Ceiling(finalCost);
     }
@@ -46,14 +58,14 @@ public class Farm
 
             if (!double.IsFinite(cost))
             {
-                return double.PositiveInfinity;
+                return double.MaxValue;
             }
 
-            totalCost += cost;
+            totalCost = GameMath.Add(totalCost, cost);
 
             if (!double.IsFinite(totalCost))
             {
-                return double.PositiveInfinity;
+                return double.MaxValue;
             }
         }
 

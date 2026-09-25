@@ -332,6 +332,31 @@ public static class AchievementCatalog
                 "図鑑20種類発見",
                 game => game.DiscoveredOimoSpeciesCount >= 20),
 
+                // OIMO POWER
+            new(
+                "oimo_power_1",
+                "芋に力を",
+                "OIMO POWERを初めて解放",
+                game => game.UnlockedOimoPowerCount >= 1),
+
+            new(
+                "oimo_power_5",
+                "育つ図鑑",
+                "OIMO POWER 5 / 20",
+                game => game.UnlockedOimoPowerCount >= 5),
+
+            new(
+                "oimo_power_10",
+                "芋の加護",
+                "OIMO POWER 10 / 20",
+                game => game.UnlockedOimoPowerCount >= 10),
+
+            new(
+                "oimo_power_20",
+                "OIMO POWER MASTER",
+                "OIMO POWER 20 / 20",
+    game => game.UnlockedOimoPowerCount >= 20),
+
             // 長期プレイ
             new(
                 "days_7",

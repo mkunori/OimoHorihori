@@ -1,4 +1,5 @@
 using OimoHorihori.Constants;
+using OimoHorihori.Utilities;
 
 namespace OimoHorihori.Models;
 
@@ -39,12 +40,24 @@ public partial class GameState
 
     public double GetRetillBaseMultiplier(int retillCount)
     {
-        return Math.Pow(RootAdjustedRetillBase, retillCount);
+        if (retillCount < 0)
+        {
+            return 1.0;
+        }
+
+        return GameMath.Pow(RootAdjustedRetillBase, retillCount);
     }
 
     public double GetRetillEfficiencyMultiplier(Farm farm)
     {
-        return 1.0 + farm.RetillCount * RetillEfficiencyUpgradeLevel * GameConstants.RetillEfficiencyBonusPerLevelPerRetill;
+        double bonus = farm.RetillCount * (double)RetillEfficiencyUpgradeLevel * GameConstants.RetillEfficiencyBonusPerLevelPerRetill;
+
+        if (!double.IsFinite(bonus))
+        {
+            return double.MaxValue;
+        }
+
+        return GameMath.Add(1.0, bonus);
     }
 
     public bool BuyRetillEfficiencyUpgrade()
