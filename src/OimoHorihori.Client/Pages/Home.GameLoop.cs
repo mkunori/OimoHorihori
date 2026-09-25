@@ -118,7 +118,7 @@ public partial class Home
                 //
                 if (game.HasStarted && (now - lastAutoActionTime).TotalSeconds >= GameConstants.AutoActionIntervalSeconds)
                 {
-                    bool automationChanged = game.ProcessAutomation();
+                    bool automationChanged = game.ProcessAutomation(purchaseMode);
 
                     lastAutoActionTime = now;
 

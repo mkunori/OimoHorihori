@@ -76,12 +76,20 @@ public partial class GameState
         return true;
     }
 
-    public bool ProcessAutoBuy()
+    public bool ProcessAutoBuy(PurchaseMode purchaseMode)
     {
         if (!AutoBuyUnlocked || !AutoBuyEnabled)
         {
             return false;
         }
+
+        int maxLevels = purchaseMode switch
+        {
+            PurchaseMode.One => 1,
+            PurchaseMode.Ten => 10,
+            PurchaseMode.Max => int.MaxValue,
+            _ => 1
+        };
 
         for (int i = Farms.Count - 1; i >= 0; i--)
         {
@@ -92,16 +100,31 @@ public partial class GameState
                 continue;
             }
 
-            int affordableLevels = farm.GetAffordableLevels(Potato, 1, FieldCostMultiplier);
+            int affordableLevels = farm.GetAffordableLevels(Potato, maxLevels, FieldCostMultiplier);
 
             if (affordableLevels <= 0)
             {
                 continue;
             }
 
-            int purchasedLevels = BuyFarm(farm, 1);
+            int purchasedLevels = BuyFarm(farm, maxLevels);
 
-            return purchasedLevels > 0;
+            if (purchasedLevels <= 0)
+            {
+                continue;
+            }
+
+            if (purchaseMode == PurchaseMode.Ten)
+            {
+                HasUsedTenPurchaseMode = true;
+            }
+
+            if (purchaseMode == PurchaseMode.Max)
+            {
+                HasUsedMaxPurchaseMode = true;
+            }
+
+            return true;
         }
 
         return false;
@@ -132,26 +155,24 @@ public partial class GameState
         return retillCount;
     }
 
-    public bool ProcessAutomation()
+    public bool ProcessAutomation(PurchaseMode purchaseMode)
     {
         bool changed = false;
 
-        // すでにLv上限なら
-        // 先にRETILLする
+        // すでにLv上限なら先にRETILL
         if (ProcessAutoRetill() > 0)
         {
             changed = true;
         }
 
-        // 1回の処理につき
-        // 購入は1Lvだけ
-        if (ProcessAutoBuy())
+        // 現在選択中の +1 / +10 / MAX で購入
+        if (ProcessAutoBuy(purchaseMode))
         {
             changed = true;
         }
 
-        // 今回の+1でLv上限に届いた場合、
-        // 同じ処理内でRETILLする
+        // 購入によってLv上限に到達した場合は、
+        // 同じ処理内でRETILL
         if (ProcessAutoRetill() > 0)
         {
             changed = true;
