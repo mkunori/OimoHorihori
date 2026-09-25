@@ -25,49 +25,6 @@
     letter-spacing: 0.06em;
 }
 
-.settings-button {
-    position: absolute;
-
-    top: 50%;
-    right: 0;
-
-    transform: translateY(-50%);
-
-    width: 40px;
-    height: 40px;
-
-    border: none;
-    border-radius: 8px;
-
-    background: transparent;
-
-    font-size: 1.3rem;
-
-    cursor: default;
-    ;
-}
-
-.settings-section {
-    padding: 14px 0;
-
-    border-bottom: 1px solid #d7c8ad;
-}
-
-.settings-label {
-    margin-bottom: 5px;
-
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-
-.upgrade-screen h2 {
-    margin: 16px 0;
-
-    text-align: center;
-
-    font-size: 1.15rem;
-}
-
 .bottom-nav {
     position: fixed;
 
@@ -106,7 +63,6 @@
     opacity: 0.55;
 
     cursor: default;
-    ;
 }
 
 .bottom-nav-button.selected {
@@ -128,30 +84,4 @@
     .game-header h1 {
         font-size: 1.05rem;
     }
-
-    .farm-header {
-        gap: 8px;
-    }
-
-    .farm-name {
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .replant-modal {
-        max-height: calc(100dvh - 20px);
-        overflow-y: auto;
-        padding: 18px;
-    }
-}
-
-.farm-buy-button:disabled {
-    opacity: 0.45;
-    cursor: default;
-}
-
-.farm-purchase-level {
-    flex-shrink: 0;
-
-    font-weight: 700;
 }

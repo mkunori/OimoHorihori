@@ -59,7 +59,7 @@ else
             </span>
 
             <strong>
-                @EarlyGameGoalText
+                @GetEarlyGameGoalText()
             </strong>
 
         </section>
@@ -142,9 +142,6 @@ else
 
     [Parameter]
     public string InitializationMessage { get; set; } = string.Empty;
-
-    [Parameter]
-    public string EarlyGameGoalText { get; set; } = string.Empty;
 
     [Parameter]
     public SaveStatus CurrentSaveStatus { get; set; }
@@ -269,5 +266,34 @@ else
     private Task HandleOpenAscentAsync()
     {
         return OnOpenAscent.InvokeAsync();
+    }
+
+    private string GetEarlyGameGoalText()
+    {
+        Farm farm8 = Game.Farms[7];
+
+        if (farm8.PurchaseCount == 0)
+        {
+            return "畑8を購入する";
+        }
+
+        if (Game.CurrentAscentReplantCount == 0)
+        {
+            if (Game.CanReplant)
+            {
+                return "REPLANTして種芋を獲得する";
+            }
+
+            return $"種芋まであと " + $"{NumberFormatter.Format(Game.ProductionUntilNextSeedPotato)} 芋";
+        }
+
+        if (Game.CanAscent)
+        {
+            return "ASCENTする";
+        }
+
+        double remaining = Math.Max(0, GameConstants.AscentTargetProduction - Game.RunProducedPotato);
+
+        return $"ASCENTまであと " + $"{NumberFormatter.Format(remaining)} 芋";
     }
 }
