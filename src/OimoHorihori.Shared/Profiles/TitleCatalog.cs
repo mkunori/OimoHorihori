@@ -31,5 +31,10 @@ public static class TitleCatalog
             new("ascent_10", "ROOT SEEKER", "ascent_10"),
             new("ascent_100", "百回の昇華者", "ascent_100"),
             new("root_power_100", "ROOT MASTER", "root_power_100"),
+
+            new("oimo_power_1", "芋に力を", "oimo_power_1"),
+            new("oimo_power_5", "育つ図鑑", "oimo_power_5"),
+            new("oimo_power_10", "芋の加護", "oimo_power_10"),
+            new("oimo_power_20", "OIMO POWER MASTER", "oimo_power_20"),
         };
 }
