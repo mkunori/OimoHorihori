@@ -24,7 +24,7 @@ public static class GameConstants
     public const int RetillMaxCount = 10;
     public const int RetillLevelCapBonus = 10;
     public const double RetillProductionMultiplier = 1.25;
-    public const double AscentTargetProduction = 8.000e10;
+    public const double AscentTargetProduction = 6.000e14;
     public const int RootAbundanceMaxLevel = 30;
     public const int RootFertilityMaxLevel = 20;
     public const int RootRetillMaxLevel = 24;
