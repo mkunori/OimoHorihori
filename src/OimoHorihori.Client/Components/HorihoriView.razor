@@ -100,8 +100,6 @@ else
         </section>
     }
 
-    <RetillReadySummary ReadyCount="RetillReadyCount" TargetFarmId="@GetFirstRetillReadyFarmId()" />
-
     <section class="farm-list">
 
         @foreach (Farm farm in Game.Farms)
@@ -212,8 +210,6 @@ else
     [Parameter]
     public EventCallback OnToggleAutoRetill { get; set; }
 
-    private int RetillReadyCount => Game.Farms.Count(farm => Game.CanRetillFarm(farm));
-
     private int GetPurchaseMaxLevels()
     {
         return CurrentPurchaseMode switch
@@ -265,18 +261,6 @@ else
         int index = Game.Farms.IndexOf(farm);
 
         return $"farm-{index + 1}";
-    }
-
-    private string GetFirstRetillReadyFarmId()
-    {
-        Farm? farm = Game.Farms.FirstOrDefault(farm => Game.CanRetillFarm(farm));
-
-        if (farm is null)
-        {
-            return string.Empty;
-        }
-
-        return GetFarmElementId(farm);
     }
 
     private Task HandleStartGameAsync()
