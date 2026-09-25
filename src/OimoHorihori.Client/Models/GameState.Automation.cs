@@ -78,7 +78,7 @@ public partial class GameState
 
     public bool ProcessAutoBuy(PurchaseMode purchaseMode)
     {
-        if (!AutoBuyUnlocked || !AutoBuyEnabled)
+        if (!AutoBuyUnlocked)
         {
             return false;
         }
@@ -91,18 +91,19 @@ public partial class GameState
             _ => 1
         };
 
+        bool changed = false;
+
+        // 上位畑から処理
         for (int i = Farms.Count - 1; i >= 0; i--)
         {
             Farm farm = Farms[i];
 
-            if (farm.IsMaxLevel)
+            if (!farm.AutoBuyEnabled)
             {
                 continue;
             }
 
-            int affordableLevels = farm.GetAffordableLevels(Potato, maxLevels, FieldCostMultiplier);
-
-            if (affordableLevels <= 0)
+            if (farm.IsMaxLevel)
             {
                 continue;
             }
@@ -114,6 +115,8 @@ public partial class GameState
                 continue;
             }
 
+            changed = true;
+
             if (purchaseMode == PurchaseMode.Ten)
             {
                 HasUsedTenPurchaseMode = true;
@@ -123,16 +126,14 @@ public partial class GameState
             {
                 HasUsedMaxPurchaseMode = true;
             }
-
-            return true;
         }
 
-        return false;
+        return changed;
     }
 
     public int ProcessAutoRetill()
     {
-        if (!AutoRetillUnlocked || !AutoRetillEnabled)
+        if (!AutoRetillUnlocked)
         {
             return 0;
         }
@@ -141,6 +142,11 @@ public partial class GameState
 
         foreach (Farm farm in Farms)
         {
+            if (!farm.AutoRetillEnabled)
+            {
+                continue;
+            }
+
             if (!CanRetillFarm(farm))
             {
                 continue;
@@ -179,5 +185,29 @@ public partial class GameState
         }
 
         return changed;
+    }
+
+    public bool ToggleFarmAutoBuy(Farm farm)
+    {
+        if (!AutoBuyUnlocked)
+        {
+            return false;
+        }
+
+        farm.AutoBuyEnabled = !farm.AutoBuyEnabled;
+
+        return true;
+    }
+
+    public bool ToggleFarmAutoRetill(Farm farm)
+    {
+        if (!AutoRetillUnlocked)
+        {
+            return false;
+        }
+
+        farm.AutoRetillEnabled = !farm.AutoRetillEnabled;
+
+        return true;
     }
 }

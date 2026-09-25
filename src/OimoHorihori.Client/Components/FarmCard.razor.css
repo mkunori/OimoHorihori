@@ -147,6 +147,33 @@
     font-weight: 700;
 }
 
+.farm-auto-row {
+    display: flex;
+    gap: 5px;
+    margin-top: 6px;
+}
+
+.farm-auto-button {
+    flex: 1;
+
+    padding: 5px 6px;
+
+    border: 1px solid #b9a78b;
+    border-radius: 6px;
+
+    background: #f5f0e8;
+    color: #35281f;
+
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+.farm-auto-button.on {
+    border-color: #765276;
+    background: #765276;
+    color: white;
+}
+
 @media (max-width: 380px) {
 
     .farm-card {

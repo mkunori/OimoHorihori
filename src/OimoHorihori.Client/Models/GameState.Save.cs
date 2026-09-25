@@ -13,14 +13,14 @@ public partial class GameState
             HasStarted = HasStarted,
             Potato = Potato,
             TotalPotato = TotalPotato,
-            Farms = Farms
-            .Select(farm => new FarmSaveData
+            Farms = Farms.Select(farm => new FarmSaveData
             {
                 Level = farm.Level,
                 PurchaseCount = farm.PurchaseCount,
-                RetillCount = farm.RetillCount
-            })
-            .ToList(),
+                RetillCount = farm.RetillCount,
+                AutoBuyEnabled = farm.AutoBuyEnabled,
+                AutoRetillEnabled = farm.AutoRetillEnabled
+            }).ToList(),
             RunProducedPotato = RunProducedPotato,
             RunStartedAtUtc = RunStartedAtUtc,
             MaxRunProducedPotato = MaxRunProducedPotato,
@@ -419,9 +419,12 @@ public partial class GameState
         for (int i = 0; i < Farms.Count; i++)
         {
             FarmSaveData savedFarm = save.Farms[i];
+
             Farms[i].Level = savedFarm.Level;
             Farms[i].PurchaseCount = savedFarm.PurchaseCount;
             Farms[i].RetillCount = savedFarm.RetillCount;
+            Farms[i].AutoBuyEnabled = savedFarm.AutoBuyEnabled ?? save.AutoBuyEnabled;
+            Farms[i].AutoRetillEnabled = savedFarm.AutoRetillEnabled ?? save.AutoRetillEnabled;
         }
         TotalConsumedPotato = save.TotalConsumedPotato;
         BestProductionPerSecond = save.BestProductionPerSecond;

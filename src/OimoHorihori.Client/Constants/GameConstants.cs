@@ -2,7 +2,7 @@ namespace OimoHorihori.Constants;
 
 public static class GameConstants
 {
-    public const int SaveVersion = 6;
+    public const int SaveVersion = 7;
     public const double BaseProductionPerSecond = 0.1;
     public const double FarmCostMultiplier = 1.005;
     public const double AutoSaveIntervalSeconds = 5;

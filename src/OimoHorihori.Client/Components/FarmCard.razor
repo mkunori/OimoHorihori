@@ -38,16 +38,35 @@
 
     </div>
 
-    @if (Farm.CanRetill && !Game.IsRetillUnlockedThisRun)
+    @if (Game.AutoBuyUnlocked || Game.AutoRetillUnlocked)
     {
-        <div class="farm-action-row">
+        <div class="farm-auto-row">
 
-            <span class="retill-ready">
-                畑8購入でRETILL解放
-            </span>
+            @if (Game.AutoBuyUnlocked)
+            {
+                <button class="@(Farm.AutoBuyEnabled ? "farm-auto-button on" : "farm-auto-button")"
+                        @onclick="HandleToggleAutoBuyAsync">
+
+                    BUY AUTO
+                    @(Farm.AutoBuyEnabled ? "ON" : "OFF")
+
+                </button>
+            }
+
+            @if (Game.AutoRetillUnlocked)
+            {
+                <button class="@(Farm.AutoRetillEnabled ? "farm-auto-button on" : "farm-auto-button")"
+                        @onclick="HandleToggleAutoRetillAsync">
+
+                    RETILL AUTO
+                    @(Farm.AutoRetillEnabled ? "ON" : "OFF")
+
+                </button>
+            }
 
         </div>
     }
+
     @if (Farm.CanRetill && !Game.IsRetillUnlockedThisRun)
     {
         <div class="farm-action-row">
@@ -124,6 +143,12 @@
     [Parameter]
     public EventCallback<Farm> OnRetill { get; set; }
 
+    [Parameter]
+    public EventCallback<Farm> OnToggleAutoBuy { get; set; }
+
+    [Parameter]
+    public EventCallback<Farm> OnToggleAutoRetill { get; set; }
+
     private Task HandleBuyAsync()
     {
         return OnBuy.InvokeAsync(Farm);
@@ -132,5 +157,15 @@
     private Task HandleRetillAsync()
     {
         return OnRetill.InvokeAsync(Farm);
+    }
+
+    private Task HandleToggleAutoBuyAsync()
+    {
+        return OnToggleAutoBuy.InvokeAsync(Farm);
+    }
+
+    private Task HandleToggleAutoRetillAsync()
+    {
+        return OnToggleAutoRetill.InvokeAsync(Farm);
     }
 }

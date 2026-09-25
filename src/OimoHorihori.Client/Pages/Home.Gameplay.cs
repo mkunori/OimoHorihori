@@ -118,4 +118,24 @@ public partial class Home
 
         await SaveGameAsync();
     }
+
+    private async Task ToggleFarmAutoBuyAsync(Farm farm)
+    {
+        if (!game.ToggleFarmAutoBuy(farm))
+        {
+            return;
+        }
+
+        await SaveGameAsync();
+    }
+
+    private async Task ToggleFarmAutoRetillAsync(Farm farm)
+    {
+        if (!game.ToggleFarmAutoRetill(farm))
+        {
+            return;
+        }
+
+        await SaveGameAsync();
+    }
 }

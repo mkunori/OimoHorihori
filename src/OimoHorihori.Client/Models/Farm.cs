@@ -11,6 +11,8 @@ public class Farm
     public int RetillCount { get; set; }
     public double BaseCost { get; }
     public double ProductionPerLevel { get; }
+    public bool AutoBuyEnabled { get; set; }
+    public bool AutoRetillEnabled { get; set; }
 
     public int MaxLevel => GameConstants.InitialFarmMaxLevel + RetillCount * GameConstants.RetillLevelCapBonus;
     public bool IsMaxLevel => Level >= MaxLevel;

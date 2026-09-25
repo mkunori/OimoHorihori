@@ -66,40 +66,6 @@ else
 
     <PurchaseModeSelector CurrentMode="CurrentPurchaseMode" OnModeChanged="HandlePurchaseModeChangedAsync" />
 
-    @if (Game.AutoBuyUnlocked || Game.AutoRetillUnlocked)
-    {
-        <section class="auto-panel">
-
-            <span class="auto-label">
-                AUTO
-            </span>
-
-            <div class="auto-buttons">
-
-                @if (Game.AutoBuyUnlocked)
-                {
-                    <button class="@(Game.AutoBuyEnabled ? "auto-button on" : "auto-button")" @onclick="HandleToggleAutoBuyAsync">
-
-                        BUY @(Game.AutoBuyEnabled ? "ON" : "OFF")
-
-                    </button>
-                }
-
-                @if (Game.AutoRetillUnlocked)
-                {
-                    <button class="@(Game.AutoRetillEnabled ? "auto-button on" : "auto-button")"
-                            @onclick="HandleToggleAutoRetillAsync">
-
-                        RETILL @(Game.AutoRetillEnabled ? "ON" : "OFF")
-
-                    </button>
-                }
-
-            </div>
-
-        </section>
-    }
-
     <section class="farm-list">
 
         @foreach (Farm farm in Game.Farms)
@@ -110,7 +76,8 @@ else
 
             <FarmCard Game="Game" Farm="farm" CanBuy="canBuy" PurchaseCost="purchaseCost"
                       PurchaseLevelText="@GetPurchaseLevelText(farm)" ElementId="@GetFarmElementId(farm)" OnBuy="HandleBuyFarmAsync"
-                      OnRetill="HandleRetillFarmAsync" />
+                      OnRetill="HandleRetillFarmAsync" OnToggleAutoBuy="OnToggleFarmAutoBuy"
+                      OnToggleAutoRetill="OnToggleFarmAutoRetill" />
         }
 
         @if (Game.CanReplant)
@@ -205,10 +172,10 @@ else
     public EventCallback OnOpenAscent { get; set; }
 
     [Parameter]
-    public EventCallback OnToggleAutoBuy { get; set; }
+    public EventCallback<Farm> OnToggleFarmAutoBuy { get; set; }
 
     [Parameter]
-    public EventCallback OnToggleAutoRetill { get; set; }
+    public EventCallback<Farm> OnToggleFarmAutoRetill { get; set; }
 
     private int GetPurchaseMaxLevels()
     {
@@ -321,15 +288,5 @@ else
         double remaining = Math.Max(0, GameConstants.AscentTargetProduction - Game.RunProducedPotato);
 
         return $"ASCENTまであと " + $"{NumberFormatter.Format(remaining)} 芋";
-    }
-
-    private Task HandleToggleAutoBuyAsync()
-    {
-        return OnToggleAutoBuy.InvokeAsync();
-    }
-
-    private Task HandleToggleAutoRetillAsync()
-    {
-        return OnToggleAutoRetill.InvokeAsync();
     }
 }
