@@ -108,6 +108,7 @@ public partial class GameState
             4 => TryLoadVersion4(save),
             5 => TryLoadVersion5(save),
             6 => TryLoadVersion6(save),
+            7 => TryLoadVersion7(save),
             _ => false
         };
     }
@@ -726,17 +727,7 @@ public partial class GameState
             return false;
         }
 
-        LoadVersion5Fields(save);
-
-        UnlockedOimoPowerIds.Clear();
-
-        foreach (string speciesId
-                 in save.UnlockedOimoPowerIds)
-        {
-            UnlockedOimoPowerIds.Add(speciesId);
-        }
-
-        TotalOimoPowerSpentPotato = save.TotalOimoPowerSpentPotato;
+        LoadVersion6Fields(save);
 
         return true;
     }
@@ -803,6 +794,60 @@ public partial class GameState
             }
 
             if (!loadedIds.Add(speciesId))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void LoadVersion6Fields(SaveData save)
+    {
+        LoadVersion5Fields(save);
+
+        UnlockedOimoPowerIds.Clear();
+
+        foreach (string speciesId in save.UnlockedOimoPowerIds)
+        {
+            UnlockedOimoPowerIds.Add(speciesId);
+        }
+
+        TotalOimoPowerSpentPotato = save.TotalOimoPowerSpentPotato;
+    }
+
+    private bool TryLoadVersion7(SaveData save)
+    {
+        if (!IsValidVersion7SaveData(save))
+        {
+            return false;
+        }
+
+        LoadVersion6Fields(save);
+
+        return true;
+    }
+
+    private static bool IsValidVersion7SaveData(SaveData save)
+    {
+        if (!IsValidVersion6SaveData(save))
+        {
+            return false;
+        }
+
+        foreach (FarmSaveData farm in save.Farms)
+        {
+            if (farm.AutoBuyEnabled is null || farm.AutoRetillEnabled is null)
+            {
+                return false;
+            }
+
+            if (farm.AutoBuyEnabled == true && !save.AutoBuyUnlocked)
+            {
+                return false;
+            }
+
+            if (farm.AutoRetillEnabled == true && !save.AutoRetillUnlocked)
             {
                 return false;
             }

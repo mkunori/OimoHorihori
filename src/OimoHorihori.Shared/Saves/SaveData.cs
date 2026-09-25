@@ -2,7 +2,7 @@ namespace OimoHorihori.Shared.Saves;
 
 public class SaveData
 {
-    public int Version { get; set; } = 6;
+    public int Version { get; set; } = 7;
     public bool HasStarted { get; set; }
     public double Potato { get; set; }
     public double TotalPotato { get; set; }
