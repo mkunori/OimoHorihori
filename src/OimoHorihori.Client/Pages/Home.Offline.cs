@@ -35,9 +35,7 @@ public partial class Home
             isPageHidden = true;
             pageHiddenAtUtc = now;
 
-            lastUpdateTime = now;
-            lastAutoSaveTime = now;
-            lastAutoActionTime = now;
+            ResetRuntimeTimestamps(now);
 
             await SaveGameAsync();
 
@@ -115,9 +113,7 @@ public partial class Home
         // hidden時間を通常ゲームループで
         // 二重計上させない
         //
-        lastUpdateTime = now;
-        lastAutoSaveTime = now;
-        lastAutoActionTime = now;
+        ResetRuntimeTimestamps(now);
 
         await SaveGameAsync();
 

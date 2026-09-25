@@ -12,6 +12,13 @@ public partial class Home
     private DateTimeOffset lastAutoSaveTime;
     private DateTimeOffset lastAutoActionTime;
 
+    private void ResetRuntimeTimestamps(DateTimeOffset now)
+    {
+        lastUpdateTime = now;
+        lastAutoSaveTime = now;
+        lastAutoActionTime = now;
+    }
+
     private async Task StartGame()
     {
         if (isInitializing || isResetting)

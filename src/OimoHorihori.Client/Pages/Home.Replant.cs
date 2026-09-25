@@ -53,9 +53,7 @@ public partial class Home
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        lastUpdateTime = now;
-        lastAutoSaveTime = now;
-        lastAutoActionTime = now;
+        ResetRuntimeTimestamps(now);
 
         await SaveGameAsync();
     }
