@@ -78,4 +78,6 @@ public partial class GameState
     public DateTimeOffset CurrentAscentStartedAtUtc { get; set; }
     public double BestAscentSeconds { get; set; }
     public List<AscentHistoryEntry> AscentHistory { get; } = new();
+    public HashSet<string> UnlockedOimoPowerIds { get; } = new();
+    public double TotalOimoPowerSpentPotato { get; set; }
 }

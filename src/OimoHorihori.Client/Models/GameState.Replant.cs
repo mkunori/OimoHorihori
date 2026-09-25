@@ -23,7 +23,7 @@ public partial class GameState
     {
         get
         {
-            double value = BaseReplantSeedPotato * RootSeedBlessingMultiplier;
+            double value = BaseReplantSeedPotato * RootSeedBlessingMultiplier * OimoSeedMultiplier;
 
             return (int)Math.Floor(value);
         }

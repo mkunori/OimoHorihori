@@ -19,7 +19,7 @@ public partial class GameState
                 total += GetFarmProductionPerSecond(farm);
             }
 
-            return total * ProductionMultiplier * RootAbundanceMultiplier;
+            return total * ProductionMultiplier * RootAbundanceMultiplier * OimoAllProductionMultiplier;
         }
     }
 

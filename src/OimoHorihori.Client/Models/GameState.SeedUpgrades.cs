@@ -10,7 +10,7 @@ public partial class GameState
     public bool IsOfflineUpgradeMax => OfflineUpgradeLevel >= GameConstants.OfflineUpgradeMaxLevel;
     public int FieldCostReductionUpgradeCost => GetUpgradeCost(FieldCostReductionUpgradeLevel);
     public bool IsFieldCostReductionUpgradeMax => FieldCostReductionUpgradeLevel >= GameConstants.FieldCostReductionMaxLevel;
-    public double FieldCostMultiplier => SeedFieldCostMultiplier * RootFertilityMultiplier;
+    public double FieldCostMultiplier => SeedFieldCostMultiplier * RootFertilityMultiplier * OimoFieldCostMultiplier;
 
     private static int GetUpgradeCost(int currentLevel)
     {

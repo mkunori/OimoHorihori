@@ -115,7 +115,7 @@ public partial class GameState
     {
         int safeLevel = Math.Clamp(level, 0, GameConstants.RootRetillMaxLevel);
 
-        return GameConstants.RetillProductionMultiplier + safeLevel * GameConstants.RootRetillBaseBonusPerLevel;
+        return GameConstants.RetillProductionMultiplier + safeLevel * GameConstants.RootRetillBaseBonusPerLevel + OimoRetillBaseBonus;
     }
 
     public double GetRootSeedBlessingMultiplier(int level)

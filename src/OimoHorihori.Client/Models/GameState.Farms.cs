@@ -82,6 +82,6 @@ public partial class GameState
         double retillMultiplier = GetRetillBaseMultiplier(farm);
         double seedRetillEfficiencyMultiplier = GetRetillEfficiencyMultiplier(farm);
 
-        return farmBase * retillMultiplier * seedRetillEfficiencyMultiplier;
+        return farmBase * retillMultiplier * seedRetillEfficiencyMultiplier * OimoFarmProductionMultiplier * GetOimoRetillFinalMultiplier(farm);
     }
 }
