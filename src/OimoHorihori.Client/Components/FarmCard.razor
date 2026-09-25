@@ -1,5 +1,4 @@
 @using Microsoft.AspNetCore.Components
-@using OimoHorihori.Constants
 @using OimoHorihori.Models
 @using OimoHorihori.Utilities
 
@@ -26,19 +25,10 @@
 
         <span class="farm-retill-info">
 
-            @if (Farm.IsRetillMax)
-            {
-                <span>
-                    RETILL MAX
-                </span>
-            }
-            else
-            {
-                <span>
-                    RETILL
-                    @Farm.RetillCount/@GameConstants.RetillMaxCount
-                </span>
-            }
+            <span>
+                RETILL
+                @Farm.RetillCount
+            </span>
 
             <span>
                 ×@Game.GetRetillBaseMultiplier(Farm).ToString("0.000")
@@ -48,6 +38,16 @@
 
     </div>
 
+    @if (Farm.CanRetill && !Game.IsRetillUnlockedThisRun)
+    {
+        <div class="farm-action-row">
+
+            <span class="retill-ready">
+                畑8購入でRETILL解放
+            </span>
+
+        </div>
+    }
     @if (Farm.CanRetill && !Game.IsRetillUnlockedThisRun)
     {
         <div class="farm-action-row">
@@ -69,16 +69,6 @@
             <button class="retill-button" @onclick="HandleRetillAsync">
                 RETILL
             </button>
-
-        </div>
-    }
-    else if (Farm.IsRetillMax && Farm.IsMaxLevel)
-    {
-        <div class="farm-action-row">
-
-            <span class="farm-complete">
-                FARM COMPLETE
-            </span>
 
         </div>
     }

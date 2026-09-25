@@ -21,7 +21,6 @@ public static class GameConstants
     public const double OimoDiscoveryIntervalSeconds = 30;
     public const double OimoDiscoveryChance = 0.00035;
     public const int InitialFarmMaxLevel = 100;
-    public const int RetillMaxCount = 10;
     public const int RetillLevelCapBonus = 10;
     public const double RetillProductionMultiplier = 1.25;
     public const double AscentTargetProduction = 6.000e14;

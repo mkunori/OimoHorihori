@@ -10,10 +10,10 @@ public class Farm
     public int RetillCount { get; set; }
     public double BaseCost { get; }
     public double ProductionPerLevel { get; }
+
     public int MaxLevel => GameConstants.InitialFarmMaxLevel + RetillCount * GameConstants.RetillLevelCapBonus;
     public bool IsMaxLevel => Level >= MaxLevel;
-    public bool IsRetillMax => RetillCount >= GameConstants.RetillMaxCount;
-    public bool CanRetill => !IsRetillMax && Level >= MaxLevel;
+    public bool CanRetill => Level >= MaxLevel;
     public double BaseProductionPerSecond => ProductionPerLevel * Level;
 
     public Farm(string name, double baseCost, double productionPerLevel)

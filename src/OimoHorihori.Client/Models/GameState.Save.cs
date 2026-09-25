@@ -693,15 +693,14 @@ public partial class GameState
 
         foreach (FarmSaveData farm in save.Farms)
         {
-            if (farm.RetillCount < 0 || farm.RetillCount > GameConstants.RetillMaxCount)
+            if (farm.RetillCount < 0)
             {
                 return false;
             }
 
             int maxLevel = GameConstants.InitialFarmMaxLevel + farm.RetillCount * GameConstants.RetillLevelCapBonus;
 
-            if (farm.Level < 0
-                || farm.Level > maxLevel)
+            if (farm.Level < 0 || farm.Level > maxLevel)
             {
                 return false;
             }
