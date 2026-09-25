@@ -1,0 +1,312 @@
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Utilities
+
+<section class="statistics-screen">
+
+    <SubpageHeader Title="統計" OnBack="OnBack" />
+
+    <div class="statistics-list">
+
+        <section class="statistics-section">
+
+            <h3>芋</h3>
+
+            <div class="stat-row">
+                <span>累計生産</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.TotalPotato)
+                    芋
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>累計消費</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.TotalConsumedPotato)
+                    芋
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>歴代最高 芋/sec</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.BestProductionPerSecond)
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>最大周回生産</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.MaxRunProducedPotato)
+                    芋
+                </span>
+            </div>
+
+        </section>
+
+        <section class="statistics-section">
+
+            <h3>REPLANT</h3>
+
+            <div class="stat-row">
+                <span>REPLANT回数</span>
+                <span>@Game.ReplantCount</span>
+            </div>
+
+            <div class="stat-row">
+                <span>現在の種芋</span>
+                <span>@Game.SeedPotato</span>
+            </div>
+
+            <div class="stat-row">
+                <span>累計獲得種芋</span>
+                <span>@Game.TotalSeedPotatoEarned</span>
+            </div>
+
+            <div class="stat-row">
+                <span>累計消費種芋</span>
+                <span>@Game.TotalSeedPotatoSpent</span>
+            </div>
+
+            <div class="stat-row">
+                <span>最大一括獲得</span>
+                <span>@Game.MaxSeedPotatoPerReplant</span>
+            </div>
+
+        </section>
+
+        <section class="statistics-section">
+
+            <h3>ASCENT</h3>
+
+            <div class="stat-row">
+                <span>ASCENT回数</span>
+                <span>@Game.AscentCount</span>
+            </div>
+
+            <div class="stat-row">
+                <span>現在ROOT</span>
+                <span>@Game.CurrentRoot</span>
+            </div>
+
+            <div class="stat-row">
+                <span>累計獲得ROOT</span>
+                <span>@Game.TotalRootEarned</span>
+            </div>
+
+            <div class="stat-row">
+                <span>使用ROOT</span>
+                <span>@Game.UsedRoot</span>
+            </div>
+
+            <div class="stat-row">
+                <span>ROOT POWER</span>
+
+                <span>
+                    @Game.RootPower
+                    /
+                    @GameConstants.RootPowerMax
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>最短ASCENT</span>
+
+                <span>
+                    @FormatAscentDuration(Game.BestAscentSeconds)
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>現在ASCENT時間</span>
+
+                <span>
+                    @FormatAscentDuration(Game.CurrentAscentElapsedSeconds)
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>今回のREPLANT</span>
+                <span>@Game.CurrentAscentReplantCount</span>
+            </div>
+
+        </section>
+
+        <section class="statistics-section">
+
+            <h3>畑</h3>
+
+            @foreach (var farm in FarmStatistics)
+            {
+                <div class="farm-stat">
+
+                    <div class="farm-stat-name">
+                        @farm.Name
+                    </div>
+
+                    <div class="stat-row">
+                        <span>累計購入</span>
+
+                        <span>
+                            @farm.TotalPurchases Lv
+                        </span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span>最高Lv</span>
+
+                        <span>
+                            @farm.BestLevel
+                        </span>
+                    </div>
+
+                </div>
+            }
+
+        </section>
+
+        <section class="statistics-section">
+
+            <h3>OFFLINE</h3>
+
+            <div class="stat-row">
+                <span>累計オフライン生産</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.TotalOfflineProducedPotato)
+                    芋
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>最大オフライン獲得</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.MaxOfflineProducedPotato)
+                    芋
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>現在の放置上限</span>
+
+                <span>
+                    @FormatOfflineUpgradeHours(Game.OfflineUpgradeLevel)
+                </span>
+            </div>
+
+        </section>
+
+        <section class="statistics-section">
+
+            <h3>PLAY</h3>
+
+            <div class="stat-row">
+                <span>プレイ時間</span>
+
+                <span>
+                    @FormatPlayTime(Game.TotalPlayTimeSeconds)
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>掘る！回数</span>
+
+                <span>
+                    @Game.DigButtonCount
+                </span>
+            </div>
+
+            <div class="stat-row">
+                <span>開始日時</span>
+
+                <span>
+                    @FormatGameStartedAt()
+                </span>
+            </div>
+
+        </section>
+
+    </div>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    private IEnumerable<(string Name, int TotalPurchases, int BestLevel)> FarmStatistics =>
+    [
+        ( "畑1", Game.Farm1TotalPurchases, Game.Farm1BestLevel ),
+        ( "畑2", Game.Farm2TotalPurchases, Game.Farm2BestLevel ),
+        ( "畑3", Game.Farm3TotalPurchases, Game.Farm3BestLevel ),
+        ( "畑4", Game.Farm4TotalPurchases, Game.Farm4BestLevel ),
+        ( "畑5", Game.Farm5TotalPurchases, Game.Farm5BestLevel ),
+        ( "畑6", Game.Farm6TotalPurchases, Game.Farm6BestLevel ),
+        ( "畑7", Game.Farm7TotalPurchases, Game.Farm7BestLevel ),
+        ( "畑8", Game.Farm8TotalPurchases, Game.Farm8BestLevel )
+    ];
+
+    private static string FormatPlayTime(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds < 0)
+        {
+            return "00:00:00";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int totalHours = (int)time.TotalHours;
+
+        return $"{totalHours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private string FormatGameStartedAt()
+    {
+        if (Game.GameStartedAtUtc == default)
+        {
+            return "-";
+        }
+
+        return Game.GameStartedAtUtc.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+
+    private static string FormatOfflineUpgradeHours(int level)
+    {
+        double seconds = GameConstants.InitialOfflineLimitSeconds + level * GameConstants.OfflineUpgradeSecondsPerLevel;
+
+        seconds = Math.Min(seconds, GameConstants.MaxOfflineLimitSeconds);
+
+        double hours = seconds / 3600.0;
+
+        return $"{hours:0.#}時間";
+    }
+
+    private static string FormatAscentDuration(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds <= 0)
+        {
+            return "--:--:--";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int days =
+            (int)time.TotalDays;
+
+        if (days > 0)
+        {
+            return $"{days:00}d " + $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+        }
+
+        return $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+}

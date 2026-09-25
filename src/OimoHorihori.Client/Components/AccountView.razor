@@ -1,0 +1,220 @@
+@using OimoHorihori.Shared.Auth
+
+<section class="account-screen">
+
+    <SubpageHeader Title="ACCOUNT" OnBack="OnBack" />
+
+    @if (CurrentUser is not null)
+    {
+        <section class="account-card">
+
+            <h3>ログイン中</h3>
+
+            <div>
+                USERNAME
+            </div>
+
+            <div>
+                @CurrentUser.UserName
+            </div>
+
+            <button @onclick="OnLogout">
+                ログアウト
+            </button>
+
+            <button class="account-delete-button" @onclick="OnOpenDeleteConfirmation">
+                アカウント削除
+            </button>
+
+        </section>
+    }
+    else
+    {
+        <section class="account-card">
+
+            <h3>ログイン</h3>
+
+            <div class="account-field">
+
+                <label>USERNAME</label>
+
+                <input type="text" maxlength="10" autocomplete="username" value="@LoginUserName"
+                       @oninput="HandleLoginUserNameInput" />
+
+            </div>
+
+            <div class="account-field">
+
+                <label>4-DIGIT PIN</label>
+
+                <input type="password" maxlength="4" inputmode="numeric" autocomplete="current-password" value="@LoginPin"
+                       @oninput="HandleLoginPinInput" />
+
+            </div>
+
+            <button class="account-register-button" disabled="@IsLoggingIn" @onclick="OnLogin">
+
+                @(IsLoggingIn ? "ログイン中..." : "ログイン")
+
+            </button>
+
+            @if (!string.IsNullOrEmpty(LoginError))
+            {
+                <div class="account-message error">
+                    @LoginError
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(LoginMessage))
+            {
+                <div class="account-message success">
+                    @LoginMessage
+                </div>
+            }
+
+        </section>
+
+        <section class="account-card">
+
+            <h3>ユーザー登録</h3>
+
+            <div class="account-field">
+
+                <label>USERNAME</label>
+
+                <input type="text" maxlength="10" autocomplete="username" value="@RegisterUserName"
+                       @oninput="HandleRegisterUserNameInput" />
+
+                <div class="account-hint">
+                    1〜10文字
+                </div>
+
+            </div>
+
+            <div class="account-field">
+
+                <label>4-DIGIT PIN</label>
+
+                <input type="password" maxlength="4" inputmode="numeric" autocomplete="new-password" value="@RegisterPin"
+                       @oninput="HandleRegisterPinInput" />
+
+                <div class="account-hint">
+                    数字4桁
+                </div>
+
+            </div>
+
+            <button class="account-register-button" disabled="@IsRegistering" @onclick="OnRegister">
+
+                @(IsRegistering ? "登録中..." : "登録する")
+
+            </button>
+
+            @if (!string.IsNullOrEmpty(RegisterError))
+            {
+                <div class="account-message error">
+                    @RegisterError
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(RegisterMessage))
+            {
+                <div class="account-message success">
+                    @RegisterMessage
+                </div>
+            }
+
+        </section>
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public CurrentUserResponse? CurrentUser { get; set; }
+
+    [Parameter]
+    public string LoginUserName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> LoginUserNameChanged { get; set; }
+
+    [Parameter]
+    public string LoginPin { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> LoginPinChanged { get; set; }
+
+    [Parameter]
+    public string RegisterUserName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> RegisterUserNameChanged { get; set; }
+
+    [Parameter]
+    public string RegisterPin { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> RegisterPinChanged { get; set; }
+
+    [Parameter]
+    public bool IsLoggingIn { get; set; }
+
+    [Parameter]
+    public bool IsRegistering { get; set; }
+
+    [Parameter]
+    public string? LoginMessage { get; set; }
+
+    [Parameter]
+    public string? LoginError { get; set; }
+
+    [Parameter]
+    public string? RegisterMessage { get; set; }
+
+    [Parameter]
+    public string? RegisterError { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnLogin { get; set; }
+
+    [Parameter]
+    public EventCallback OnRegister { get; set; }
+
+    [Parameter]
+    public EventCallback OnLogout { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenDeleteConfirmation { get; set; }
+
+    private Task HandleLoginUserNameInput(ChangeEventArgs args)
+    {
+        string value = args.Value?.ToString() ?? string.Empty;
+
+        return LoginUserNameChanged.InvokeAsync(value);
+    }
+
+    private Task HandleLoginPinInput(ChangeEventArgs args)
+    {
+        string value = args.Value?.ToString() ?? string.Empty;
+
+        return LoginPinChanged.InvokeAsync(value);
+    }
+
+    private Task HandleRegisterUserNameInput(ChangeEventArgs args)
+    {
+        string value = args.Value?.ToString() ?? string.Empty;
+
+        return RegisterUserNameChanged.InvokeAsync(value);
+    }
+
+    private Task HandleRegisterPinInput(ChangeEventArgs args)
+    {
+        string value = args.Value?.ToString() ?? string.Empty;
+
+        return RegisterPinChanged.InvokeAsync(value);
+    }
+}

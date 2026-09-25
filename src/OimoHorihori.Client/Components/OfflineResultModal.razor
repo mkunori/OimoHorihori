@@ -1,0 +1,79 @@
+@using OimoHorihori.Models
+@using OimoHorihori.Utilities
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop">
+
+        <div class="offline-modal">
+
+            <h2>
+                おかえり！
+            </h2>
+
+            @if (Reward > 0)
+            {
+                <div class="offline-label">
+                    OFFLINE
+                </div>
+
+                <div class="offline-time">
+                    @FormatOfflineTime(Duration)
+                </div>
+
+                <div class="offline-reward">
+                    +@NumberFormatter.Format(Reward)
+                    芋
+                </div>
+            }
+
+            @if (OimoDiscoveries.Count > 0)
+            {
+                <div class="offline-oimo">
+
+                    <div class="offline-oimo-label">
+                        いも図鑑
+                    </div>
+
+                    @foreach (OimoSpeciesDefinition species in OimoDiscoveries)
+                    {
+                        <div class="offline-oimo-entry">
+                            @species.Name
+                        </div>
+                    }
+
+                </div>
+            }
+
+            <button @onclick="OnClose">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public TimeSpan Duration { get; set; }
+
+    [Parameter]
+    public double Reward { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<OimoSpeciesDefinition> OimoDiscoveries { get; set; } = Array.Empty<OimoSpeciesDefinition>();
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private static string FormatOfflineTime(TimeSpan time)
+    {
+        int hours = (int)time.TotalHours;
+
+        return $"{hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+}

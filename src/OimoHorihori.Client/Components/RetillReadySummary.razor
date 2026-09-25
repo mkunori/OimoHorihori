@@ -1,0 +1,26 @@
+@if (ReadyCount > 0)
+{
+    <div class="retill-ready-summary">
+
+        <div>
+            RETILL READY
+            <strong>@ReadyCount</strong>
+        </div>
+
+        @if (!string.IsNullOrEmpty(TargetFarmId))
+        {
+            <a class="retill-ready-jump" href="@($"#{TargetFarmId}")">
+                最初の畑へ
+            </a>
+        }
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int ReadyCount { get; set; }
+
+    [Parameter]
+    public string TargetFarmId { get; set; } = string.Empty;
+}

@@ -1,0 +1,71 @@
+@if (IsOpen)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal ascent-confirm-modal">
+
+            <h2>
+                ASCENT
+            </h2>
+
+            <p>
+                ASCENTしますか？
+            </p>
+
+            <div class="ascent-reset-list">
+
+                <div>
+                    以下がリセットされます。
+                </div>
+
+                <ul>
+                    <li>現在芋</li>
+                    <li>畑1〜8</li>
+                    <li>RETILL</li>
+                    <li>現在保有種芋</li>
+                    <li>種芋強化5種類</li>
+                    <li>今回ASCENT中のREPLANT進行</li>
+                </ul>
+
+            </div>
+
+            <div class="ascent-confirm-reward">
+                獲得
+
+                <strong>
+                    ROOT +1
+                </strong>
+            </div>
+
+            <p class="ascent-confirm-note">
+                ROOT・ROOT強化・AUTO能力・
+                実績・図鑑・長期記録は維持されます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="OnCancel">
+                    CANCEL
+                </button>
+
+                <button class="danger-button" @onclick="OnConfirm">
+                    ASCENT
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+}

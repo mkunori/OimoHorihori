@@ -1,0 +1,39 @@
+@if (IsOpen)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                新しいセーブデータが見つかりました
+            </h2>
+
+            <p>
+                別の端末でゲームが
+                更新されています。
+            </p>
+
+            <p>
+                最新データを読み込みます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="OnLoad">
+                    読み込む
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback OnLoad { get; set; }
+}

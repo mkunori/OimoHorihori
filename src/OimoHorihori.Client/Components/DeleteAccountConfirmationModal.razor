@@ -1,0 +1,67 @@
+@if (IsOpen)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                アカウント削除
+            </h2>
+
+            <p>
+                このアカウントを削除します。
+            </p>
+
+            <p>
+                最新のセーブデータは
+                この端末に保存され、
+                ローカルプレイへ戻ります。
+            </p>
+
+            <p>
+                同じユーザー名は
+                再登録できません。
+            </p>
+
+            @if (!string.IsNullOrEmpty(Error))
+            {
+                <div class="delete-account-error">
+                    @Error
+                </div>
+            }
+
+            <div class="confirm-actions">
+
+                <button disabled="@IsDeleting" @onclick="OnCancel">
+                    キャンセル
+                </button>
+
+                <button class="danger-button" disabled="@IsDeleting" @onclick="OnConfirm">
+
+                    @(IsDeleting ? "削除中..." : "削除する")
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public bool IsDeleting { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+}

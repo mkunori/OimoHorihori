@@ -1,0 +1,155 @@
+@using OimoHorihori.Shared.Rankings
+@using OimoHorihori.Utilities
+
+<section class="ranking-screen">
+
+    <SubpageHeader Title="RANKING" OnBack="OnBack" />
+
+    <div class="ranking-tabs">
+
+        <button class="@GetTabClass(RankingCategory.TotalPotato)"
+                @onclick="() => ChangeCategoryAsync(RankingCategory.TotalPotato)">
+            TOTAL POTATO
+        </button>
+
+        <button class="@GetTabClass(RankingCategory.BestProductionPerSecond)"
+                @onclick="() => ChangeCategoryAsync(RankingCategory.BestProductionPerSecond)">
+            BEST / SEC
+        </button>
+
+        <button class="@GetTabClass(RankingCategory.Replant)"
+                @onclick="() => ChangeCategoryAsync(RankingCategory.Replant)">
+            REPLANT
+        </button>
+
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="ranking-message">
+            LOADING...
+        </div>
+    }
+    else if (Error is not null)
+    {
+        <div class="ranking-message">
+            @Error
+        </div>
+    }
+    else if (Response is not null)
+    {
+        <div class="ranking-list">
+
+            @foreach (RankingEntryResponse entry in Response.TopEntries)
+            {
+                <div class="@GetRowClass(entry)">
+
+                    <span class="ranking-rank">
+                        #@entry.Rank
+                    </span>
+
+                    <button class="ranking-name ranking-profile-link" @onclick="() => OpenPublicProfileAsync(entry.UserId)">
+                        @entry.UserName
+                    </button>
+
+                    <span class="ranking-value">
+                        @FormatRankingValue(entry.Value)
+                    </span>
+
+                </div>
+            }
+
+        </div>
+
+        @if (Response.TopEntries.Count == 0)
+        {
+            <div class="ranking-message">
+                まだランキング記録がありません。
+            </div>
+        }
+
+        @if (Response.MyEntry is not null && Response.MyEntry.Rank > 30)
+        {
+            <div class="ranking-my-position">
+
+                <div class="ranking-divider">
+                    YOUR RANK
+                </div>
+
+                <div class="ranking-row ranking-self">
+
+                    <span class="ranking-rank">
+                        #@Response.MyEntry.Rank
+                    </span>
+
+                    <span class="ranking-name">
+                        @Response.MyEntry.UserName
+                    </span>
+
+                    <span class="ranking-value">
+                        @FormatRankingValue(Response.MyEntry.Value)
+                    </span>
+
+                </div>
+
+            </div>
+        }
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public RankingCategory CurrentCategory { get; set; }
+
+    [Parameter]
+    public RankingResponse? Response { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    [Parameter]
+    public EventCallback<RankingCategory> OnCategoryChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnOpenPublicProfile { get; set; }
+
+    private string GetTabClass(
+        RankingCategory category)
+    {
+        return CurrentCategory == category ? "ranking-tab active" : "ranking-tab";
+    }
+
+    private static string GetRowClass(RankingEntryResponse entry)
+    {
+        return entry.IsCurrentUser ? "ranking-row ranking-self" : "ranking-row";
+    }
+
+    private string FormatRankingValue(
+        double value)
+    {
+        return CurrentCategory switch
+        {
+            RankingCategory.TotalPotato => $"{NumberFormatter.Format(value)} 芋",
+            RankingCategory.BestProductionPerSecond => $"{NumberFormatter.Format(value)} 芋 / sec",
+            RankingCategory.Replant => $"{(long)value} 回",
+            _ => NumberFormatter.Format(value)
+        };
+    }
+
+    private Task ChangeCategoryAsync(RankingCategory category)
+    {
+        return OnCategoryChanged.InvokeAsync(category);
+    }
+
+    private Task OpenPublicProfileAsync(Guid userId)
+    {
+        return OnOpenPublicProfile.InvokeAsync(userId);
+    }
+}

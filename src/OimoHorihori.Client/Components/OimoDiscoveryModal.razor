@@ -1,0 +1,42 @@
+@using OimoHorihori.Models
+
+@if (IsOpen && Species is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="oimo-discovery-modal">
+
+            <div class="oimo-discovery-label">
+                NEW OIMO
+            </div>
+
+            <h2>
+                @Species.Name
+            </h2>
+
+            <div class="oimo-discovery-count">
+                ×@DiscoveryCount
+            </div>
+
+            <button @onclick="OnClose">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public OimoSpeciesDefinition? Species { get; set; }
+
+    [Parameter]
+    public int DiscoveryCount { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+}

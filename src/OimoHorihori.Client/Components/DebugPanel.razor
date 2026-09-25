@@ -1,0 +1,88 @@
+@using OimoHorihori.Constants
+
+@if (BuildInfo.IsDebug && HasStarted)
+{
+    <section class="debug-panel">
+
+        <div class="debug-title">
+            DEBUG
+        </div>
+
+        <button @onclick="() => OnAddPotato.InvokeAsync(1_000_000)">
+            +1.000e+6 芋
+        </button>
+
+        <button @onclick="() => OnAddPotato.InvokeAsync(5.000e19)">
+            +5.000e+19 芋
+        </button>
+
+        <button @onclick="() => OnOffline.InvokeAsync(3_600)">
+            OFFLINE 1時間
+        </button>
+
+        <button @onclick="() => OnOffline.InvokeAsync(43_200)">
+            OFFLINE 12時間
+        </button>
+
+        <button @onclick="OnAddSeedPotato">
+            +100 種芋
+        </button>
+
+        <button @onclick="OnAscentReady">
+            ASCENT READY
+        </button>
+
+        <button @onclick="OnBuyProductionUpgrade">
+            生産力強化
+        </button>
+
+        <button @onclick="OnBuyDigUpgrade">
+            掘り出し強化
+        </button>
+
+        <button @onclick="OnBuyOfflineUpgrade">
+            放置強化
+        </button>
+
+        <button @onclick="OnBuyRetillEfficiencyUpgrade">
+            RETILL効率強化
+        </button>
+
+        <button @onclick="OnBuyFieldCostReductionUpgrade">
+            畑コスト軽減
+        </button>
+
+    </section>
+}
+
+@code {
+    [Parameter]
+    public bool HasStarted { get; set; }
+
+    [Parameter]
+    public EventCallback<double> OnAddPotato { get; set; }
+
+    [Parameter]
+    public EventCallback<double> OnOffline { get; set; }
+
+    [Parameter]
+    public EventCallback OnAddSeedPotato { get; set; }
+
+    [Parameter]
+    public EventCallback OnAscentReady { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyProductionUpgrade { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyDigUpgrade { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyOfflineUpgrade { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyRetillEfficiencyUpgrade { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyFieldCostReductionUpgrade { get; set; }
+}

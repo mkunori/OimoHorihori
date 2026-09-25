@@ -1,0 +1,44 @@
+.purchase-mode {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 6px;
+
+    margin-bottom: 12px;
+}
+
+.purchase-mode-button {
+    padding: 9px 8px;
+
+    border: 1px solid #a99170;
+    border-radius: 8px;
+
+    background: #fffaf0;
+    color: #35281f;
+
+    font-size: 0.9rem;
+    font-weight: 700;
+
+    cursor: default;
+}
+
+.purchase-mode-button.selected {
+    background: #765276;
+    color: white;
+
+    border-color: #604060;
+}
+
+@media (max-width: 390px) {
+    .purchase-mode {
+        gap: 5px;
+
+        margin-bottom: 8px;
+    }
+
+    .purchase-mode-button {
+        padding: 7px 5px;
+
+        font-size: 0.82rem;
+    }
+}

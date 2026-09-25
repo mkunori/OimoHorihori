@@ -1,0 +1,19 @@
+<div class="subpage-header">
+
+    <button class="back-button" @onclick="OnBack">
+        ‹
+    </button>
+
+    <h2>
+        @Title
+    </h2>
+
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+}

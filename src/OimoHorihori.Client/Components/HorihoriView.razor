@@ -1,0 +1,273 @@
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Utilities
+
+@if (IsInitializing || IsResetting)
+{
+    <div class="loading-panel">
+
+        <div class="loading-spinner"></div>
+
+        <div>
+            @InitializationMessage
+        </div>
+
+    </div>
+}
+else if (!Game.HasStarted)
+{
+    <section class="start-screen">
+
+        <button class="dig-button" @onclick="HandleStartGameAsync">
+            掘る！
+        </button>
+
+    </section>
+}
+else
+{
+    <section class="status-panel">
+
+        <div class="potato-value">
+
+            @NumberFormatter.Format(Game.Potato)
+
+            <span class="unit">
+                芋
+            </span>
+
+        </div>
+
+        <div class="production-value">
+            +@NumberFormatter.Format(Game.ProductionPerSecond)
+            / sec
+        </div>
+
+        <div class="total-value">
+            TOTAL
+            @NumberFormatter.Format(Game.TotalPotato)
+        </div>
+
+    </section>
+
+    @if (Game.AscentCount == 0)
+    {
+        <section class="next-goal-panel">
+
+            <span class="next-goal-label">
+                NEXT GOAL
+            </span>
+
+            <strong>
+                @EarlyGameGoalText
+            </strong>
+
+        </section>
+    }
+
+    <SaveStatusIndicator Status="CurrentSaveStatus" LastSaveCompletedAtUtc="LastSaveCompletedAtUtc" />
+
+    <PurchaseModeSelector CurrentMode="CurrentPurchaseMode" OnModeChanged="HandlePurchaseModeChangedAsync" />
+
+    @if (Game.CanAscent)
+    {
+        <button class="ascent-ready-banner" @onclick="HandleOpenAscentAsync">
+
+            <span>
+                ASCENT READY
+            </span>
+
+            <span>
+                ROOT +1 ›
+            </span>
+
+        </button>
+    }
+
+    <RetillReadySummary ReadyCount="RetillReadyCount" TargetFarmId="@GetFirstRetillReadyFarmId()" />
+
+    <section class="farm-list">
+
+        @foreach (Farm farm in Game.Farms)
+        {
+            int purchaseLevels = GetAffordablePurchaseLevels(farm);
+            bool canBuy = purchaseLevels > 0;
+            double purchaseCost = GetPurchaseDisplayCost(farm);
+
+            <FarmCard Game="Game" Farm="farm" CanBuy="canBuy" PurchaseCost="purchaseCost"
+                      PurchaseLevelText="@GetPurchaseLevelText(farm)" ElementId="@GetFarmElementId(farm)" OnBuy="HandleBuyFarmAsync"
+                      OnRetill="HandleRetillFarmAsync" />
+        }
+
+        <button class="replant-card" @onclick="HandleOpenReplantAsync">
+
+            <div class="replant-header">
+
+                <span class="replant-name">
+                    REPLANT
+                </span>
+
+                <span class="replant-seed">
+                    種芋 ×@Game.ReplantSeedPotato
+                </span>
+
+            </div>
+
+            <div class="replant-production">
+                今回の生産
+                @NumberFormatter.Format(Game.RunProducedPotato)
+                芋
+            </div>
+
+            <div class="replant-next">
+                次の種芋まで
+                @NumberFormatter.Format(Game.ProductionUntilNextSeedPotato)
+                芋
+            </div>
+
+        </button>
+
+    </section>
+}
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public bool IsInitializing { get; set; }
+
+    [Parameter]
+    public bool IsResetting { get; set; }
+
+    [Parameter]
+    public string InitializationMessage { get; set; } = string.Empty;
+
+    [Parameter]
+    public string EarlyGameGoalText { get; set; } = string.Empty;
+
+    [Parameter]
+    public SaveStatus CurrentSaveStatus { get; set; }
+
+    [Parameter]
+    public DateTimeOffset? LastSaveCompletedAtUtc { get; set; }
+
+    [Parameter]
+    public PurchaseMode CurrentPurchaseMode { get; set; }
+
+    [Parameter]
+    public EventCallback OnStartGame { get; set; }
+
+    [Parameter]
+    public EventCallback<PurchaseMode> OnPurchaseModeChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<Farm> OnBuyFarm { get; set; }
+
+    [Parameter]
+    public EventCallback<Farm> OnRetillFarm { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenReplant { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenAscent { get; set; }
+
+    private int RetillReadyCount => Game.Farms.Count(farm => Game.CanRetillFarm(farm));
+
+    private int GetPurchaseMaxLevels()
+    {
+        return CurrentPurchaseMode switch
+        {
+            PurchaseMode.One => 1,
+            PurchaseMode.Ten => 10,
+            PurchaseMode.Max => int.MaxValue,
+            _ => 1
+        };
+    }
+
+    private int GetAffordablePurchaseLevels(Farm farm)
+    {
+        return farm.GetAffordableLevels(Game.Potato, GetPurchaseMaxLevels(), Game.FieldCostMultiplier);
+    }
+
+    private double GetPurchaseDisplayCost(Farm farm)
+    {
+        int levels = GetAffordablePurchaseLevels(farm);
+
+        if (levels > 0)
+        {
+            return farm.GetCostForLevels(levels, Game.FieldCostMultiplier);
+        }
+
+        return farm.GetNextCost(Game.FieldCostMultiplier);
+    }
+
+    private string GetPurchaseLevelText(Farm farm)
+    {
+        int levels = GetAffordablePurchaseLevels(farm);
+
+        if (levels <= 0)
+        {
+            return "購入不可";
+        }
+
+        return CurrentPurchaseMode switch
+        {
+            PurchaseMode.One => "+1 Lv",
+            PurchaseMode.Ten => $"+{levels} Lv",
+            PurchaseMode.Max => $"MAX +{levels} Lv",
+            _ => $"+{levels} Lv"
+        };
+    }
+
+    private string GetFarmElementId(Farm farm)
+    {
+        int index = Game.Farms.IndexOf(farm);
+
+        return $"farm-{index + 1}";
+    }
+
+    private string GetFirstRetillReadyFarmId()
+    {
+        Farm? farm = Game.Farms.FirstOrDefault(farm => Game.CanRetillFarm(farm));
+
+        if (farm is null)
+        {
+            return string.Empty;
+        }
+
+        return GetFarmElementId(farm);
+    }
+
+    private Task HandleStartGameAsync()
+    {
+        return OnStartGame.InvokeAsync();
+    }
+
+    private Task HandlePurchaseModeChangedAsync(
+        PurchaseMode mode)
+    {
+        return OnPurchaseModeChanged.InvokeAsync(mode);
+    }
+
+    private Task HandleBuyFarmAsync(Farm farm)
+    {
+        return OnBuyFarm.InvokeAsync(farm);
+    }
+
+    private Task HandleRetillFarmAsync(Farm farm)
+    {
+        return OnRetillFarm.InvokeAsync(farm);
+    }
+
+    private Task HandleOpenReplantAsync()
+    {
+        return OnOpenReplant.InvokeAsync();
+    }
+
+    private Task HandleOpenAscentAsync()
+    {
+        return OnOpenAscent.InvokeAsync();
+    }
+}

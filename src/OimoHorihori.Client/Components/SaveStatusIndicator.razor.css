@@ -1,0 +1,45 @@
+.save-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    margin: 4px 0 10px;
+
+    font-size: 0.72rem;
+    opacity: 0.75;
+}
+
+.save-status-dot {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: currentColor;
+}
+
+.save-status-time {
+    opacity: 0.7;
+
+    font-variant-numeric: tabular-nums;
+}
+
+.save-status.saving {
+    opacity: 0.6;
+}
+
+.save-status.synced {
+    opacity: 0.8;
+}
+
+.save-status.local {
+    opacity: 0.7;
+}
+
+.save-status.offline,
+.save-status.warning,
+.save-status.error {
+    opacity: 1;
+}

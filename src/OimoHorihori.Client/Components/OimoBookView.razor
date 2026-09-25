@@ -1,0 +1,67 @@
+@using OimoHorihori.Models
+
+<section class="oimo-book-screen">
+
+    <SubpageHeader Title="いも図鑑" OnBack="OnBack" />
+
+    <div class="oimo-book-progress">
+        @Game.DiscoveredOimoSpeciesCount
+        /
+        @OimoSpeciesCatalog.All.Count
+    </div>
+
+    <div class="oimo-book-list">
+
+        @for (int i = 0;
+              i < OimoSpeciesCatalog.All.Count;
+              i++)
+        {
+            OimoSpeciesDefinition species = OimoSpeciesCatalog.All[i];
+
+            bool discovered = Game.IsOimoDiscovered(species.Id);
+
+            <div class="@GetCardClass(discovered)">
+
+                <div class="oimo-book-number">
+                    #@((i + 1).ToString("00"))
+                </div>
+
+                <div class="oimo-book-name">
+
+                    @if (discovered)
+                    {
+                        @species.Name
+                    }
+                    else
+                    {
+                        <span>??????</span>
+                    }
+
+                </div>
+
+                @if (discovered)
+                {
+                    <div class="oimo-book-count">
+                        ×@Game.GetOimoDiscoveryCount(species.Id)
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    private static string GetCardClass(bool discovered)
+    {
+        return discovered ? "oimo-book-card" : "oimo-book-card locked";
+    }
+}

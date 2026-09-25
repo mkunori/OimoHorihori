@@ -1,0 +1,153 @@
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Shared.Profiles
+@using OimoHorihori.Utilities
+
+<section class="profile-screen">
+
+    <SubpageHeader Title="PROFILE" OnBack="OnBack" />
+
+    @if (IsLoading)
+    {
+        <div class="profile-message">
+            LOADING...
+        </div>
+    }
+    else if (Error is not null)
+    {
+        <div class="profile-message">
+            @Error
+        </div>
+    }
+    else if (Profile is not null)
+    {
+        <section class="profile-card">
+
+            <div class="profile-user-name">
+                @Profile.UserName
+            </div>
+
+            <div class="profile-title">
+                @(Profile.EquippedTitleName ?? "称号なし")
+            </div>
+
+        </section>
+
+        <section class="profile-card">
+
+            <div class="profile-row">
+
+                <span>総生産芋</span>
+
+                <span>
+                    @NumberFormatter.Format(Profile.TotalPotato)
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>
+                    歴代最高 芋 / sec
+                </span>
+
+                <span>
+                    @NumberFormatter.Format(Profile.BestProductionPerSecond)
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>REPLANT</span>
+
+                <span>
+                    @Profile.ReplantCount 回
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>ASCENT</span>
+
+                <span>
+                    @Profile.AscentCount 回
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>ROOT POWER</span>
+
+                <span>
+                    @Profile.RootPower
+                    /
+                    @GameConstants.RootPowerMax
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>実績</span>
+
+                <span>
+                    @Profile.AchievementCount
+                    /
+                    @AchievementCatalog.All.Count
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>いも図鑑</span>
+
+                <span>
+                    @Profile.OimoSpeciesCount
+                    /
+                    @OimoSpeciesCatalog.All.Count
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>ゲーム開始</span>
+
+                <span>
+                    @FormatGameStartedDate(Profile.GameStartedAtUtc)
+                </span>
+
+            </div>
+
+        </section>
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public PublicProfileResponse? Profile { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    private static string FormatGameStartedDate(DateTimeOffset? date)
+    {
+        if (date is null)
+        {
+            return "-";
+        }
+
+        return date.Value.ToLocalTime().ToString("yyyy/MM/dd");
+    }
+}

@@ -1,0 +1,68 @@
+.account-screen {
+    padding: 16px;
+}
+
+.account-card {
+    display: grid;
+
+    gap: 16px;
+}
+
+.account-card+.account-card {
+    margin-top: 20px;
+}
+
+.account-card h3 {
+    margin: 0;
+}
+
+.account-field {
+    display: grid;
+
+    gap: 6px;
+}
+
+.account-field label {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.account-field input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px;
+
+    font-size: 1rem;
+}
+
+.account-hint {
+    font-size: 0.75rem;
+
+    opacity: 0.7;
+}
+
+.account-register-button {
+    padding: 12px;
+}
+
+.account-message {
+    padding: 10px;
+
+    border-radius: 6px;
+}
+
+.account-message.error {
+    border: 1px solid currentColor;
+}
+
+.account-message.success {
+    border: 1px solid currentColor;
+}
+
+.account-delete-button {
+    width: 100%;
+
+    margin-top: 12px;
+}

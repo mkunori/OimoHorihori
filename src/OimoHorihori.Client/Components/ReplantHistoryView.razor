@@ -1,0 +1,136 @@
+@using OimoHorihori.Models
+@using OimoHorihori.Shared.Saves
+@using OimoHorihori.Utilities
+
+<section class="replant-history-screen">
+
+    <SubpageHeader Title="REPLANT HISTORY" OnBack="OnBack" />
+
+    <section class="replant-record-card">
+
+        <h3>BEST RECORDS</h3>
+
+        <div class="replant-record-row">
+
+            <span>最短REPLANT</span>
+
+            <span>
+                @FormatReplantDuration(Game.ShortestReplantSeconds)
+            </span>
+
+        </div>
+
+        <div class="replant-record-row">
+
+            <span>最大周回生産</span>
+
+            <span>
+                @NumberFormatter.Format(Game.MaxRunProducedPotato)
+                芋
+            </span>
+
+        </div>
+
+        <div class="replant-record-row">
+
+            <span>最大獲得種芋</span>
+
+            <span>
+                @Game.MaxSeedPotatoPerReplant
+            </span>
+
+        </div>
+
+    </section>
+
+    <section class="replant-history-list">
+
+        @if (Game.ReplantHistory.Count == 0)
+        {
+            <div class="replant-history-empty">
+                REPLANT履歴はまだありません。
+            </div>
+        }
+        else
+        {
+            @for (int i = 0; i < Game.ReplantHistory.Count; i++)
+            {
+                ReplantHistoryEntry entry = Game.ReplantHistory[i];
+
+                int replantNumber = Game.ReplantCount - i;
+
+                <section class="replant-history-card">
+
+                    <div class="replant-history-number">
+                        #@replantNumber
+                    </div>
+
+                    <div class="replant-history-date">
+                        @FormatReplantDate(entry.ReplantedAtUtc)
+                    </div>
+
+                    <div class="replant-history-row">
+
+                        <span>周回時間</span>
+
+                        <span>
+                            @FormatReplantDuration(entry.RunDurationSeconds)
+                        </span>
+
+                    </div>
+
+                    <div class="replant-history-row">
+
+                        <span>周回生産</span>
+
+                        <span>
+                            @NumberFormatter.Format(entry.RunProducedPotato)
+                            芋
+                        </span>
+
+                    </div>
+
+                    <div class="replant-history-row">
+
+                        <span>獲得種芋</span>
+
+                        <span>
+                            +@entry.EarnedSeedPotato
+                        </span>
+
+                    </div>
+
+                </section>
+            }
+        }
+
+    </section>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    private static string FormatReplantDuration(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds <= 0)
+        {
+            return "--:--:--";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int hours = (int)time.TotalHours;
+
+        return $"{hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private static string FormatReplantDate(DateTimeOffset date)
+    {
+        return date.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+}

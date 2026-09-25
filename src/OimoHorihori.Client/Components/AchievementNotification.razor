@@ -1,0 +1,36 @@
+@using OimoHorihori.Models
+
+@if (Achievement is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="achievement-unlock-modal">
+
+            <div class="achievement-unlock-label">
+                ACHIEVEMENT UNLOCKED
+            </div>
+
+            <h2>
+                @Achievement.Name
+            </h2>
+
+            <div class="achievement-unlock-description">
+                @Achievement.Description
+            </div>
+
+            <button @onclick="OnClose">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public AchievementDefinition? Achievement { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+}

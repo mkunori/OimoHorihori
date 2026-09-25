@@ -1,0 +1,81 @@
+@using OimoHorihori.Models
+
+<section class="achievements-screen">
+
+    <SubpageHeader Title="実績" OnBack="OnBack" />
+
+    <div class="achievement-progress">
+        @UnlockedAchievementCount
+        /
+        @AchievementCatalog.All.Count
+    </div>
+
+    <div class="achievement-list">
+
+        @foreach (AchievementDefinition achievement in AchievementCatalog.All)
+        {
+            bool unlocked =
+                Game.IsAchievementUnlocked(achievement.Id);
+
+            <div class="@GetAchievementClass(unlocked)">
+
+                <div class="achievement-header">
+
+                    <span class="achievement-name">
+                        @achievement.Name
+                    </span>
+
+                    @if (unlocked)
+                    {
+                        <span class="achievement-status">
+                            CLEAR
+                        </span>
+                    }
+
+                </div>
+
+                <div class="achievement-description">
+                    @achievement.Description
+                </div>
+
+                @if (unlocked)
+                {
+                    <div class="achievement-date">
+                        @FormatAchievementDate(achievement.Id)
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    private int UnlockedAchievementCount => AchievementCatalog.All.Count(achievement =>
+Game.IsAchievementUnlocked(achievement.Id));
+
+    private static string GetAchievementClass(bool unlocked)
+    {
+        return unlocked ? "achievement-card unlocked" : "achievement-card locked";
+    }
+
+    private string FormatAchievementDate(string achievementId)
+    {
+        DateTimeOffset? unlockedAt = Game.GetAchievementUnlockedAtUtc(achievementId);
+
+        if (unlockedAt is null)
+        {
+            return string.Empty;
+        }
+
+        return unlockedAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+}

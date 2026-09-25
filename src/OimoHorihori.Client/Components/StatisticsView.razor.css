@@ -1,0 +1,78 @@
+.statistics-screen {
+    padding-bottom: 12px;
+}
+
+.statistics-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+.statistics-section {
+    padding: 14px 16px;
+
+    border: 1px solid #b9a78b;
+    border-radius: 10px;
+
+    background: #fffaf0;
+}
+
+.statistics-section h3 {
+    margin: 0 0 10px;
+
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 5px 0;
+
+    font-size: 0.85rem;
+}
+
+.stat-row span:last-child {
+    text-align: right;
+
+    font-weight: 700;
+}
+
+.farm-stat+.farm-stat {
+    margin-top: 12px;
+    padding-top: 12px;
+
+    border-top: 1px solid #ddd0bb;
+}
+
+.farm-stat-name {
+    margin-bottom: 4px;
+
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+@media (max-width: 390px) {
+    .statistics-section {
+        padding: 10px 12px;
+    }
+
+    .stat-row {
+        align-items: flex-start;
+
+        gap: 8px;
+    }
+
+    .stat-row span {
+        min-width: 0;
+    }
+
+    .stat-row span:last-child {
+        overflow-wrap: anywhere;
+    }
+}

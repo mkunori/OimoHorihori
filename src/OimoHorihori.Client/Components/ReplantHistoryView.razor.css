@@ -1,0 +1,57 @@
+.replant-history-screen {
+    padding: 16px;
+}
+
+.replant-record-card,
+.replant-history-card {
+    padding: 14px;
+
+    border: 1px solid currentColor;
+    border-radius: 8px;
+}
+
+.replant-record-card {
+    margin-bottom: 16px;
+}
+
+.replant-record-card h3 {
+    margin-top: 0;
+}
+
+.replant-record-row,
+.replant-history-row {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-top: 8px;
+}
+
+.replant-history-list {
+    display: grid;
+
+    gap: 12px;
+}
+
+.replant-history-number {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.replant-history-date {
+    margin-top: 4px;
+    margin-bottom: 10px;
+
+    font-size: 0.8rem;
+
+    opacity: 0.7;
+}
+
+.replant-history-empty {
+    padding: 20px;
+
+    text-align: center;
+
+    opacity: 0.7;
+}

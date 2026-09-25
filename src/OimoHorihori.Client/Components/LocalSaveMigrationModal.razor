@@ -1,0 +1,41 @@
+@if (IsOpen)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                セーブデータ引き継ぎ
+            </h2>
+
+            <p>
+                この端末のセーブデータを
+                引き継ぎますか？
+            </p>
+
+            <p>
+                引き継ぎ後は
+                サーバー上のセーブデータを
+                正として扱います。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="OnConfirm">
+                    引き継ぐ
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+}

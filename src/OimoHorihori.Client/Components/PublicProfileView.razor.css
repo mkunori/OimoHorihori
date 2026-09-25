@@ -1,0 +1,57 @@
+.profile-screen {
+    padding: 16px;
+}
+
+.profile-card {
+    margin-bottom: 14px;
+    padding: 14px;
+
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    border-radius: 8px;
+}
+
+.profile-user-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.profile-title {
+    margin-top: 4px;
+
+    opacity: 0.75;
+}
+
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-top: 8px;
+}
+
+.profile-message {
+    padding: 24px;
+
+    text-align: center;
+}
+
+@media (max-width: 390px) {
+    .profile-screen {
+        padding: 8px;
+    }
+
+    .profile-card {
+        padding: 10px 12px;
+    }
+
+    .profile-row {
+        gap: 8px;
+    }
+
+    .profile-row span:last-child {
+        text-align: right;
+
+        overflow-wrap: anywhere;
+    }
+}

@@ -1,0 +1,40 @@
+@using OimoHorihori.Constants
+
+@if (NewerVersion is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                セーブデータを保護しました
+            </h2>
+
+            <p>
+                このセーブデータは
+                Version
+                @NewerVersion
+                用です。
+            </p>
+
+            <p>
+                現在のアプリ
+                Version
+                @GameConstants.SaveVersion
+                では読み込めません。
+            </p>
+
+            <p>
+                データ保護のため、
+                セーブ内容には変更を加えていません。
+            </p>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int? NewerVersion { get; set; }
+}

@@ -1,0 +1,460 @@
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Utilities
+
+<section class="ascent-screen">
+
+    <SubpageHeader Title="ASCENT" OnBack="OnBack" />
+
+    <section class="ascent-status-card">
+
+        <div class="ascent-status-row">
+            <span>CURRENT RUN</span>
+
+            <strong>
+                @NumberFormatter.Format(Game.RunProducedPotato)
+            </strong>
+        </div>
+
+        <div class="ascent-status-row">
+            <span>TARGET</span>
+
+            <strong>
+                @NumberFormatter.Format(GameConstants.AscentTargetProduction)
+            </strong>
+        </div>
+
+        <div class="ascent-status-row">
+            <span>ASCENT COUNT</span>
+
+            <strong>
+                @Game.AscentCount
+            </strong>
+        </div>
+
+        <div class="ascent-status-row">
+            <span>ROOT</span>
+
+            <strong>
+                @Game.CurrentRoot
+            </strong>
+        </div>
+
+        <div class="ascent-status-row">
+            <span>ROOT POWER</span>
+
+            <strong>
+                @Game.RootPower
+                /
+                @GameConstants.RootPowerMax
+            </strong>
+        </div>
+
+    </section>
+
+    <button class="ascent-history-link" @onclick="OnOpenHistory">
+
+        <span>
+            ASCENT HISTORY
+        </span>
+
+        <span>
+            @Game.AscentHistory.Count
+            /
+            @GameConstants.AscentHistoryMaxCount
+            ›
+        </span>
+
+    </button>
+
+    <section class="ascent-action-card">
+
+        @if (Game.CurrentAscentReplantCount == 0)
+        {
+            <div class="ascent-remaining-label">
+                ASCENT条件
+            </div>
+
+            <div class="ascent-remaining-value">
+                REPLANTを1回行う
+            </div>
+        }
+        else if (Game.CanAscent)
+        {
+            <div class="ascent-ready-label">
+                ASCENT READY
+            </div>
+
+            <div class="ascent-replant-preview">
+
+                REPLANT IF NOW
+
+                <strong>
+                    SEED POTATO +@Game.ReplantSeedPotato
+                </strong>
+
+            </div>
+
+            <button class="ascent-button" @onclick="OnOpenConfirmation">
+                ASCENT
+            </button>
+        }
+        else
+        {
+            <div class="ascent-remaining-label">
+                あと
+            </div>
+
+            <div class="ascent-remaining-value">
+                @NumberFormatter.Format(AscentRemainingProduction)
+                芋
+            </div>
+        }
+
+    </section>
+
+    <div class="root-section-header">
+
+        <div>
+            ROOT POWER
+            @Game.RootPower
+            /
+            @GameConstants.RootPowerMax
+        </div>
+
+        <div>
+            ROOT @Game.CurrentRoot
+        </div>
+
+    </div>
+
+    <div class="root-upgrade-list">
+
+        <button class="upgrade-card" disabled="@(Game.IsRootAbundanceMax || Game.CurrentRoot < 1)"
+                @onclick="OnBuyRootAbundance">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    豊穣
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.RootAbundanceLevel
+                    /
+                    @GameConstants.RootAbundanceMaxLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                @if (Game.IsRootAbundanceMax)
+                {
+                    <span>
+                        全生産
+                        ×@FormatRootMultiplier(Game.RootAbundanceMultiplier)
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        全生産
+                        ×@FormatRootMultiplier(Game.RootAbundanceMultiplier)
+
+                        <span class="upgrade-arrow">
+                            →
+                        </span>
+
+                        ×@FormatRootMultiplier(Game.GetRootAbundanceMultiplier(Game.RootAbundanceLevel + 1))
+                    </span>
+                }
+
+            </div>
+
+            <div class="upgrade-cost">
+                @(Game.IsRootAbundanceMax ? "MAX" : "ROOT 1")
+            </div>
+
+        </button>
+
+        <button class="upgrade-card" disabled="@(Game.IsRootFertilityMax || Game.CurrentRoot < 1)"
+                @onclick="OnBuyRootFertility">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    肥沃
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.RootFertilityLevel
+                    /
+                    @GameConstants.RootFertilityMaxLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                @if (Game.IsRootFertilityMax)
+                {
+                    <span>
+                        畑価格
+                        -@FormatRootFertilityReduction(Game.RootFertilityLevel)
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        畑価格
+                        -@FormatRootFertilityReduction(Game.RootFertilityLevel)
+
+                        <span class="upgrade-arrow">
+                            →
+                        </span>
+
+                        -@FormatRootFertilityReduction(Game.RootFertilityLevel + 1)
+                    </span>
+                }
+
+            </div>
+
+            <div class="upgrade-cost">
+                @(Game.IsRootFertilityMax ? "MAX" : "ROOT 1")
+            </div>
+
+        </button>
+
+        <button class="upgrade-card" disabled="@(Game.IsRootRetillMax || Game.CurrentRoot < 1)"
+                @onclick="OnBuyRootRetill">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    再耕
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.RootRetillLevel
+                    /
+                    @GameConstants.RootRetillMaxLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                @if (Game.IsRootRetillMax)
+                {
+                    <span>
+                        RETILL基礎
+                        ×@Game.RootAdjustedRetillBase.ToString("0.000")
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        RETILL基礎
+                        ×@Game.RootAdjustedRetillBase.ToString("0.000")
+
+                        <span class="upgrade-arrow">
+                            →
+                        </span>
+
+                        ×@Game.GetRootAdjustedRetillBase(Game.RootRetillLevel + 1) .ToString("0.000")
+                    </span>
+                }
+
+            </div>
+
+            <div class="upgrade-cost">
+                @(Game.IsRootRetillMax ? "MAX" : "ROOT 1")
+            </div>
+
+        </button>
+
+        <button class="upgrade-card" disabled="@(Game.IsRootSeedBlessingMax || Game.CurrentRoot < 1)"
+                @onclick="OnBuyRootSeedBlessing">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    種の祝福
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.RootSeedBlessingLevel
+                    /
+                    @GameConstants.RootSeedBlessingMaxLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                @if (Game.IsRootSeedBlessingMax)
+                {
+                    <span>
+                        種芋獲得
+                        ×@FormatRootMultiplier(Game.RootSeedBlessingMultiplier)
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        種芋獲得
+                        ×@FormatRootMultiplier(Game.RootSeedBlessingMultiplier)
+
+                        <span class="upgrade-arrow">
+                            →
+                        </span>
+
+                        ×@FormatRootMultiplier(Game.GetRootSeedBlessingMultiplier(Game.RootSeedBlessingLevel + 1))
+                    </span>
+                }
+
+            </div>
+
+            <div class="upgrade-cost">
+                @(Game.IsRootSeedBlessingMax ? "MAX" : "ROOT 1")
+            </div>
+
+        </button>
+
+    </div>
+
+    <section class="auto-root-card">
+
+        <div class="auto-root-header">
+
+            <span>AUTO BUY</span>
+
+            <span>
+                @(Game.AutoBuyUnlocked ? "UNLOCKED" : "LOCKED")
+            </span>
+
+        </div>
+
+        <div class="auto-root-description">
+            購入可能な最上位畑を自動で+1します。
+        </div>
+
+        @if (!Game.AutoBuyUnlocked)
+        {
+            <button disabled="@(Game.CurrentRoot < 1)" @onclick="OnUnlockAutoBuy">
+                ROOT 1で解放
+            </button>
+        }
+        else
+        {
+            <button class="@(Game.AutoBuyEnabled ? "auto-toggle on" : "auto-toggle")" @onclick="OnToggleAutoBuy">
+
+                @(Game.AutoBuyEnabled ? "ON" : "OFF")
+
+            </button>
+        }
+
+    </section>
+
+    <section class="auto-root-card">
+
+        <div class="auto-root-header">
+
+            <span>AUTO RETILL</span>
+
+            <span>
+                @(Game.AutoRetillUnlocked ? "UNLOCKED" : "LOCKED")
+            </span>
+
+        </div>
+
+        <div class="auto-root-description">
+            Lv上限へ到達した畑を自動でRETILLします。
+        </div>
+
+        @if (!Game.AutoRetillUnlocked)
+        {
+            <button disabled="@(Game.CurrentRoot < 1)" @onclick="OnUnlockAutoRetill">
+                ROOT 1で解放
+            </button>
+        }
+        else
+        {
+            <button class="@(Game.AutoRetillEnabled ? "auto-toggle on" : "auto-toggle")" @onclick="OnToggleAutoRetill">
+
+                @(Game.AutoRetillEnabled ? "ON" : "OFF")
+
+            </button>
+        }
+
+    </section>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenHistory { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenConfirmation { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyRootAbundance { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyRootFertility { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyRootRetill { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyRootSeedBlessing { get; set; }
+
+    [Parameter]
+    public EventCallback OnUnlockAutoBuy { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleAutoBuy { get; set; }
+
+    [Parameter]
+    public EventCallback OnUnlockAutoRetill { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleAutoRetill { get; set; }
+
+    private double AscentRemainingProduction => Math.Max(0, GameConstants.AscentTargetProduction - Game.RunProducedPotato);
+
+    private static string FormatRootMultiplier(double multiplier)
+    {
+        if (!double.IsFinite(multiplier))
+        {
+            return "-";
+        }
+
+        if (multiplier >= 100)
+        {
+            return multiplier.ToString("0.0");
+        }
+
+        if (multiplier >= 10)
+        {
+            return multiplier.ToString("0.00");
+        }
+
+        return multiplier.ToString("0.000");
+    }
+
+    private static string FormatRootFertilityReduction(int level)
+    {
+        double reduction = level * GameConstants.RootFertilityReductionPerLevel * 100.0;
+
+        return $"{reduction:0.0}%";
+    }
+}

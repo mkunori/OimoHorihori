@@ -1,0 +1,142 @@
+@using OimoHorihori.Models
+@using OimoHorihori.Shared.Saves
+@using OimoHorihori.Utilities
+
+<section class="ascent-history-screen">
+
+    <SubpageHeader Title="ASCENT HISTORY" OnBack="OnBack" />
+
+    <section class="ascent-record-card">
+
+        <h3>BEST RECORD</h3>
+
+        <div class="ascent-history-row">
+
+            <span>
+                最短ASCENT
+            </span>
+
+            <span>
+                @FormatAscentDuration(Game.BestAscentSeconds)
+            </span>
+
+        </div>
+
+        <div class="ascent-history-row">
+
+            <span>
+                ASCENT回数
+            </span>
+
+            <span>
+                @Game.AscentCount
+            </span>
+
+        </div>
+
+    </section>
+
+    <div class="ascent-history-list">
+
+        @if (Game.AscentHistory.Count == 0)
+        {
+            <div class="ascent-history-empty">
+                ASCENT履歴はまだありません。
+            </div>
+        }
+        else
+        {
+            @foreach (
+                AscentHistoryEntry entry
+                in Game.AscentHistory)
+            {
+                <section class="ascent-history-card">
+
+                    <div class="ascent-history-header">
+
+                        <strong>
+                            ASCENT #@entry.AscentNumber
+                        </strong>
+
+                        <span>
+                            @FormatAscentDate(entry.AscendedAtUtc)
+                        </span>
+
+                    </div>
+
+                    <div class="ascent-history-row">
+
+                        <span>
+                            ASCENT時間
+                        </span>
+
+                        <span>
+                            @FormatAscentDuration(entry.AscentDurationSeconds)
+                        </span>
+
+                    </div>
+
+                    <div class="ascent-history-row">
+
+                        <span>
+                            REPLANT
+                        </span>
+
+                        <span>
+                            @entry.ReplantCount 回
+                        </span>
+
+                    </div>
+
+                    <div class="ascent-history-row">
+
+                        <span>
+                            最終周回生産
+                        </span>
+
+                        <span>
+                            @NumberFormatter.Format(entry.FinalRunProducedPotato)
+                            芋
+                        </span>
+
+                    </div>
+
+                </section>
+            }
+        }
+
+    </div>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    private static string FormatAscentDuration(double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds <= 0)
+        {
+            return "--:--:--";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int days = (int)time.TotalDays;
+
+        if (days > 0)
+        {
+            return $"{days:00}d " + $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+        }
+
+        return $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+
+    private static string FormatAscentDate(DateTimeOffset date)
+    {
+        return date.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+}

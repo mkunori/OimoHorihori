@@ -1,0 +1,70 @@
+@using OimoHorihori.Models
+
+@if (Status != SaveStatus.None)
+{
+    <div class="save-status @GetStatusClass()">
+
+        <span class="save-status-dot"></span>
+
+        <span>
+            @GetStatusText()
+        </span>
+
+        @if (LastSaveCompletedAtUtc is not null)
+        {
+            <span class="save-status-time">
+                @GetLastSaveTimeText()
+            </span>
+        }
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public SaveStatus Status { get; set; }
+
+    [Parameter]
+    public DateTimeOffset? LastSaveCompletedAtUtc { get; set; }
+
+    private string GetStatusText()
+    {
+        return Status switch
+        {
+            SaveStatus.Saving => "SAVING...",
+            SaveStatus.LocalSaved => "LOCAL SAVED",
+            SaveStatus.ServerSaved => "SYNCED",
+            SaveStatus.ServerUnavailable => "LOCAL SAVED / SYNC OFFLINE",
+            SaveStatus.Conflict => "SYNC CONFLICT",
+            SaveStatus.Error => "SAVE ERROR",
+            _ => string.Empty
+        };
+    }
+
+    private string GetStatusClass()
+    {
+        return Status switch
+        {
+            SaveStatus.Saving => "saving",
+            SaveStatus.ServerSaved => "synced",
+            SaveStatus.LocalSaved => "local",
+            SaveStatus.ServerUnavailable => "offline",
+            SaveStatus.Conflict => "warning",
+            SaveStatus.Error => "error",
+            _ => string.Empty
+        };
+    }
+
+    private string GetLastSaveTimeText()
+    {
+        if (LastSaveCompletedAtUtc is null)
+        {
+            return string.Empty;
+        }
+
+        return LastSaveCompletedAtUtc
+            .Value
+            .ToLocalTime()
+            .ToString("HH:mm:ss");
+    }
+}

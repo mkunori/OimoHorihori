@@ -1,0 +1,327 @@
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+
+<section class="upgrade-screen">
+
+    <SubpageHeader Title="種芋強化" OnBack="OnBack" />
+
+    <div class="seed-potato-status">
+
+        <div class="seed-potato-label">
+            種芋
+        </div>
+
+        <div class="seed-potato-value">
+            @Game.SeedPotato
+        </div>
+
+    </div>
+
+    <div class="upgrade-list">
+
+        <button class="upgrade-card" disabled="@(Game.SeedPotato < Game.ProductionUpgradeCost)"
+                @onclick="OnBuyProduction">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    生産力強化
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.ProductionUpgradeLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                全生産
+                +@FormatProductionUpgradeBonus(Game.ProductionUpgradeLevel)
+
+                <span class="upgrade-arrow">
+                    →
+                </span>
+
+                +@FormatProductionUpgradeBonus(Game.ProductionUpgradeLevel + 1)
+
+            </div>
+
+            <div class="upgrade-cost">
+                NEXT
+                @Game.ProductionUpgradeCost
+                種芋
+            </div>
+
+        </button>
+
+        <button class="upgrade-card" disabled="@(Game.SeedPotato < Game.DigUpgradeCost)" @onclick="OnBuyDig">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    掘り出し強化
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.DigUpgradeLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                基礎
+                +@FormatDigUpgradeBonus(Game.DigUpgradeLevel)
+                / sec
+
+                <span class="upgrade-arrow">
+                    →
+                </span>
+
+                +@FormatDigUpgradeBonus(Game.DigUpgradeLevel + 1)
+                / sec
+
+            </div>
+
+            <div class="upgrade-cost">
+                NEXT
+                @Game.DigUpgradeCost
+                種芋
+            </div>
+
+        </button>
+
+        <button class="upgrade-card" disabled="@(!CanBuyOfflineUpgrade())" @onclick="OnBuyOffline">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    放置強化
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.OfflineUpgradeLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                @if (Game.IsOfflineUpgradeMax)
+                {
+                    <span>
+                        最大
+                        @FormatOfflineUpgradeHours(Game.OfflineUpgradeLevel)
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        @FormatOfflineUpgradeHours(Game.OfflineUpgradeLevel)
+
+                        <span class="upgrade-arrow">
+                            →
+                        </span>
+
+                        @FormatOfflineUpgradeHours(Game.OfflineUpgradeLevel + 1)
+                    </span>
+                }
+
+            </div>
+
+            <div class="upgrade-cost">
+
+                @if (Game.IsOfflineUpgradeMax)
+                {
+                    <span>
+                        MAX
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        NEXT
+                        @Game.OfflineUpgradeCost
+                        種芋
+                    </span>
+                }
+
+            </div>
+
+        </button>
+
+        <button class="upgrade-card" disabled="@(Game.SeedPotato < Game.RetillEfficiencyUpgradeCost)"
+                @onclick="OnBuyRetillEfficiency">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    RETILL効率強化
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.RetillEfficiencyUpgradeLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                RETILL 1回につき
+                +@FormatRetillEfficiencyBonus(Game.RetillEfficiencyUpgradeLevel)
+
+                <span class="upgrade-arrow">
+                    →
+                </span>
+
+                +@FormatRetillEfficiencyBonus(Game.RetillEfficiencyUpgradeLevel + 1)
+
+            </div>
+
+            <div class="upgrade-cost">
+                NEXT
+                @Game.RetillEfficiencyUpgradeCost
+                種芋
+            </div>
+
+        </button>
+
+        <button class="upgrade-card" disabled="@(!CanBuyFieldCostReductionUpgrade())"
+                @onclick="OnBuyFieldCostReduction">
+
+            <div class="upgrade-header">
+
+                <span class="upgrade-name">
+                    畑コスト軽減
+                </span>
+
+                <span class="upgrade-level">
+                    Lv.@Game.FieldCostReductionUpgradeLevel
+                </span>
+
+            </div>
+
+            <div class="upgrade-effect">
+
+                @if (Game.IsFieldCostReductionUpgradeMax)
+                {
+                    <span>
+                        畑価格
+                        -@FormatFieldCostReduction(Game.FieldCostReductionUpgradeLevel)
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        畑価格
+                        -@FormatFieldCostReduction(Game.FieldCostReductionUpgradeLevel)
+
+                        <span class="upgrade-arrow">
+                            →
+                        </span>
+
+                        -@FormatFieldCostReduction(Game.FieldCostReductionUpgradeLevel + 1)
+                    </span>
+                }
+
+            </div>
+
+            <div class="upgrade-cost">
+
+                @if (Game.IsFieldCostReductionUpgradeMax)
+                {
+                    <span>
+                        MAX
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        NEXT
+                        @Game.FieldCostReductionUpgradeCost
+                        種芋
+                    </span>
+                }
+
+            </div>
+
+        </button>
+
+    </div>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyProduction { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyDig { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyOffline { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyRetillEfficiency { get; set; }
+
+    [Parameter]
+    public EventCallback OnBuyFieldCostReduction { get; set; }
+
+    private bool CanBuyOfflineUpgrade()
+    {
+        return !Game.IsOfflineUpgradeMax && Game.SeedPotato >= Game.OfflineUpgradeCost;
+    }
+
+    private bool CanBuyFieldCostReductionUpgrade()
+    {
+        return !Game.IsFieldCostReductionUpgradeMax && Game.SeedPotato >= Game.FieldCostReductionUpgradeCost;
+    }
+
+    private static string FormatProductionUpgradeBonus(int level)
+    {
+        double percent = level * GameConstants.ProductionUpgradeBonusPerLevel * 100.0;
+
+        return $"{percent:0}%";
+    }
+
+    private static string FormatDigUpgradeBonus(int level)
+    {
+        double bonus = level * GameConstants.DigUpgradeBonusPerLevel;
+
+        return $"{bonus:0.0}";
+    }
+
+    private static string FormatOfflineUpgradeHours(int level)
+    {
+        double seconds = GameConstants.InitialOfflineLimitSeconds + level * GameConstants.OfflineUpgradeSecondsPerLevel;
+
+        seconds = Math.Min(seconds, GameConstants.MaxOfflineLimitSeconds);
+
+        double hours = seconds / 3600.0;
+
+        return $"{hours:0.#}時間";
+    }
+
+    private static string FormatRetillEfficiencyBonus(int level)
+    {
+        double percent = level * GameConstants.RetillEfficiencyBonusPerLevelPerRetill * 100.0;
+
+        return $"{percent:0.0}%";
+    }
+
+    private static string FormatFieldCostReduction(int level)
+    {
+        double percent = level * GameConstants.FieldCostReductionPerLevel * 100.0;
+
+        percent = Math.Min(percent, 40.0);
+
+        return $"{percent:0.00}%";
+    }
+}

@@ -1,0 +1,184 @@
+.farm-card {
+    width: 100%;
+    padding: 10px 12px;
+
+    border: 1px solid #a99170;
+    border-radius: 10px;
+
+    background: #fffaf0;
+    color: #35281f;
+
+    text-align: left;
+
+    scroll-margin-top: 12px;
+}
+
+.farm-card:active {
+    transform: scale(0.985);
+}
+
+.farm-card.unavailable {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+}
+
+.farm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+}
+
+.farm-name {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.farm-level {
+    flex-shrink: 0;
+
+    font-size: 0.85rem;
+}
+
+.farm-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-top: 5px;
+}
+
+.farm-production {
+    margin-top: 0;
+
+    font-size: 0.85rem;
+}
+
+.farm-retill-info {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 0;
+
+    font-size: 0.72rem;
+    opacity: 0.75;
+
+    white-space: nowrap;
+}
+
+.farm-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-top: 7px;
+}
+
+.farm-purchase-info {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    font-size: 0.78rem;
+}
+
+.farm-purchase-level {
+    flex-shrink: 0;
+
+    font-weight: 700;
+}
+
+.farm-cost {
+    margin-top: 0;
+
+    font-size: 0.78rem;
+
+    opacity: 0.8;
+
+    overflow-wrap: anywhere;
+}
+
+.retill-ready {
+    margin-top: 0;
+
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.farm-buy-button,
+.retill-button {
+    width: auto;
+    min-width: 72px;
+
+    flex-shrink: 0;
+
+    margin-top: 0;
+    padding: 7px 12px;
+
+    border: 1px solid #a99170;
+    border-radius: 7px;
+
+    background: #fff3d6;
+    color: #35281f;
+}
+
+.farm-buy-button:disabled {
+    opacity: 0.45;
+
+    filter: grayscale(1);
+
+    cursor: default;
+}
+
+.farm-complete {
+    margin-top: 0;
+
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+@media (max-width: 380px) {
+
+    .farm-card {
+        padding: 9px 10px;
+    }
+
+    .farm-summary {
+        gap: 5px;
+    }
+
+    .farm-production {
+        font-size: 0.8rem;
+    }
+
+    .farm-retill-info {
+        font-size: 0.68rem;
+    }
+
+    .farm-purchase-info {
+        gap: 5px;
+
+        font-size: 0.72rem;
+    }
+
+    .farm-cost {
+        font-size: 0.72rem;
+    }
+
+    .farm-buy-button,
+    .retill-button {
+        min-width: 66px;
+
+        padding: 7px 9px;
+    }
+}

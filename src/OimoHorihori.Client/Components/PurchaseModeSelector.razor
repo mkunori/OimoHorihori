@@ -1,0 +1,35 @@
+@using OimoHorihori.Models
+
+<section class="purchase-mode">
+
+    <button class="@GetButtonClass(PurchaseMode.One)" @onclick="() => ChangeModeAsync(PurchaseMode.One)">
+        +1
+    </button>
+
+    <button class="@GetButtonClass(PurchaseMode.Ten)" @onclick="() => ChangeModeAsync(PurchaseMode.Ten)">
+        +10
+    </button>
+
+    <button class="@GetButtonClass(PurchaseMode.Max)" @onclick="() => ChangeModeAsync(PurchaseMode.Max)">
+        MAX
+    </button>
+
+</section>
+
+@code {
+    [Parameter]
+    public PurchaseMode CurrentMode { get; set; }
+
+    [Parameter]
+    public EventCallback<PurchaseMode> OnModeChanged { get; set; }
+
+    private string GetButtonClass(PurchaseMode mode)
+    {
+        return CurrentMode == mode ? "purchase-mode-button selected" : "purchase-mode-button";
+    }
+
+    private Task ChangeModeAsync(PurchaseMode mode)
+    {
+        return OnModeChanged.InvokeAsync(mode);
+    }
+}

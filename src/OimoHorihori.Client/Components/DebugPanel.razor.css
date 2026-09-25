@@ -1,0 +1,33 @@
+.debug-panel {
+    margin-top: 24px;
+    margin-bottom: 80px;
+    padding: 12px;
+
+    border: 1px dashed #777;
+    border-radius: 8px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    gap: 8px;
+}
+
+.debug-title {
+    grid-column: 1 / -1;
+
+    font-size: 0.75rem;
+    font-weight: bold;
+
+    opacity: 0.7;
+}
+
+.debug-panel button {
+    min-height: 40px;
+
+    border: 1px solid #999;
+    border-radius: 6px;
+
+    background: #eee;
+
+    cursor: default;
+}

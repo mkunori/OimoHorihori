@@ -1,0 +1,125 @@
+@using OimoHorihori.Models
+@using OimoHorihori.Utilities
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop">
+
+        <div class="replant-modal">
+
+            <h2>
+                REPLANT
+            </h2>
+
+            <div class="replant-detail">
+
+                <div class="replant-detail-label">
+                    今回の生産
+                </div>
+
+                <div class="replant-detail-value">
+                    @NumberFormatter.Format(Game.RunProducedPotato)
+                    芋
+                </div>
+
+            </div>
+
+            <div class="replant-detail">
+
+                <div class="replant-detail-label">
+                    獲得予定
+                </div>
+
+                <div class="replant-detail-value">
+                    種芋 ×@Game.ReplantSeedPotato
+                </div>
+
+            </div>
+
+            <div class="replant-detail">
+
+                <div class="replant-detail-label">
+                    次の種芋まで
+                </div>
+
+                <div class="replant-detail-value">
+                    @NumberFormatter.Format(Game.ProductionUntilNextSeedPotato)
+                    芋
+                </div>
+
+            </div>
+
+            <div class="replant-actions">
+
+                <button @onclick="OnClose">
+                    閉じる
+                </button>
+
+                <button disabled="@(!Game.CanReplant)" @onclick="OnOpenConfirmation">
+                    REPLANT
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+else if (IsConfirming)
+{
+    <div class="modal-backdrop">
+
+        <div class="confirm-modal">
+
+            <h2>
+                REPLANT
+            </h2>
+
+            <p>
+                本当に REPLANT しますか？
+            </p>
+
+            <p>
+                現在の芋と周回生産、
+                全畑のLv・RETILL状態はリセットされます。
+            </p>
+
+            <div class="confirm-actions">
+
+                <button @onclick="OnCancelConfirmation">
+                    キャンセル
+                </button>
+
+                <button @onclick="OnConfirm">
+                    REPLANT
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public bool IsConfirming { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenConfirmation { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancelConfirmation { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+}

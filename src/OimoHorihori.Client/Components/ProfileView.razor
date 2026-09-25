@@ -1,0 +1,246 @@
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Shared.Auth
+@using OimoHorihori.Shared.Profiles
+@using OimoHorihori.Utilities
+
+<section class="profile-screen">
+
+    <SubpageHeader Title="PROFILE" OnBack="OnBack" />
+
+    @if (CurrentUser is null)
+    {
+        <div class="profile-message">
+            プロフィールを利用するには
+            ログインしてください。
+        </div>
+    }
+    else
+    {
+        <section class="profile-card">
+
+            <div class="profile-user-name">
+                @CurrentUser.UserName
+            </div>
+
+            <div class="profile-title">
+                @EquippedTitleName
+            </div>
+
+        </section>
+
+        <section class="profile-card">
+
+            <div class="profile-row">
+
+                <span>総生産芋</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.TotalPotato)
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>歴代最高 芋 / sec</span>
+
+                <span>
+                    @NumberFormatter.Format(Game.BestProductionPerSecond)
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>REPLANT</span>
+
+                <span>
+                    @Game.ReplantCount 回
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>ASCENT</span>
+
+                <span>
+                    @Game.AscentCount 回
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>ROOT POWER</span>
+
+                <span>
+                    @Game.RootPower
+                    /
+                    @GameConstants.RootPowerMax
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>実績</span>
+
+                <span>
+                    @Game.AchievementUnlockedAtUtc.Count
+                    /
+                    @AchievementCatalog.All.Count
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>いも図鑑</span>
+
+                <span>
+                    @Game.DiscoveredOimoSpeciesCount
+                    /
+                    @OimoSpeciesCatalog.All.Count
+                </span>
+
+            </div>
+
+            <div class="profile-row">
+
+                <span>ゲーム開始</span>
+
+                <span>
+                    @FormatGameStartedDate()
+                </span>
+
+            </div>
+
+        </section>
+
+        <section class="profile-card">
+
+            <h3>称号</h3>
+
+            @if (IsLoading)
+            {
+                <div>
+                    LOADING...
+                </div>
+            }
+            else if (Error is not null)
+            {
+                <div>
+                    @Error
+                </div>
+            }
+            else if (TitleSettings is not null)
+            {
+                <button class="title-option" @onclick="RemoveTitleAsync">
+                    称号を外す
+                </button>
+
+                @foreach (TitleOptionResponse title in TitleSettings.Titles)
+                {
+                    <button class="@GetTitleClass(title)" disabled="@(!title.Unlocked)" @onclick="() => EquipTitleAsync(title.Id)">
+
+                        <span>
+                            @title.Name
+                        </span>
+
+                        <span>
+                            @GetTitleStatus(title)
+                        </span>
+
+                    </button>
+                }
+            }
+
+        </section>
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public CurrentUserResponse? CurrentUser { get; set; }
+
+    [Parameter]
+    public TitleSettingsResponse? TitleSettings { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> OnEquipTitle { get; set; }
+
+    private string EquippedTitleName
+    {
+        get
+        {
+            TitleOptionResponse? equipped = TitleSettings?.Titles.FirstOrDefault(title => title.Equipped);
+
+            return equipped?.Name ?? "称号なし";
+        }
+    }
+
+    private static string GetTitleClass(TitleOptionResponse title)
+    {
+        if (title.Equipped)
+        {
+            return "title-option equipped";
+        }
+
+        if (!title.Unlocked)
+        {
+            return "title-option locked";
+        }
+
+        return "title-option";
+    }
+
+    private static string GetTitleStatus(TitleOptionResponse title)
+    {
+        if (title.Equipped)
+        {
+            return "装備中";
+        }
+
+        if (!title.Unlocked)
+        {
+            return "未解放";
+        }
+
+        return "装備";
+    }
+
+    private string FormatGameStartedDate()
+    {
+        if (Game.GameStartedAtUtc == default)
+        {
+            return "-";
+        }
+
+        return Game.GameStartedAtUtc.ToLocalTime().ToString("yyyy/MM/dd");
+    }
+
+    private Task EquipTitleAsync(string titleId)
+    {
+        return OnEquipTitle.InvokeAsync(titleId);
+    }
+
+    private Task RemoveTitleAsync()
+    {
+        return OnEquipTitle.InvokeAsync(null);
+    }
+}

@@ -1,0 +1,74 @@
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+
+<section class="settings-screen">
+
+    <SubpageHeader Title="設定" OnBack="OnBack" />
+
+    <div class="settings-list">
+
+        <section class="settings-card">
+
+            <div class="settings-row">
+
+                <span>
+                    OFFLINE LIMIT
+                </span>
+
+                <span>
+                    @FormatOfflineLimit()
+                </span>
+
+            </div>
+
+        </section>
+
+        <section class="settings-card">
+
+            <div class="settings-row">
+
+                <span>
+                    VERSION
+                </span>
+
+                <span>
+                    @BuildInfo.Version
+                </span>
+
+            </div>
+
+        </section>
+
+        <section class="settings-card">
+
+            <div class="settings-card-title">
+                DATA
+            </div>
+
+            <button class="reset-button" @onclick="OnOpenResetConfirmation">
+                セーブデータ初期化
+            </button>
+
+        </section>
+
+    </div>
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenResetConfirmation { get; set; }
+
+    private string FormatOfflineLimit()
+    {
+        double hours = Game.OfflineLimitSeconds / 3600.0;
+
+        return $"{hours:0.#} HOURS";
+    }
+}

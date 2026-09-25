@@ -1,0 +1,132 @@
+@using OimoHorihori.Models
+
+<section class="menu-screen">
+
+    <h2>MENU</h2>
+
+    <div class="menu-list">
+
+        <button class="menu-item" @onclick="OnOpenSeedUpgrades">
+            <span>種芋強化</span>
+            <span>›</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenOimoBook">
+            <span>いも図鑑</span>
+
+            <span>
+                @Game.DiscoveredOimoSpeciesCount
+                /20
+            </span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenAchievements">
+            <span>実績</span>
+            <span>›</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenStatistics">
+            <span>統計</span>
+            <span>›</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenProfile">
+            <span>プロフィール</span>
+            <span>›</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenRanking">
+            <span>ランキング</span>
+            <span>›</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenReplantHistory">
+            <span>REPLANT履歴</span>
+            <span>›</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenAscent">
+
+            <span>ASCENT</span>
+
+            @if (Game.CanAscent)
+            {
+                <span>
+                    READY
+                </span>
+            }
+            else
+            {
+                <span>
+                    ROOT @Game.CurrentRoot
+                </span>
+            }
+
+        </button>
+
+        <button class="menu-item" @onclick="OnShare">
+            <span>共有</span>
+            <span>SHARE</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenSettings">
+            <span>設定</span>
+            <span>›</span>
+        </button>
+
+        <button class="menu-item" @onclick="OnOpenAccount">
+            <span>アカウント</span>
+            <span>›</span>
+        </button>
+
+    </div>
+
+    @if (!string.IsNullOrEmpty(ShareResultMessage))
+    {
+        <div class="share-result">
+            @ShareResultMessage
+        </div>
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public string? ShareResultMessage { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenSeedUpgrades { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenOimoBook { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenAchievements { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenStatistics { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenProfile { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenRanking { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenReplantHistory { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenAscent { get; set; }
+
+    [Parameter]
+    public EventCallback OnShare { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenSettings { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenAccount { get; set; }
+}

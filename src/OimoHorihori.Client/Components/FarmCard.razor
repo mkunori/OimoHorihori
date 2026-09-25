@@ -1,0 +1,146 @@
+@using Microsoft.AspNetCore.Components
+@using OimoHorihori.Constants
+@using OimoHorihori.Models
+@using OimoHorihori.Utilities
+
+<div id="@ElementId" class="farm-card @(CanBuy || Game.CanRetillFarm(Farm) ? "" : "unavailable")">
+
+    <div class="farm-header">
+
+        <span class="farm-name">
+            @Farm.Name
+        </span>
+
+        <span class="farm-level">
+            Lv.@Farm.Level / @Farm.MaxLevel
+        </span>
+
+    </div>
+
+    <div class="farm-summary">
+
+        <span class="farm-production">
+            +@NumberFormatter.Format(Game.GetFarmProductionPerSecond(Farm))
+            / sec
+        </span>
+
+        <span class="farm-retill-info">
+
+            @if (Farm.IsRetillMax)
+            {
+                <span>
+                    RETILL MAX
+                </span>
+            }
+            else
+            {
+                <span>
+                    RETILL
+                    @Farm.RetillCount/@GameConstants.RetillMaxCount
+                </span>
+            }
+
+            <span>
+                ×@Game.GetRetillBaseMultiplier(Farm).ToString("0.000")
+            </span>
+
+        </span>
+
+    </div>
+
+    @if (Farm.CanRetill && !Game.IsRetillUnlockedThisRun)
+    {
+        <div class="farm-action-row">
+
+            <span class="retill-ready">
+                畑8購入でRETILL解放
+            </span>
+
+        </div>
+    }
+    else if (Game.CanRetillFarm(Farm))
+    {
+        <div class="farm-action-row">
+
+            <span class="retill-ready">
+                RETILL READY
+            </span>
+
+            <button class="retill-button" @onclick="HandleRetillAsync">
+                RETILL
+            </button>
+
+        </div>
+    }
+    else if (Farm.IsRetillMax && Farm.IsMaxLevel)
+    {
+        <div class="farm-action-row">
+
+            <span class="farm-complete">
+                FARM COMPLETE
+            </span>
+
+        </div>
+    }
+    else
+    {
+        <div class="farm-action-row">
+
+            <div class="farm-purchase-info">
+
+                <span class="farm-purchase-level">
+                    @PurchaseLevelText
+                </span>
+
+                <span class="farm-cost">
+                    COST
+                    @NumberFormatter.Format(PurchaseCost)
+                    芋
+                </span>
+
+            </div>
+
+            <button class="farm-buy-button" disabled="@(!CanBuy)" @onclick="HandleBuyAsync">
+                購入
+            </button>
+
+        </div>
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    public required GameState Game { get; set; }
+
+    [Parameter]
+    public required Farm Farm { get; set; }
+
+    [Parameter]
+    public bool CanBuy { get; set; }
+
+    [Parameter]
+    public double PurchaseCost { get; set; }
+
+    [Parameter]
+    public string PurchaseLevelText { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ElementId { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<Farm> OnBuy { get; set; }
+
+    [Parameter]
+    public EventCallback<Farm> OnRetill { get; set; }
+
+    private Task HandleBuyAsync()
+    {
+        return OnBuy.InvokeAsync(Farm);
+    }
+
+    private Task HandleRetillAsync()
+    {
+        return OnRetill.InvokeAsync(Farm);
+    }
+}

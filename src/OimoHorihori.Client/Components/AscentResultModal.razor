@@ -1,0 +1,100 @@
+@using OimoHorihori.Shared.Saves
+@using OimoHorihori.Utilities
+
+@if (IsOpen && Result is not null)
+{
+    <div class="modal-backdrop">
+
+        <div class="ascent-result-modal">
+
+            <div class="ascent-complete-label">
+                ASCENT COMPLETE
+            </div>
+
+            <h2>
+                ASCENT #@Result.AscentNumber
+            </h2>
+
+            <div class="ascent-result-root">
+                ROOT
+
+                <strong>
+                    +1
+                </strong>
+            </div>
+
+            <div class="ascent-result-row">
+
+                <span>
+                    ASCENT TIME
+                </span>
+
+                <span>
+                    @FormatAscentDuration(Result.AscentDurationSeconds)
+                </span>
+
+            </div>
+
+            <div class="ascent-result-row">
+
+                <span>
+                    REPLANT
+                </span>
+
+                <span>
+                    @Result.ReplantCount
+                </span>
+
+            </div>
+
+            <div class="ascent-result-row">
+
+                <span>
+                    FINAL RUN
+                </span>
+
+                <span>
+                    @NumberFormatter.Format(Result.FinalRunProducedPotato)
+                </span>
+
+            </div>
+
+            <button class="close-button" @onclick="OnClose">
+                OK
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public AscentHistoryEntry? Result { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private static string FormatAscentDuration(
+        double totalSeconds)
+    {
+        if (!double.IsFinite(totalSeconds) || totalSeconds <= 0)
+        {
+            return "--:--:--";
+        }
+
+        TimeSpan time = TimeSpan.FromSeconds(totalSeconds);
+
+        int days = (int)time.TotalDays;
+
+        if (days > 0)
+        {
+            return $"{days:00}d " + $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+        }
+
+        return $"{time.Hours:00}:" + $"{time.Minutes:00}:" + $"{time.Seconds:00}";
+    }
+}

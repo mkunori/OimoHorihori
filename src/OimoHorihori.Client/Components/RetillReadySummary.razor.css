@@ -1,0 +1,32 @@
+.retill-ready-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 8px 0 10px;
+    padding: 10px 12px;
+
+    border: 1px solid currentColor;
+    border-radius: 8px;
+
+    font-size: 0.85rem;
+}
+
+.retill-ready-summary strong {
+    margin-left: 4px;
+
+    font-size: 1rem;
+}
+
+.retill-ready-jump {
+    padding: 5px 9px;
+
+    border: 1px solid currentColor;
+    border-radius: 6px;
+
+    color: inherit;
+
+    text-decoration: none;
+
+    font-size: 0.75rem;
+}
