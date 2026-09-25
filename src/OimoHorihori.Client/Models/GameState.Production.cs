@@ -49,7 +49,7 @@ public partial class GameState
             return;
         }
 
-        double amount = ProductionPerSecond * seconds;
+        double amount = GameMath.Multiply(ProductionPerSecond, seconds);
 
         ProducePotato(amount);
     }
@@ -62,13 +62,11 @@ public partial class GameState
         }
 
         double cappedSeconds = Math.Min(seconds, OfflineLimitSeconds);
-
-        double amount = ProductionPerSecond * cappedSeconds;
+        double amount = GameMath.Multiply(ProductionPerSecond, cappedSeconds);
 
         ProducePotato(amount);
 
-        TotalOfflineProducedPotato += amount;
-
+        TotalOfflineProducedPotato = GameMath.Add(TotalOfflineProducedPotato, amount);
         MaxOfflineProducedPotato = Math.Max(MaxOfflineProducedPotato, amount);
 
         return amount;

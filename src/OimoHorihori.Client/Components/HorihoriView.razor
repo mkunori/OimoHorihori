@@ -78,7 +78,7 @@ else
 
                 @if (Game.AutoBuyUnlocked)
                 {
-                    <button class="@(Game.AutoBuyEnabled ? "auto-button on" : "auto-button")">
+                    <button class="@(Game.AutoBuyEnabled ? "auto-button on" : "auto-button")" @onclick="HandleToggleAutoBuyAsync">
 
                         BUY @(Game.AutoBuyEnabled ? "ON" : "OFF")
 
@@ -87,7 +87,8 @@ else
 
                 @if (Game.AutoRetillUnlocked)
                 {
-                    <button class="@(Game.AutoRetillEnabled ? "auto-button on" : "auto-button")">
+                    <button class="@(Game.AutoRetillEnabled ? "auto-button on" : "auto-button")"
+                            @onclick="HandleToggleAutoRetillAsync">
 
                         RETILL @(Game.AutoRetillEnabled ? "ON" : "OFF")
 
@@ -204,6 +205,12 @@ else
 
     [Parameter]
     public EventCallback OnOpenAscent { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleAutoBuy { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleAutoRetill { get; set; }
 
     private int RetillReadyCount => Game.Farms.Count(farm => Game.CanRetillFarm(farm));
 
@@ -330,5 +337,15 @@ else
         double remaining = Math.Max(0, GameConstants.AscentTargetProduction - Game.RunProducedPotato);
 
         return $"ASCENTまであと " + $"{NumberFormatter.Format(remaining)} 芋";
+    }
+
+    private Task HandleToggleAutoBuyAsync()
+    {
+        return OnToggleAutoBuy.InvokeAsync();
+    }
+
+    private Task HandleToggleAutoRetillAsync()
+    {
+        return OnToggleAutoRetill.InvokeAsync();
     }
 }

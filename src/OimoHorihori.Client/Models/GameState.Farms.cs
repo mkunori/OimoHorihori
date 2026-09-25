@@ -21,7 +21,7 @@ public partial class GameState
         }
 
         Potato -= cost;
-        TotalConsumedPotato += cost;
+        TotalConsumedPotato = GameMath.Add(TotalConsumedPotato, cost);
         farm.Level += levels;
         farm.PurchaseCount += levels;
 
