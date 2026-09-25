@@ -92,6 +92,15 @@ public partial class Home
 
                 return;
             }
+
+            //
+            // Server保存に失敗したが
+            // Conflictではない場合はLocalへ退避
+            //
+            await SaveService.SaveAsync(save);
+
+            lastSaveCompletedAtUtc = DateTimeOffset.UtcNow;
+            saveStatus = SaveStatus.LocalSaved;
         }
         catch (HttpRequestException)
         {
