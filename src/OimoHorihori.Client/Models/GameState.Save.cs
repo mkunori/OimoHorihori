@@ -93,6 +93,8 @@ public partial class GameState
                 ReplantCount = entry.ReplantCount,
                 FinalRunProducedPotato = entry.FinalRunProducedPotato
             }).ToList(),
+            UnlockedOimoPowerIds = UnlockedOimoPowerIds.ToList(),
+            TotalOimoPowerSpentPotato = TotalOimoPowerSpentPotato,
         };
     }
 
@@ -105,6 +107,7 @@ public partial class GameState
             3 => TryLoadVersion3(save),
             4 => TryLoadVersion4(save),
             5 => TryLoadVersion5(save),
+            6 => TryLoadVersion6(save),
             _ => false
         };
     }
@@ -387,36 +390,10 @@ public partial class GameState
             return false;
         }
 
-        LoadVersion4Fields(save);
+        LoadVersion5Fields(save);
 
-        AscentCount = save.AscentCount;
-        CurrentRoot = save.CurrentRoot;
-        TotalRootEarned = save.TotalRootEarned;
-        RootAbundanceLevel = save.RootAbundanceLevel;
-        RootFertilityLevel = save.RootFertilityLevel;
-        RootRetillLevel = save.RootRetillLevel;
-        RootSeedBlessingLevel = save.RootSeedBlessingLevel;
-        AutoBuyUnlocked = save.AutoBuyUnlocked;
-        AutoBuyEnabled = save.AutoBuyEnabled;
-        AutoRetillUnlocked = save.AutoRetillUnlocked;
-        AutoRetillEnabled = save.AutoRetillEnabled;
-        CurrentAscentReplantCount = save.CurrentAscentReplantCount;
-        CurrentAscentStartedAtUtc = save.CurrentAscentStartedAtUtc;
-        BestAscentSeconds = save.BestAscentSeconds;
-
-        AscentHistory.Clear();
-
-        foreach (AscentHistoryEntry entry in save.AscentHistory)
-        {
-            AscentHistory.Add(new AscentHistoryEntry
-            {
-                AscentNumber = entry.AscentNumber,
-                AscendedAtUtc = entry.AscendedAtUtc,
-                AscentDurationSeconds = entry.AscentDurationSeconds,
-                ReplantCount = entry.ReplantCount,
-                FinalRunProducedPotato = entry.FinalRunProducedPotato
-            });
-        }
+        UnlockedOimoPowerIds.Clear();
+        TotalOimoPowerSpentPotato = 0;
 
         return true;
     }
@@ -734,6 +711,98 @@ public partial class GameState
         if (save.Farm1Level < 0 || save.Farm2Level < 0 || save.Farm3Level < 0)
         {
             return false;
+        }
+
+        return true;
+    }
+
+    private bool TryLoadVersion6(SaveData save)
+    {
+        if (!IsValidVersion6SaveData(save))
+        {
+            return false;
+        }
+
+        LoadVersion5Fields(save);
+
+        UnlockedOimoPowerIds.Clear();
+
+        foreach (string speciesId
+                 in save.UnlockedOimoPowerIds)
+        {
+            UnlockedOimoPowerIds.Add(speciesId);
+        }
+
+        TotalOimoPowerSpentPotato = save.TotalOimoPowerSpentPotato;
+
+        return true;
+    }
+
+    private void LoadVersion5Fields(SaveData save)
+    {
+        LoadVersion4Fields(save);
+
+        AscentCount = save.AscentCount;
+        CurrentRoot = save.CurrentRoot;
+        TotalRootEarned = save.TotalRootEarned;
+        RootAbundanceLevel = save.RootAbundanceLevel;
+        RootFertilityLevel = save.RootFertilityLevel;
+        RootRetillLevel = save.RootRetillLevel;
+        RootSeedBlessingLevel = save.RootSeedBlessingLevel;
+        AutoBuyUnlocked = save.AutoBuyUnlocked;
+        AutoBuyEnabled = save.AutoBuyEnabled;
+        AutoRetillUnlocked = save.AutoRetillUnlocked;
+        AutoRetillEnabled = save.AutoRetillEnabled;
+        CurrentAscentReplantCount = save.CurrentAscentReplantCount;
+        CurrentAscentStartedAtUtc = save.CurrentAscentStartedAtUtc;
+        BestAscentSeconds = save.BestAscentSeconds;
+
+        AscentHistory.Clear();
+
+        foreach (AscentHistoryEntry entry in save.AscentHistory)
+        {
+            AscentHistory.Add(new AscentHistoryEntry
+            {
+                AscentNumber = entry.AscentNumber,
+                AscendedAtUtc = entry.AscendedAtUtc,
+                AscentDurationSeconds = entry.AscentDurationSeconds,
+                ReplantCount = entry.ReplantCount,
+                FinalRunProducedPotato = entry.FinalRunProducedPotato
+            });
+        }
+    }
+
+    private static bool IsValidVersion6SaveData(SaveData save)
+    {
+        if (!IsValidVersion5SaveData(save))
+        {
+            return false;
+        }
+
+        if (save.UnlockedOimoPowerIds is null)
+        {
+            return false;
+        }
+
+        if (!double.IsFinite(save.TotalOimoPowerSpentPotato) || save.TotalOimoPowerSpentPotato < 0)
+        {
+            return false;
+        }
+
+        HashSet<string> validIds = OimoSpeciesCatalog.All.Select(species => species.Id).ToHashSet();
+        HashSet<string> loadedIds = new();
+
+        foreach (string speciesId in save.UnlockedOimoPowerIds)
+        {
+            if (!validIds.Contains(speciesId))
+            {
+                return false;
+            }
+
+            if (!loadedIds.Add(speciesId))
+            {
+                return false;
+            }
         }
 
         return true;

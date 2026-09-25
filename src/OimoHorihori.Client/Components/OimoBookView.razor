@@ -11,6 +11,22 @@
         @OimoSpeciesCatalog.All.Count
     </div>
 
+    @if (!Game.IsOimoPowerFeatureUnlocked)
+    {
+        <div class="oimo-power-locked-message">
+            OIMO POWERはASCENTを1回行うと解放されます。
+        </div>
+    }
+    else
+    {
+        <div class="oimo-power-progress">
+            OIMO POWER
+            @Game.UnlockedOimoPowerCount
+            /
+            @OimoSpeciesCatalog.All.Count
+        </div>
+    }
+
     <div class="oimo-book-list">
 
         @for (int i = 0; i < OimoSpeciesCatalog.All.Count; i++)
@@ -95,22 +111,6 @@
                         </div>
                     }
                     
-                }
-
-                @if (!Game.IsOimoPowerFeatureUnlocked)
-                {
-                    <div class="oimo-power-locked-message">
-                        OIMO POWERはASCENTを1回行うと解放されます。
-                    </div>
-                }
-                else
-                {
-                    <div class="oimo-power-progress">
-                        OIMO POWER
-                        @Game.UnlockedOimoPowerCount
-                        /
-                        @OimoSpeciesCatalog.All.Count
-                    </div>
                 }
 
             </div>

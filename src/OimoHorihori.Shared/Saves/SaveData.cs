@@ -2,7 +2,7 @@ namespace OimoHorihori.Shared.Saves;
 
 public class SaveData
 {
-    public int Version { get; set; } = 5;
+    public int Version { get; set; } = 6;
     public bool HasStarted { get; set; }
     public double Potato { get; set; }
     public double TotalPotato { get; set; }
@@ -69,4 +69,6 @@ public class SaveData
     public DateTimeOffset CurrentAscentStartedAtUtc { get; set; }
     public double BestAscentSeconds { get; set; }
     public List<AscentHistoryEntry> AscentHistory { get; set; } = new();
+    public List<string> UnlockedOimoPowerIds { get; set; } = new();
+    public double TotalOimoPowerSpentPotato { get; set; }
 }

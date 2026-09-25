@@ -10,6 +10,9 @@ namespace OimoHorihori.Server.Endpoints;
 
 public static class SaveEndpoints
 {
+    private static readonly HashSet<string>
+    ValidOimoPowerIds = Enumerable.Range(1, 20).Select(index => $"oimo_{index:00}").ToHashSet(StringComparer.Ordinal);
+
     public static void MapSaveEndpoints(this WebApplication app)
     {
         app.MapGet("/api/save",
@@ -52,6 +55,11 @@ public static class SaveEndpoints
                 if (!IsValidAscentProgress(saveRequest.Save))
                 {
                     return Results.BadRequest(new ApiErrorResponse("ASCENTデータの整合性を確認できませんでした。"));
+                }
+
+                if (!IsValidOimoPowerProgress(saveRequest.Save))
+                {
+                    return Results.BadRequest(new ApiErrorResponse("OIMO POWERデータの整合性を確認できませんでした。"));
                 }
 
                 GameSave? currentSave = await db.GameSaves.SingleOrDefaultAsync(save => save.UserId == user.Id);
@@ -148,6 +156,24 @@ public static class SaveEndpoints
                     }
                 }
 
+                if (oldSave.Version >= 6 && saveRequest.Save.Version >= 6)
+                {
+                    HashSet<string> newPowerIds = saveRequest.Save.UnlockedOimoPowerIds.ToHashSet(StringComparer.Ordinal);
+
+                    foreach (string oldPowerId in oldSave.UnlockedOimoPowerIds)
+                    {
+                        if (!newPowerIds.Contains(oldPowerId))
+                        {
+                            return Results.BadRequest(new ApiErrorResponse("OIMO POWERの解放状態を確認できませんでした。"));
+                        }
+                    }
+
+                    if (saveRequest.Save.TotalOimoPowerSpentPotato < oldSave.TotalOimoPowerSpentPotato)
+                    {
+                        return Results.BadRequest(new ApiErrorResponse("OIMO POWER消費記録の整合性を確認できませんでした。"));
+                    }
+                }
+
                 //
                 // 保存成功
                 //
@@ -234,5 +260,40 @@ public static class SaveEndpoints
         int usedRoot = save.RootAbundanceLevel + save.RootFertilityLevel + save.RootRetillLevel + save.RootSeedBlessingLevel + (save.AutoBuyUnlocked ? 1 : 0) + (save.AutoRetillUnlocked ? 1 : 0);
 
         return save.TotalRootEarned == save.AscentCount && save.CurrentRoot + usedRoot == save.TotalRootEarned;
+    }
+
+    private static bool IsValidOimoPowerProgress(SaveData save)
+    {
+        if (save.Version < 6)
+        {
+            return true;
+        }
+
+        if (save.UnlockedOimoPowerIds is null)
+        {
+            return false;
+        }
+
+        if (!double.IsFinite(save.TotalOimoPowerSpentPotato) || save.TotalOimoPowerSpentPotato < 0)
+        {
+            return false;
+        }
+
+        HashSet<string> ids = new(StringComparer.Ordinal);
+
+        foreach (string id in save.UnlockedOimoPowerIds)
+        {
+            if (!ValidOimoPowerIds.Contains(id))
+            {
+                return false;
+            }
+
+            if (!ids.Add(id))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
