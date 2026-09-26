@@ -8,5 +8,5 @@ public static class BuildInfo
     public const bool IsDebug = false;
 #endif
 
-    public const string Version = "6.0.5";
+    public const string Version = "6.0.6";
 }
