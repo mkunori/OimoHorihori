@@ -164,20 +164,22 @@
                 {
                     <span>
                         RETILL基礎
-                        ×@Game.RootAdjustedRetillBase.ToString("0.000")
+                        ×@(Game.RootAdjustedRetillBase.ToString("0.000"))
                     </span>
                 }
                 else
                 {
                     <span>
                         RETILL基礎
-                        ×@Game.RootAdjustedRetillBase.ToString("0.000")
+                        ×@(Game.RootAdjustedRetillBase.ToString("0.000"))
 
                         <span class="upgrade-arrow">
                             →
                         </span>
 
-                        ×@Game.GetRootAdjustedRetillBase(Game.RootRetillLevel + 1) .ToString("0.000")
+                        ×@(Game.GetRootAdjustedRetillBase(
+                                                            Game.RootRetillLevel + 1
+                                                        ).ToString("0.000"))
                     </span>
                 }
 
